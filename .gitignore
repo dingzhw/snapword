@@ -1,5 +1,6 @@
 # Personal & local learner records (NEVER commit private data)
 local_data/
+docs/评审/
 *.local.json
 *备份*.json
 *backup*.json

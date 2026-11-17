@@ -1,0 +1,691 @@
+/* 词哒 · SnapWord Built-in Curriculum & Fun Gadget Decks (v0.1.0)
+ * Textbook alignment: 2026 Autumn Jiangsu Grade 5 Volume 1 (Units 5 & 6 verified against print p.58–81, p.111–113).
+ * Contains zero personal learner data; safe for open-source distribution.
+ */
+const SNAPWORD_CURRICULUM = (() => {
+  const ITEMS = [
+    // ==================== Baseline & Autumn Break Core (U5 + Foundations) ====================
+    {
+      id: 'u5_saturday', version: 1, unit: 5, bookPage: 58, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'Saturday', acceptedVariants: [], zh: '星期六',
+      helpKind: 'spelling_focus',
+      displayChunks: 'Sat ｜ ur ｜ day',
+      helpNote: '整词连读听音；重点留意首字母大写 S 和中间容易漏掉的 ur。',
+      bridgeNote: '星期名称首字母永远大写：Saturday（周六）。',
+      snap: {
+        pieces: ['Sat', 'ur', 'day'],
+        decoys: [
+          { text: 'sat', tip: '🎩 星期大哥出门，头顶得戴大写礼帽 S 哦！' },
+          { text: 'er', tip: '🔎 再看一眼中间那块，周六藏的是 u-r！' }
+        ]
+      },
+      cloze: { prefix: 'Sat', blank: 'ur', suffix: 'day', hint: '补上中间容易漏写的两个字母' },
+      context: { en: 'I usually play football on Saturday.', zh: '我通常在星期六踢足球。', origin: '家庭练习句' }
+    },
+    {
+      id: 'u5_sunday', version: 1, unit: 5, bookPage: 58, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'Sunday', acceptedVariants: [], zh: '星期日',
+      helpKind: 'morphology',
+      displayChunks: 'Sun + day',
+      helpNote: '太阳 Sun（u 发 /ʌ/，别按拼音写成 a）＋ day；首字母大写 S。',
+      bridgeNote: '对比记忆：Sunday（单指星期日） → on Sundays（每逢星期日，词尾加 s）。',
+      snap: {
+        pieces: ['Sun', 'day'],
+        decoys: [
+          { text: 'san', tip: '☀️ 星期日是太阳 Sun (S-u-n)，大写 S 加字母 u！' },
+          { text: 'sun', tip: '🎩 别忘了给星期日戴上大写礼帽 S！' }
+        ]
+      },
+      cloze: { prefix: '', blank: 'Sun', suffix: 'day', hint: '注意首字母大写和中间的元音字母 u' },
+      context: { en: 'We visit my grandparents on Sundays.', zh: '我们每逢星期日看望祖父母。', origin: '家庭练习句' }
+    },
+    {
+      id: 'fnd_morning', version: 1, unit: 5, bookPage: 60, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'morning', acceptedVariants: [], zh: '早晨；上午',
+      helpKind: 'spelling_focus',
+      displayChunks: 'mor ｜ ning',
+      helpNote: '整词听读，留意前一半里的字母组合 or，别漏掉 r。',
+      bridgeNote: '常见搭配：on Saturday morning（在周六上午，具体某天上午用 on）。',
+      snap: {
+        pieces: ['mor', 'ning'],
+        decoys: [
+          { text: 'mo', tip: '⏰ 少了字母 r 啦，m-o-r 才完整！' },
+          { text: 'in', tip: '🔔 结尾是 -ning 哦！' }
+        ]
+      },
+      cloze: { prefix: 'm', blank: 'or', suffix: 'ning', hint: '补全中间的字母组合（别漏 r）' },
+      context: { en: 'I read books on Sunday morning.', zh: '我在星期日上午读书。', origin: '家庭练习句' }
+    },
+    {
+      id: 'fnd_homework', version: 1, unit: 6, bookPage: 79, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'homework', acceptedVariants: [], zh: '家庭作业',
+      helpKind: 'morphology',
+      displayChunks: 'home + work',
+      helpNote: '构词记忆：home（家）＋ work（工作/作业），合起来连写不留空格。',
+      bridgeNote: '词义区分：work（工作/作业，w-o-r-k） ≠ walk（走路，w-a-l-k，U4 p.50）。',
+      snap: {
+        pieces: ['home', 'work'],
+        decoys: [
+          { text: 'walk', tip: '🚶 walk 是去散步走路，做作业要找 work (w-o-r-k)！' },
+          { text: 'wrok', tip: '🔧 字母顺序是 w-o-r-k 哟！' }
+        ]
+      },
+      cloze: { prefix: 'home', blank: 'work', suffix: '', hint: '家 home + 作业 ____（别写成走路 walk）' },
+      context: { en: 'I always do my homework first.', zh: '我总是先做我的家庭作业。', origin: '家庭练习句' }
+    },
+    {
+      id: 'fnd_football', version: 1, unit: 5, bookPage: 60, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'football', acceptedVariants: [], zh: '足球',
+      helpKind: 'morphology',
+      displayChunks: 'foot + ball',
+      helpNote: '构词记忆：foot（脚）＋ ball（球），中间连写不空格。',
+      bridgeNote: '同类词串记：ball（球） → wall（墙，U6 p.70） → football（足球）。',
+      snap: {
+        pieces: ['foot', 'ball'],
+        decoys: [
+          { text: 'bool', tip: '⚽ 球是 ball (b-a-l-l)，不是 bool 哦！' },
+          { text: 'bell', tip: '🔔 bell 是铃铛，球是 b-a-l-l！' }
+        ]
+      },
+      cloze: { prefix: 'foot', blank: 'ball', suffix: '', hint: '脚 foot + 球 ____（注意是 a-l-l）' },
+      context: { en: 'He plays football after school.', zh: '他放学后踢足球。', origin: '家庭练习句' }
+    },
+    {
+      id: 'u5_sometimes', version: 1, unit: 5, bookPage: 63, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'sometimes', acceptedVariants: [], zh: '有时',
+      helpKind: 'morphology',
+      displayChunks: 'some + time + s',
+      helpNote: '全词共两个音节；拼写用“一些 some ＋ 时间 time ＋ 尾巴 s”记最稳（别漏掉 some 里的 e）。',
+      bridgeNote: '巧合彩蛋：some (U6 p.73) 和 time (U6 p.79) 都是第六单元核心词！',
+      snap: {
+        pieces: ['some', 'time', 's'],
+        decoys: [
+          { text: 'som', tip: '🧩 一些是 s-o-m-e，尾巴上有个不吭声的 e！' },
+          { text: 'timey', tip: '⏱️ 时间是 t-i-m-e，后面直接加 s 就好啦！' }
+        ]
+      },
+      cloze: { prefix: '', blank: 'some', suffix: 'times', hint: '前半截是“一些 ____”（4个字母，别漏 e）' },
+      context: { en: 'Sometimes we fly a kite in the park.', zh: '有时我们在公园里放风筝。', origin: '家庭练习句' }
+    },
+    {
+      id: 'fnd_with', version: 1, unit: 6, bookPage: 70, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'with', acceptedVariants: [], zh: '和……一起',
+      helpKind: 'spelling_focus',
+      displayChunks: 'wi ｜ th',
+      helpNote: '标准读音 /wɪð/ 或 /wɪθ/，结尾是咬舌字母组合 th，表示“和谁一起”。',
+      bridgeNote: '句子用词区分：play football with my friends（和朋友一起，不用 was）。',
+      snap: {
+        pieces: ['wi', 'th'],
+        decoys: [
+          { text: 'was', tip: '🤝 表示“和朋友一起”要用 with，was 是“过去是”哦！' },
+          { text: 'sh', tip: '👅 结尾是咬舌尖的 t-h！' }
+        ]
+      },
+      cloze: { prefix: 'wi', blank: 'th', suffix: '', hint: '补全结尾两个字母' },
+      context: { en: 'I play football with my friends.', zh: '我和我的朋友们一起踢足球。', origin: '家庭练习句' }
+    },
+    {
+      id: 'u5_have_a_picnic', version: 1, unit: 5, bookPage: 61, textbookCore: false, classRequirement: 'dictation',
+      type: 'phrase', en: 'have a picnic', acceptedVariants: [], zh: '野餐',
+      helpKind: 'word_boundary',
+      displayChunks: 'have ␣ a ␣ pic·nic',
+      helpNote: '三个独立的词，纸上写时词与词之间要留出空格；野餐固定搭配用 have a picnic。',
+      bridgeNote: '搭配提醒：去野餐说 have a picnic（不用 go to the picnic）。',
+      snap: {
+        pieces: ['have', '␣', 'a', '␣', 'picnic'],
+        decoys: [
+          { text: 'go', tip: '🧺 野餐在课本里的固定搭档是 have a picnic 哦！' },
+          { text: 'the', tip: '🍎 中间是 have a picnic！' }
+        ]
+      },
+      cloze: { prefix: 'have a ', blank: 'picnic', suffix: '', hint: '拼出“野餐” p-i-c-n-i-c' },
+      context: { en: "Why don't we have a picnic here?", zh: '我们为什么不在这儿野餐呢？', origin: '教材五上 U6 p.72' }
+    },
+    {
+      id: 'fnd_stay_up_late', version: 1, unit: 1, bookPage: 14, textbookCore: true, classRequirement: 'dictation',
+      type: 'phrase', en: 'stay up late', acceptedVariants: [], zh: '熬夜；很晚睡',
+      helpKind: 'word_boundary',
+      displayChunks: 'stay ␣ up ␣ late',
+      helpNote: '三个独立的词！尤其注意 up 和 late 中间一定要留出空格，不能连成 uplate。',
+      bridgeNote: '好习惯表达：I never stay up late.（我从不熬夜。）',
+      snap: {
+        pieces: ['stay', '␣', 'up', '␣', 'late'],
+        decoys: [
+          { text: 'uplate', tip: '✂️ up 和 late 是两个词，中间必须留出呼吸空格 ␣！' }
+        ]
+      },
+      cloze: { prefix: 'stay ', blank: 'up late', suffix: '', hint: '两个词，记得中间敲一个空格' },
+      context: { en: 'I never stay up late.', zh: '我从不熬夜。', origin: '家庭练习句' }
+    },
+
+    // ==================== Additional U5 Core & Seasons / Weekdays ====================
+    {
+      id: 'u5_tuesday', version: 1, unit: 5, bookPage: 58, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'Tuesday', acceptedVariants: [], zh: '星期二',
+      helpKind: 'spelling_focus', displayChunks: 'Tues ｜ day',
+      helpNote: '首字母大写 T，注意 Tues 结尾有 s，与星期四 Thursday 区分。',
+      bridgeNote: '对比：Tuesday（周二，Tues-） vs Thursday（周四，Thurs-）。',
+      snap: { pieces: ['Tues', 'day'], decoys: [{ text: 'tues', tip: '🎩 星期词首字母要大写 T！' }, { text: 'Thur', tip: '📅 带 r 的是周四 Thursday，周二是 Tues-day！' }] },
+      cloze: { prefix: '', blank: 'Tues', suffix: 'day', hint: '周二前四位字母（首字母大写，别漏 s）' },
+      context: { en: 'We have English on Tuesday.', zh: '我们在星期二有英语课。', origin: '家庭练习句' }
+    },
+    {
+      id: 'u5_wednesday', version: 1, unit: 5, bookPage: 58, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'Wednesday', acceptedVariants: [], zh: '星期三',
+      helpKind: 'spelling_focus', displayChunks: 'Wed ｜ nes ｜ day',
+      helpNote: '整词读 /ˈwenzdeɪ/，虽然 d 不发音，但拼写藏着 Wed + nes + day 三块！',
+      bridgeNote: '拼写口诀：Wed-nes-day，别漏掉不吭声的 d 和中间的 nes。',
+      snap: { pieces: ['Wed', 'nes', 'day'], decoys: [{ text: 'Wen', tip: '🤫 星期三藏着一个安静不发音的字母 d：W-e-d！' }, { text: 'ens', tip: '🧩 中间那块是 n-e-s 哦！' }] },
+      cloze: { prefix: 'Wed', blank: 'nes', suffix: 'day', hint: '补全周三中间的三个字母' },
+      context: { en: 'I play ping-pong on Wednesday.', zh: '我在星期三打乒乓球。', origin: '家庭练习句' }
+    },
+    {
+      id: 'u5_thursday', version: 1, unit: 5, bookPage: 58, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'Thursday', acceptedVariants: [], zh: '星期四',
+      helpKind: 'spelling_focus', displayChunks: 'Thurs ｜ day',
+      helpNote: '咬舌音 Th 开头（大写 T）＋ ur ＋ s ＋ day。',
+      bridgeNote: '和周六一样中间藏着 ur：Thurs-day / Sat-ur-day。',
+      snap: { pieces: ['Th', 'urs', 'day'], decoys: [{ text: 'Tues', tip: '📅 Tues 是周二，周四开头咬舌尖 Th-urs-day！' }] },
+      cloze: { prefix: 'Th', blank: 'urs', suffix: 'day', hint: '补全中间三个字母 u-r-s' },
+      context: { en: 'She dances on Thursday afternoon.', zh: '她在星期四下午跳舞。', origin: '家庭练习句' }
+    },
+    {
+      id: 'u5_always', version: 1, unit: 5, bookPage: 60, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'always', acceptedVariants: [], zh: '总是，每次都是',
+      helpKind: 'spelling_focus', displayChunks: 'al ｜ ways',
+      helpNote: '开头只有一个 l（al-），后面是 ways（路/方式，带 s）。',
+      bridgeNote: '频度排第一（100%）：always > usually > often > sometimes > never。',
+      snap: { pieces: ['al', 'ways'], decoys: [{ text: 'all', tip: '✂️ all 进入 always 时要瘦身减掉一个 l，变成 al-ways！' }, { text: 'way', tip: '✨ 尾巴上还有一个 s 哦：always！' }] },
+      cloze: { prefix: '', blank: 'al', suffix: 'ways', hint: '开头两个字母（只有一个 l）' },
+      context: { en: 'He always takes notes in class.', zh: '他总是在课堂上记笔记。', origin: '家庭练习句' }
+    },
+    {
+      id: 'u5_usually', version: 1, unit: 5, bookPage: 63, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'usually', acceptedVariants: [], zh: '通常地，一般地',
+      helpKind: 'spelling_focus', displayChunks: 'u ｜ su ｜ al ｜ ly',
+      helpNote: '整词听读，留意结尾是 al + ly（总共两个 l）。',
+      bridgeNote: '在句子里放在主语后、实义动词前：I usually read books.',
+      snap: { pieces: ['u', 'su', 'ally'], decoys: [{ text: 'aly', tip: '👯 尾巴上有两个并排的 l：-ally！' }] },
+      cloze: { prefix: 'usu', blank: 'ally', suffix: '', hint: '补全结尾四个字母（两个 l）' },
+      context: { en: 'I usually visit my grandparents at weekends.', zh: '我通常在周末看望祖父母。', origin: '家庭练习句' }
+    },
+    {
+      id: 'u5_play_the_piano', version: 1, unit: 5, bookPage: 59, textbookCore: true, classRequirement: 'dictation',
+      type: 'phrase', en: 'play the piano', acceptedVariants: [], zh: '弹钢琴',
+      helpKind: 'word_boundary', displayChunks: 'play ␣ the ␣ pi·a·no',
+      helpNote: '西洋乐器前面一定要带上小跟班 the！三个词之间留空格。',
+      bridgeNote: '对比：球类棋类不加 the（play football / play Chinese chess），乐器加 the（play the piano）。',
+      snap: { pieces: ['play', '␣', 'the', '␣', 'piano'], decoys: [{ text: 'a', tip: '🎹 弹西洋乐器中间固定用 the，不是 a 哦！' }] },
+      cloze: { prefix: 'play ', blank: 'the piano', suffix: '', hint: '别忘了乐器前的冠词 the' },
+      context: { en: 'She likes playing the piano.', zh: '她喜欢弹钢琴。', origin: '家庭练习句' }
+    },
+    {
+      id: 'u5_chat_internet', version: 1, unit: 5, bookPage: 59, textbookCore: true, classRequirement: 'dictation',
+      type: 'phrase', en: 'chat on the internet', acceptedVariants: ['chat on the Internet'], zh: '在网上聊天',
+      helpKind: 'word_boundary', displayChunks: 'chat ␣ on ␣ the ␣ in·ter·net',
+      helpNote: '先有动词 chat（聊天），“在网上”介词用 on（不用 in）！',
+      bridgeNote: '2026 江苏五上词表 p.111 小写 internet，大写 Internet 也算对。',
+      snap: { pieces: ['chat', '␣', 'on', '␣', 'the', '␣', 'internet'], decoys: [{ text: 'in', tip: '🌐 在网上、在电视上都用介词 on，不用 in 哦！' }] },
+      cloze: { prefix: '', blank: 'chat on', suffix: ' the internet', hint: '动词“聊天”＋介词“在……上”' },
+      context: { en: 'They sometimes chat on the internet.', zh: '他们有时在网上聊天。', origin: '家庭练习句' }
+    },
+
+    // ==================== Unit 6 All 24 Textbook Items (2026 Jiangsu Grade 5 Vol.1, p.70–79, p.111–112) ====================
+    // --- Get ready (p.70–71) ---
+    {
+      id: 'u6_get_along_with', version: 1, unit: 6, bookPage: 70, textbookCore: false, classRequirement: 'read_meaning_use',
+      type: 'phrase', en: 'get along with', acceptedVariants: [], zh: '与……和睦相处',
+      helpKind: 'word_boundary', displayChunks: 'get ␣ a·long ␣ with',
+      helpNote: '单元标题核心短语（教材带 * 词）：三个词留清空格，结尾用 with（和……一起）。',
+      bridgeNote: '单元大问题：How can you get along well with others?',
+      snap: { pieces: ['get', '␣', 'along', '␣', 'with'], decoys: [{ text: 'was', tip: '🤝 和别人相处要用 with！' }] },
+      cloze: { prefix: 'get ', blank: 'along with', suffix: '', hint: 'a-l-o-n-g 空格 w-i-t-h' },
+      context: { en: 'How can you get along well with others?', zh: '你怎样才能和他人和睦相处？', origin: '教材五上 U6 p.71' }
+    },
+    {
+      id: 'u6_between', version: 1, unit: 6, bookPage: 70, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'between', acceptedVariants: [], zh: '在……中间，介于……之间',
+      helpKind: 'spelling_focus', displayChunks: 'be ｜ tween',
+      helpNote: '前面是熟悉的 be，后面 tween 中间有两个 e（ee 发长音 /iː/）。',
+      bridgeNote: '搭配：between their houses（在他们两家房子中间）。',
+      snap: { pieces: ['be', 'tw', 'een'], decoys: [{ text: 'ea', tip: '👀 between 里面藏着双胞胎字母 e-e！' }, { text: 'bi', tip: '🐝 开头是 b-e 哦！' }] },
+      cloze: { prefix: 'be', blank: 'tween', suffix: '', hint: 't-w 加双胞胎 e-e 再加 n' },
+      context: { en: 'There is a narrow space between two houses.', zh: '两栋房子中间有一块窄空地。', origin: '改编自教材 p.70/75' }
+    },
+    {
+      id: 'u6_wall', version: 1, unit: 6, bookPage: 70, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'wall', acceptedVariants: [], zh: '围墙；墙，壁',
+      helpKind: 'morphology', displayChunks: 'w + all',
+      helpNote: 'w ＋ all（全部），四个字母一气呵成。',
+      bridgeNote: '同类词串记：ball（球） → wall（墙） → football（足球）。',
+      snap: { pieces: ['w', 'all'], decoys: [{ text: 'ool', tip: '🧱 墙和球一样，尾巴都是 a-l-l！' }, { text: 'al', tip: '🧱 尾巴有两个 l：w-a-l-l！' }] },
+      cloze: { prefix: 'w', blank: 'all', suffix: '', hint: '和 ball（球）拥有相同的后三个字母' },
+      context: { en: 'A wall is not important. We should be friendly.', zh: '一堵墙并不重要，我们应该友好相处。', origin: '教材五上 U6 p.76' }
+    },
+    {
+      id: 'u6_neighbour', version: 1, unit: 6, bookPage: 70, textbookCore: false, classRequirement: 'read_meaning_use',
+      type: 'word', en: 'neighbour', acceptedVariants: ['neighbor'], zh: '邻居，邻人',
+      helpKind: 'spelling_focus', displayChunks: 'neigh ｜ bour',
+      helpNote: '教材带 * 词（先保听读认义）：前半 neigh（eigh 发 /eɪ/），后半英式 -bour（美式 neighbor）。',
+      bridgeNote: '六尺巷主旨：become good neighbours（成为好邻居）。',
+      snap: { pieces: ['neigh', 'bour'], decoys: [{ text: 'niegh', tip: '🏡 这词比较特殊，是 e-i-g-h 开头哦！' }] },
+      cloze: { prefix: 'neigh', blank: 'bour', suffix: '', hint: '补全英式词尾 b-o-u-r' },
+      context: { en: 'The two families become good neighbours.', zh: '两家人成为了好邻居。', origin: '改编自教材 p.76' }
+    },
+
+    // --- Cartoon time & Sounds in focus (p.72–74) ---
+    {
+      id: 'u6_heavy', version: 1, unit: 6, bookPage: 72, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'heavy', acceptedVariants: [], zh: '重的，沉的',
+      helpKind: 'spelling_focus', displayChunks: 'hea ｜ vy',
+      helpNote: '整词读 /ˈhevi/，注意中间是字母组合 ea（发短音 /e/，别漏掉 a）。',
+      bridgeNote: '反义联系：heavy（重的） ↔ light（轻的）。',
+      snap: { pieces: ['h', 'ea', 'vy'], decoys: [{ text: 'e', tip: '🎒 包太重啦，里面装了 e 和 a 两个元音字母：h-e-a-v-y！' }] },
+      cloze: { prefix: 'h', blank: 'ea', suffix: 'vy', hint: '中间是两个元音字母组合 e-a' },
+      context: { en: 'My bag is so heavy.', zh: '我的包太重了。', origin: '教材五上 U6 p.72' }
+    },
+    {
+      id: 'u6_drink', version: 1, unit: 6, bookPage: 72, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'drink', acceptedVariants: [], zh: '喝，饮；饮料',
+      helpKind: 'spelling_focus', displayChunks: 'dr ｜ ink',
+      helpNote: 'U6 p.74 重点语音词：辅音连缀 dr- ＋ ink（墨水）。',
+      bridgeNote: 'dr 语音家族（p.74）：drink、dress、drawing、children（词中也有 dr！）。',
+      snap: { pieces: ['dr', 'ink'], decoys: [{ text: 'tr', tip: '🥤 喝水开头是浊音 d-r (drink)，不是 t-r 哦！' }] },
+      cloze: { prefix: '', blank: 'dr', suffix: 'ink', hint: '本单元重点学习的两个辅音字母组合' },
+      context: { en: 'I want to drink some water.', zh: '我想喝点水。', origin: '教材五上 U6 p.72' }
+    },
+    {
+      id: 'u6_some', version: 1, unit: 6, bookPage: 73, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'some', acceptedVariants: [], zh: '一些；有些事物，有些人',
+      helpKind: 'spelling_focus', displayChunks: 's ｜ ome',
+      helpNote: '四个字母 s-o-m-e，词尾的 e 不发音但千万不能漏。',
+      bridgeNote: '构词串联：some（一些）＋ time（时间）＋ s ＝ sometimes（有时）。',
+      snap: { pieces: ['so', 'me'], decoys: [{ text: 'sam', tip: '🍰 一些是 s-o-m-e 哦！' }] },
+      cloze: { prefix: 's', blank: 'ome', suffix: '', hint: '后三个字母是 o-m-e' },
+      context: { en: 'You can have some of my food.', zh: '你可以吃一些我的食物。', origin: '教材五上 U6 p.73' }
+    },
+    {
+      id: 'u6_way_back', version: 1, unit: 6, bookPage: 73, textbookCore: true, classRequirement: 'dictation',
+      type: 'phrase', en: "on one's way back", acceptedVariants: ['on their way back', 'on my way back', 'on his way back', 'on her way back'],
+      zh: '在某人回去的路上',
+      helpKind: 'word_boundary', displayChunks: "on ␣ their/my ␣ way ␣ back",
+      helpNote: "词表原形为 on one's way back，造句时把 one's 换成 my / their / his 等具体人称。",
+      bridgeNote: '课本原句：Bobby, Sam and Billy are on their way back. (p.73)',
+      snap: { pieces: ['on', '␣', 'my', '␣', 'way', '␣', 'back'], decoys: [{ text: 'in', tip: '🛣️ 在路上介词用 on 哦！' }] },
+      cloze: { prefix: 'on their ', blank: 'way back', suffix: '', hint: '回去的路：w-a-y 空格 b-a-c-k' },
+      context: { en: 'They are on their way back.', zh: '他们在回去的路上。', origin: '改编自教材 p.73' }
+    },
+
+    // --- Story time: Liu Chi Xiang (p.75–77) ---
+    {
+      id: 'u6_next_to', version: 1, unit: 6, bookPage: 75, textbookCore: true, classRequirement: 'dictation',
+      type: 'phrase', en: 'next to', acceptedVariants: [], zh: '紧邻，在……近旁',
+      helpKind: 'word_boundary', displayChunks: 'next ␣ to',
+      helpNote: '两个词中间留空格：next（紧接着）＋ to。',
+      bridgeNote: '位置短语对比：next to（紧挨着） vs between（在两者中间）。',
+      snap: { pieces: ['next', '␣', 'to'], decoys: [{ text: 'too', tip: '📍 紧挨着是 next to（一个 o），too（两个 o）是“太/也”！' }] },
+      cloze: { prefix: '', blank: 'next', suffix: ' to', hint: 'n-e-x-t' },
+      context: { en: 'The Wu family live next to the Zhang family.', zh: '吴家住在张家隔壁。', origin: '教材五上 U6 p.75' }
+    },
+    {
+      id: 'u6_space', version: 1, unit: 6, bookPage: 75, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'space', acceptedVariants: [], zh: '空地，空间',
+      helpKind: 'spelling_focus', displayChunks: 'sp ｜ ace',
+      helpNote: 'a-c-e 是“元音+辅音+不发音e”结构，a 读字母本音 /eɪ/，c 在 e 前发 /s/。',
+      bridgeNote: '同类词：face（脸） → place（地方） → space（空地）。',
+      snap: { pieces: ['sp', 'ace'], decoys: [{ text: 'ase', tip: '🌌 空地 s-p-a-c-e 里藏着字母 c，和 face（脸）一样！' }] },
+      cloze: { prefix: 'sp', blank: 'ace', suffix: '', hint: '和 face 后三个字母一样' },
+      context: { en: 'You can use the space.', zh: '你们可以使用这块空地。', origin: '教材五上 U6 p.76' }
+    },
+    {
+      id: 'u6_their', version: 1, unit: 6, bookPage: 75, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'their', acceptedVariants: [], zh: '他们的，她们的，它们的',
+      helpKind: 'spelling_focus', displayChunks: 'th ｜ eir',
+      helpNote: 'the 后面加上 i-r 就是“他们的” their。',
+      bridgeNote: '区分：their houses（他们的房子） vs there（那里）。',
+      snap: { pieces: ['the', 'ir'], decoys: [{ text: 're', tip: '🏠 there 是“那里”，表示“他们的房子”要用 t-h-e-i-r！' }] },
+      cloze: { prefix: 'the', blank: 'ir', suffix: '', hint: 'the 后面补上两个字母表示“他们的”' },
+      context: { en: 'There is a space between their houses.', zh: '他们两家房子之间有一块空地。', origin: '改编自教材 p.75' }
+    },
+    {
+      id: 'u6_too', version: 1, unit: 6, bookPage: 75, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'too', acceptedVariants: [], zh: '太，过于；也',
+      helpKind: 'spelling_focus', displayChunks: 't ｜ oo',
+      helpNote: 't 后面跟两个圆圆的 o：too close to（离……太近了）。',
+      bridgeNote: '区分：too（太/也，两个 o） vs to（向/到，一个 o）。',
+      snap: { pieces: ['t', 'oo'], decoys: [{ text: 'o', tip: '👀 表示“太近了 / 我也是”要有两个圆圆的 o：t-o-o！' }] },
+      cloze: { prefix: 't', blank: 'oo', suffix: '', hint: '两个相同的元音字母' },
+      context: { en: 'Your house is too close to our house!', zh: '你们的房子离我们的房子太近了！', origin: '教材五上 U6 p.75' }
+    },
+    {
+      id: 'u6_close_to', version: 1, unit: 6, bookPage: 75, textbookCore: true, classRequirement: 'dictation',
+      type: 'phrase', en: 'close to', acceptedVariants: [], zh: '接近，靠近',
+      helpKind: 'word_boundary', displayChunks: 'close ␣ to',
+      helpNote: 'close（靠近，读 /kləʊs/）＋ 空格 ＋ to。',
+      bridgeNote: '常与 too 连用：too close to our house（离我们家太近）。',
+      snap: { pieces: ['close', '␣', 'to'], decoys: [{ text: 'too', tip: '📏 靠近某处后面跟介词 to（一个 o）！' }] },
+      cloze: { prefix: '', blank: 'close', suffix: ' to', hint: 'c-l-o-s-e' },
+      context: { en: 'Do not stand too close to the river.', zh: '不要站得离河边太近。', origin: '家庭练习句' }
+    },
+    {
+      id: 'u6_use', version: 1, unit: 6, bookPage: 75, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'use', acceptedVariants: [], zh: '使用，利用',
+      helpKind: 'spelling_focus', displayChunks: 'u ｜ se',
+      helpNote: 'u-s-e，字母 u 读本音 /juː/，词尾不发音的 e 不能漏。',
+      bridgeNote: '情态动词后跟原形：can use / shouldn’t use。',
+      snap: { pieces: ['u', 'se'], decoys: [{ text: 'us', tip: '🔧 us 是“我们”，使用需要在尾巴加上不发音的 e：u-s-e！' }] },
+      cloze: { prefix: '', blank: 'use', suffix: '', hint: '三个字母 u-s-e' },
+      context: { en: 'Can I use your ruler?', zh: '我可以用一下你的尺子吗？', origin: '家庭练习句' }
+    },
+    {
+      id: 'u6_letter', version: 1, unit: 6, bookPage: 75, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'letter', acceptedVariants: [], zh: '信，函；字母',
+      helpKind: 'spelling_focus', displayChunks: 'let ｜ ter',
+      helpNote: '中间是双写字母 tt，结尾是 er：let + ter。',
+      bridgeNote: '搭配：write a letter to...（给……写一封信）。',
+      snap: { pieces: ['let', 'ter'], decoys: [{ text: 'er', tip: '✉️ 信封中间有两个 t：let-ter！' }] },
+      cloze: { prefix: 'le', blank: 'tt', suffix: 'er', hint: '中间双写哪两个辅音字母？' },
+      context: { en: "Why don't we write a letter to Zhang Ying?", zh: '我们为什么不给张英写封信呢？', origin: '教材五上 U6 p.75' }
+    },
+    {
+      id: 'u6_advice', version: 1, unit: 6, bookPage: 75, textbookCore: false, classRequirement: 'read_meaning_use',
+      type: 'word', en: 'advice', acceptedVariants: [], zh: '建议（不可数名词）',
+      helpKind: 'spelling_focus', displayChunks: 'ad ｜ vice',
+      helpNote: '教材带 * 词：ad ＋ vice（c 发 /s/），注意它是不可数名词，不能加 s，不说 an advice。',
+      bridgeNote: '搭配：give good advice（给出好建议）。',
+      snap: { pieces: ['ad', 'vice'], decoys: [{ text: 'vise', tip: '💡 名词“建议”里面是字母 c：ad-v-i-c-e！' }] },
+      cloze: { prefix: 'ad', blank: 'vice', suffix: '', hint: 'v-i-c-e' },
+      context: { en: 'He can give good advice.', zh: '他能给出好建议。', origin: '教材五上 U6 p.75' }
+    },
+    {
+      id: 'u6_important', version: 1, unit: 6, bookPage: 76, textbookCore: false, classRequirement: 'read_meaning_use',
+      type: 'word', en: 'important', acceptedVariants: [], zh: '重要的',
+      helpKind: 'spelling_focus', displayChunks: 'im ｜ por ｜ tant',
+      helpNote: '教材带 * 词：三段好记 im + por + tant（结尾是 -ant，不是 -ent）。',
+      bridgeNote: '六尺巷名句：A wall is not important.（一堵墙并不重要。）',
+      snap: { pieces: ['im', 'por', 'tant'], decoys: [{ text: 'tent', tip: '⭐ 结尾藏着一只小蚂蚁 ant：im-por-tant！' }] },
+      cloze: { prefix: 'im', blank: 'por', suffix: 'tant', hint: '中间三个字母 p-o-r' },
+      context: { en: 'A wall is not important.', zh: '一堵墙并不重要。', origin: '教材五上 U6 p.76' }
+    },
+    {
+      id: 'u6_friendly', version: 1, unit: 6, bookPage: 76, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'friendly', acceptedVariants: [], zh: '友好的，友爱的',
+      helpKind: 'morphology', displayChunks: 'friend + ly',
+      helpNote: '先把词根 friend（朋友，注意中间字母组合 i-e）记牢，尾巴直接加 -ly 变成“友好的”。',
+      bridgeNote: '一箭双雕：记熟 friend，复数加 s 是 friends，形容词加 ly 是 friendly！',
+      snap: { pieces: ['fr', 'ie', 'nd', 'ly'], decoys: [{ text: 'i', tip: '🧑‍🤝‍🧑 朋友 friend 中间是 i 和 e 手拉手：f-r-i-e-n-d！' }, { text: 'ei', tip: '🧑‍🤝‍🧑 顺序是 i 在前、e 在后：f-r-i-e-n-d！' }] },
+      cloze: { prefix: 'fr', blank: 'ie', suffix: 'ndly', hint: '补全 friend 中间的两个元音字母组合' },
+      context: { en: 'We should be friendly.', zh: '我们应该友好待人。', origin: '教材五上 U6 p.76' }
+    },
+
+    // --- Grammar time (p.78–79) ---
+    {
+      id: 'u6_then', version: 1, unit: 6, bookPage: 78, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'then', acceptedVariants: [], zh: '到那时，当时；然后',
+      helpKind: 'spelling_focus', displayChunks: 'th ｜ en',
+      helpNote: '咬舌音 th ＋ en（区别于比较级 than）。',
+      bridgeNote: '日常告别常用：See you then!（到时候见！）',
+      snap: { pieces: ['th', 'en'], decoys: [{ text: 'an', tip: '👋 到时候见是 t-h-e-n (then) 哦！' }] },
+      cloze: { prefix: 'th', blank: 'en', suffix: '', hint: '结尾两个字母 e-n' },
+      context: { en: 'See you then!', zh: '到时候见！', origin: '教材五上 U6 p.78' }
+    },
+    {
+      id: 'u6_time', version: 1, unit: 6, bookPage: 79, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'time', acceptedVariants: [], zh: '时候；时间',
+      helpKind: 'spelling_focus', displayChunks: 't ｜ ime',
+      helpNote: 't-i-m-e，词尾不发音 e 让中间 i 读字母本音 /aɪ/。',
+      bridgeNote: '串联：have time（有空） / at that time（在那时） / sometimes（有时）。',
+      snap: { pieces: ['ti', 'me'], decoys: [{ text: 'tim', tip: '⏰ 时间 t-i-m-e 尾巴上有不发音的 e！' }] },
+      cloze: { prefix: 't', blank: 'ime', suffix: '', hint: 'i-m-e' },
+      context: { en: "Sorry, I don't have time today.", zh: '抱歉，我今天没空。', origin: '教材五上 U6 p.79' }
+    },
+    {
+      id: 'u6_favourite', version: 1, unit: 6, bookPage: 79, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'favourite', acceptedVariants: ['favorite'], zh: '特别喜爱的',
+      helpKind: 'spelling_focus', displayChunks: 'fa ｜ vour ｜ ite',
+      helpNote: '整词先听熟 /ˈfeɪvərɪt/；江苏教材主用英式拼写，重点留意中间的 our（美式写作 favorite）。',
+      bridgeNote: '搭配：your favourite pen（你最喜欢的钢笔，p.79）。',
+      snap: { pieces: ['fav', 'our', 'ite'], decoys: [{ text: 'er', tip: '🌟 英式拼写中间藏着“我们的” o-u-r：fav-our-ite！' }] },
+      cloze: { prefix: 'fav', blank: 'our', suffix: 'ite', hint: '按江苏课本英式拼写，中间三个字母是 o-u-r' },
+      context: { en: 'English is my favourite subject.', zh: '英语是我最喜欢的科目。', origin: '家庭练习句' }
+    },
+    {
+      id: 'u6_problem', version: 1, unit: 6, bookPage: 79, textbookCore: true, classRequirement: 'dictation',
+      type: 'word', en: 'problem', acceptedVariants: [], zh: '问题，困难',
+      helpKind: 'spelling_focus', displayChunks: 'prob ｜ lem',
+      helpNote: '两段拼写：prob ＋ lem。',
+      bridgeNote: '日常口语：No problem!（没问题！）',
+      snap: { pieces: ['prob', 'lem'], decoys: [{ text: 'lam', tip: '🧩 后半截是 l-e-m 哦：prob-lem！' }] },
+      cloze: { prefix: 'prob', blank: 'lem', suffix: '', hint: '后三个字母 l-e-m' },
+      context: { en: 'What problem do you have with others?', zh: '你和别人相处有什么困扰？', origin: '教材五上 U6 p.79' }
+    },
+    {
+      id: 'u6_do_homework', version: 1, unit: 6, bookPage: 79, textbookCore: true, classRequirement: 'dictation',
+      type: 'phrase', en: 'do your homework', acceptedVariants: ['do my homework'], zh: '做家庭作业',
+      helpKind: 'word_boundary', displayChunks: 'do ␣ your/my ␣ home·work',
+      helpNote: '三个独立的词留出空格；讲别人/情境卡用 do your homework，讲自己用 do my homework 都算对！',
+      bridgeNote: '锁死后半截：home + work（不是 walk）！',
+      snap: { pieces: ['do', '␣', 'your', '␣', 'homework'], decoys: [{ text: 'homewalk', tip: '🚶 又抓到一只伪装虫！做作业是 home-work，不是 walk！' }] },
+      cloze: { prefix: 'do your home', blank: 'work', suffix: '', hint: '工作/作业 w-o-r-k' },
+      context: { en: 'At that time, you do your homework.', zh: '在那个时候，你在做家庭作业。', origin: '改编自教材五上 U6 p.79' }
+    },
+    {
+      id: 'u6_classmate', version: 1, unit: 6, bookPage: 79, textbookCore: false, classRequirement: 'read_meaning_use',
+      type: 'word', en: 'classmate', acceptedVariants: [], zh: '同班同学',
+      helpKind: 'morphology', displayChunks: 'class + mate',
+      helpNote: '教材带 * 词，但构词超级好记：class（班级）＋ mate（伙伴），连写不空格！',
+      bridgeNote: '复数直接加 s：classmates（同班同学们）。',
+      snap: { pieces: ['class', 'mate'], decoys: [{ text: 'meat', tip: '🥩 meat 是肉，伙伴是 m-a-t-e（和 late 一样）！' }] },
+      cloze: { prefix: 'class', blank: 'mate', suffix: '', hint: '班级 class + 伙伴 m-a-t-e' },
+      context: { en: 'Your classmate uses your favourite pen.', zh: '你的同班同学用了你最喜欢的钢笔。', origin: '教材五上 U6 p.79' }
+    }
+  ];
+
+  // Preset micro-lessons strictly keeping 3-5 paper items per 15-18 min session
+  const PACKS = [
+    {
+      id: 'pack-baseline',
+      title: '00 · 首次 10 分钟纸笔基线短测',
+      subtitle: '先摸清哪几个词已经稳了（6 词 + 1 句无提示纸写）',
+      modeHint: 'baseline',
+      itemIds: ['u5_saturday', 'u5_sunday', 'fnd_morning', 'fnd_homework', 'fnd_football', 'u5_sometimes'],
+      extraSentence: { zh: '我和我的朋友们一起踢足球。', en: 'I play football with my friends.', focus: 'with 的理解选用与词间空格' },
+      altCheckWords: ['u5_tuesday', 'u5_usually', 'u5_play_the_piano']
+    },
+    {
+      id: 'pack-autumn-1',
+      title: '01 · 秋假第1次：星期大哥戴礼帽',
+      subtitle: '精练 Saturday / Sunday / morning（约 15 分钟）',
+      modeHint: 'standard',
+      itemIds: ['u5_saturday', 'u5_sunday', 'fnd_morning'],
+      bugId: 'bug_1'
+    },
+    {
+      id: 'pack-autumn-2',
+      title: '02 · 秋假第2次：作业与足球构词拆解',
+      subtitle: '搞清 home+work 与 foot+ball，区分 work / walk',
+      modeHint: 'standard',
+      itemIds: ['fnd_homework', 'fnd_football', 'u6_do_homework'],
+      bugId: 'bug_2'
+    },
+    {
+      id: 'pack-autumn-3',
+      title: '03 · 秋假第3次：合成词与短语留空',
+      subtitle: '拆解 some+time+s，练准 with、野餐与不熬夜',
+      modeHint: 'standard',
+      itemIds: ['u5_sometimes', 'fnd_with', 'u5_have_a_picnic', 'fnd_stay_up_late'],
+      bugId: 'bug_3'
+    },
+    {
+      id: 'pack-autumn-4',
+      title: '04 · 秋假第4次：U6 破冰预读（一）',
+      subtitle: '借 wall 串起 ball/football，预读 between 与 drink',
+      modeHint: 'standard',
+      itemIds: ['u6_wall', 'u6_between', 'u6_drink', 'u6_some'],
+      bugId: 'bug_4'
+    },
+    {
+      id: 'pack-autumn-5',
+      title: '05 · 秋假第5次：六尺巷与友好相处',
+      subtitle: '掌握 friendly (ie)、letter、next to 与提建议问答',
+      modeHint: 'standard',
+      itemIds: ['u6_friendly', 'u6_letter', 'u6_next_to', 'u6_space'],
+      bugId: 'bug_5'
+    },
+    {
+      id: 'pack-u6-p75',
+      title: '06 · 五上 U6：六尺巷核心词（二）',
+      subtitle: 'their / too / close to / use（p.75 必会短词）',
+      modeHint: 'standard',
+      itemIds: ['u6_their', 'u6_too', 'u6_close_to', 'u6_use'],
+      bugId: 'bug_6'
+    },
+    {
+      id: 'pack-u6-p78',
+      title: '07 · 五上 U6：语法页核心词（三）',
+      subtitle: 'then / time / favourite / problem（p.78–79）',
+      modeHint: 'standard',
+      itemIds: ['u6_then', 'u6_time', 'u6_favourite', 'u6_problem'],
+      bugId: 'bug_7'
+    }
+  ];
+
+  // Fun Gadget #2: Slot-Machine Sentence Maker ("老爸整蛊造句机")
+  const SLOT_DECKS = [
+    {
+      id: 'slot_u5_weekend',
+      name: '🎲 周末日常摇奖机（U5 频度副词 + 动词三单变化）',
+      subjects: [
+        { en: 'I', zh: '我', thirdSingular: false },
+        { en: 'My dad', zh: '我老爸', thirdSingular: true },
+        { en: 'Billy', zh: '比利', thirdSingular: true },
+        { en: 'My friends and I', zh: '我和朋友们', thirdSingular: false }
+      ],
+      adverbs: [
+        { en: 'always', zh: '总是' },
+        { en: 'usually', zh: '通常' },
+        { en: 'sometimes', zh: '有时' },
+        { en: 'never', zh: '从不' }
+      ],
+      actions: [
+        { base: 'do homework on Saturday', sForm: 'does homework on Saturday', zh: '在周六做作业', highlight: 'homework' },
+        { base: 'play football with friends', sForm: 'plays football with friends', zh: '和朋友一起踢足球', highlight: 'with' },
+        { base: 'have a picnic in autumn', sForm: 'has a picnic in autumn', zh: '在秋天去野餐', highlight: 'have a picnic' },
+        { base: 'stay up late on Sundays', sForm: 'stays up late on Sundays', zh: '在周日熬夜', highlight: 'on Sundays' },
+        { base: 'chat on the internet', sForm: 'chats on the internet', zh: '在网上聊天', highlight: 'on' }
+      ]
+    },
+    {
+      id: 'slot_u6_advice',
+      name: '💡 好邻居点子摇奖机（U6 Why don’t we + 动词原形）',
+      subjects: [
+        { en: "Why don't we", zh: '我们为什么不', thirdSingular: false },
+        { en: "Why don't you", zh: '你为什么不', thirdSingular: false }
+      ],
+      adverbs: [
+        { en: '', zh: '' }
+      ],
+      actions: [
+        { base: 'have a picnic here?', sForm: 'have a picnic here?', zh: '在这儿野餐呢？（答：Good idea!）', highlight: 'have a picnic' },
+        { base: 'drink some water first?', sForm: 'drink some water first?', zh: '先喝点水呢？（答：Great!）', highlight: 'drink' },
+        { base: 'write a letter to him?', sForm: 'write a letter to him?', zh: '给他写封信呢？（答：Good idea!）', highlight: 'letter' },
+        { base: 'move our wall back?', sForm: 'move our wall back?', zh: '把我们的墙往后退呢？（答：That’s a good idea!）', highlight: 'wall' }
+      ]
+    }
+  ];
+
+  // Fun Gadget #3: 15-Second Bug Hunter Cards ("抓拼写臭虫侦探")
+  const BUG_CARDS = [
+    {
+      id: 'bug_1',
+      title: '🕵️ 马虎特工的周末日记（揪出 2 只臭虫！）',
+      zh: '我通常在星期六上午读书。',
+      tokens: [
+        { text: 'I' }, { text: 'usually' }, { text: 'read' }, { text: 'books' }, { text: 'on' },
+        { text: 'satday', isBug: true, fix: 'Saturday', choices: ['Saturday', 'satday'], tip: '大写 S ＋ 中间不能漏掉 ur！' },
+        { text: 'moning.', isBug: true, fix: 'morning.', choices: ['morning.', 'moning.'], tip: 'm-o-r-n-i-n-g，别漏掉字母 r！' }
+      ]
+    },
+    {
+      id: 'bug_2',
+      title: '🕵️ 谁把作业写成散步啦？（揪出 2 只臭虫！）',
+      zh: '我先做家庭作业，然后去踢足球。',
+      tokens: [
+        { text: 'I' }, { text: 'do' }, { text: 'my' },
+        { text: 'homewalk', isBug: true, fix: 'homework', choices: ['homework', 'homewalk'], tip: '做作业是 home + work，walk 是走路！' },
+        { text: 'and' }, { text: 'play' },
+        { text: 'footbool.', isBug: true, fix: 'football.', choices: ['football.', 'footbool.'], tip: '足球是 foot + ball (a-l-l)！' }
+      ]
+    },
+    {
+      id: 'bug_3',
+      title: '🕵️ 揪出伪装词与连体词（揪出 2 只臭虫！）',
+      zh: '我和朋友一起踢球，而且从不熬夜。',
+      tokens: [
+        { text: 'I' }, { text: 'play' }, { text: 'football' },
+        { text: 'was', isBug: true, fix: 'with', choices: ['with', 'was'], tip: '“和……一起”用介词 with！' },
+        { text: 'my' }, { text: 'friends,' }, { text: 'and' }, { text: 'I' }, { text: 'never' }, { text: 'stay' },
+        { text: 'uplate.', isBug: true, fix: 'up late.', choices: ['up late.', 'uplate.'], tip: 'up 和 late 是两个词，中间必须留空格！' }
+      ]
+    },
+    {
+      id: 'bug_4',
+      title: '🕵️ 野餐与墙边找茬（揪出 2 只臭虫！）',
+      zh: '有时我们在两堵墙中间喝点水。',
+      tokens: [
+        { text: 'Somtimeys', isBug: true, fix: 'Sometimes', choices: ['Sometimes', 'Somtimeys'], tip: 'Some + time + s，首字母大写且别漏掉 e！' },
+        { text: 'we' }, { text: 'drink' }, { text: 'some' }, { text: 'water' },
+        { text: 'bitween', isBug: true, fix: 'between', choices: ['between', 'bitween'], tip: 'be + tween（开头是 be，中间两个 e）！' },
+        { text: 'two' }, { text: 'walls.' }
+      ]
+    },
+    {
+      id: 'bug_5',
+      title: '🕵️ 六尺巷友好侦探（揪出 2 只臭虫！）',
+      zh: '我们应该友好相处，我们为什么不写封信呢？',
+      tokens: [
+        { text: 'We' }, { text: 'should' }, { text: 'be' },
+        { text: 'frindly.', isBug: true, fix: 'friendly.', choices: ['friendly.', 'frindly.'], tip: 'friend 中间藏着字母组合 i-e！' },
+        { text: 'Why' }, { text: "don't" }, { text: 'we' }, { text: 'write' }, { text: 'a' },
+        { text: 'leter?', isBug: true, fix: 'letter?', choices: ['letter?', 'leter?'], tip: '信封 letter 中间有两个 t！' }
+      ]
+    },
+    {
+      id: 'bug_6',
+      title: '🕵️ 两个 o 还是一个 o？（揪出 2 只臭虫！）',
+      zh: '他们的房子离我们的太近了！',
+      tokens: [
+        { text: 'There', isBug: true, fix: 'Their', choices: ['Their', 'There'], tip: '“他们的房子”要用形容词性物主代词 Their (t-h-e-i-r)！' },
+        { text: 'house' }, { text: 'is' },
+        { text: 'to', isBug: true, fix: 'too', choices: ['too', 'to'], tip: '表示“太近了”要用两个 o 的 too！' },
+        { text: 'close' }, { text: 'to' }, { text: 'ours!' }
+      ]
+    },
+    {
+      id: 'bug_7',
+      title: '🕵️ 最喜爱的科目找茬（揪出 2 只臭虫！）',
+      zh: '到那时我有时间，英语是我最喜爱的科目。',
+      tokens: [
+        { text: 'I' }, { text: 'have' },
+        { text: 'tim', isBug: true, fix: 'time', choices: ['time', 'tim'], tip: '时间 t-i-m-e 词尾有不发音的 e！' },
+        { text: 'then.' }, { text: 'English' }, { text: 'is' }, { text: 'my' },
+        { text: 'faverite', isBug: true, fix: 'favourite', choices: ['favourite', 'faverite'], tip: '按江苏课本英式拼写是 fav-our-ite！' },
+        { text: 'subject.' }
+      ]
+    }
+  ];
+
+  const ERROR_TAGS = [
+    { id: 'missing_letter', label: '漏字母/漏块' },
+    { id: 'letter_swap', label: '换错字母' },
+    { id: 'chunk_replace', label: '词块误替(如walk/work)' },
+    { id: 'case_missing', label: '星期/句首未大写' },
+    { id: 'space_missing', label: '词间缺空格' },
+    { id: 'word_choice', label: '选词不当(如with/was)' },
+    { id: 'boundary_punct', label: '标点/句界缺失' }
+  ];
+
+  return { ITEMS, PACKS, SLOT_DECKS, BUG_CARDS, ERROR_TAGS };
+})();
+
+if (typeof module !== 'undefined') module.exports = SNAPWORD_CURRICULUM;

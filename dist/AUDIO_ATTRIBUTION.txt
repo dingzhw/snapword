@@ -1,0 +1,35 @@
+词哒 · SnapWord 内置公开授权真人发音署名清单
+================================================
+
+- spring: Speaker: Naomi Persephone Amethyst
+Recorder: NaomiAmethyst | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Naomi_Persephone_Amethyst_(NaomiAmethyst)-spring.wav
+- summer: No machine-readable author provided. Dvortygirl assumed (based on copyright claims). | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-summer.ogg
+- autumn: No machine-readable author provided. Celestianpower assumed (based on copyright claims). | Public domain | https://commons.wikimedia.org/wiki/File:En-uk-autumn.ogg
+- winter: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-winter.ogg
+- Monday: Speaker: Back ache
+Recorder: Back ache | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Back_ache-Monday.wav
+- Tuesday: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-Tuesday.ogg
+- Wednesday: No machine-readable author provided. Dvortygirl assumed (based on copyright claims). | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-Wednesday.ogg
+- Thursday: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-Thursday.ogg
+- Friday: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-Friday.ogg
+- Saturday: Speaker: Back ache
+Recorder: Back ache | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Back_ache-Saturday.wav
+- Sunday: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-Sunday.ogg
+- watch: SeanCollins and Emily | Public domain | https://commons.wikimedia.org/wiki/File:En-gb-watch.ogg
+- TV: Speaker: Vealhurl
+Recorder: Vealhurl | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-TV.wav
+- visit: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-visit.ogg
+- grandparent: Speaker: Vealhurl
+Recorder: Vealhurl | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-grandparent.wav
+- chat: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-chat.ogg
+- internet: Gbeebani | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-internet.ogg
+- always: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-always.ogg
+- get out: Speaker: Flame, not lame
+Recorder: Flame, not lame | CC0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Flame,_not_lame-get_out.wav
+- usually: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-usually.ogg
+- plant: Speaker: I learned some phrases
+Recorder: I learned some phrases | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-I_learned_some_phrases-plant.wav
+- spend: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-spend.ogg
+- live: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-live-verb.ogg
+- wonderful: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-wonderful.ogg
+- wall: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-wall.ogg

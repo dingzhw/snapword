@@ -1,0 +1,24 @@
+# Personal & local learner records (NEVER commit private data)
+local_data/
+*.local.json
+*备份*.json
+*backup*.json
+*档案*.json
+
+# Custom / copyrighted local audio overrides
+audio/custom/
+
+# Build & test artifacts
+node_modules/
+__pycache__/
+*.pyc
+test-results/
+playwright-report/
+dist/*.zip
+
+# OS & editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

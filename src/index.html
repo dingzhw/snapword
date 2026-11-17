@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>词哒 · SnapWord — 趣味拆词与父子伴学工作台</title>
+  <style>/*SNAPWORD_STYLE*/</style>
+</head>
+<body>
+  <header class="topbar no-print">
+    <div class="brand">
+      <span class="logo-mark" aria-hidden="true">哒</span>
+      <div>
+        <div class="brand-title">词哒 <span class="brand-en">SnapWord</span></div>
+        <div class="brand-sub">开口读准 · 咔嗒拆词 · 红笔落纸</div>
+      </div>
+    </div>
+
+    <nav class="main-nav" aria-label="主导航">
+      <button type="button" class="nav-btn active" data-nav="learn">🚀 今日闯关</button>
+      <button type="button" class="nav-btn" data-nav="vault">🏅 徽章图鉴</button>
+      <button type="button" class="nav-btn" data-nav="ledger">📒 复测与错题</button>
+      <button type="button" class="nav-btn" data-nav="prep">🧰 爸爸排课台</button>
+    </nav>
+
+    <div class="topbar-right">
+      <button type="button" id="actor-toggle" class="actor-pill student" title="切换为家长演练模式时，所有点击测试均不会记入孩子成绩与徽章">
+        🎒 学生正式学习
+      </button>
+      <span id="save-indicator" class="save-dot" aria-live="polite">● 本机已保存</span>
+    </div>
+  </header>
+
+  <div id="demo-banner" class="demo-banner no-print" hidden>
+    🛠️ 当前处于<strong>「家长演练试用模式」</strong>：你可以随意点击体验所有题目与答案，不会改动孩子的金银铜徽章、正确率或明日复测队列。正式带教前点右上角切回「学生正式学习」。
+  </div>
+
+  <main id="app-main" class="container"></main>
+
+  <div id="toast" class="toast no-print" role="status" aria-live="polite" hidden></div>
+
+  <script>/*SNAPWORD_AUDIO_DATA*/</script>
+  <script>/*SNAPWORD_CURRICULUM*/</script>
+  <script>/*SNAPWORD_CORE*/</script>
+  <script>/*SNAPWORD_AUDIO*/</script>
+  <script>/*SNAPWORD_APP*/</script>
+</body>
+</html>

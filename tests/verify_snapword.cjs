@@ -1,5 +1,5 @@
-// Comprehensive Unit + Adversarial Offline Chromium E2E + Privacy Gate Suite for 词哒 · SnapWord (v0.1.2)
-// Covers Party A Round 1 (F01–F08) and Round 2 re-inspection items (R01–R08).
+// Comprehensive Unit + Adversarial Offline Chromium E2E + Privacy Gate Suite for 词哒 · SnapWord (v0.1.3)
+// Covers Party A Round 1 (F01–F08), Round 2 (R01–R08), and Round 3 (N01–N05).
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -372,7 +372,107 @@ function runUnitTests() {
     assert.equal(reimported.events.length, 1);
   }
 
-  console.log('   ✔ SnapCore unit tests passed (F01–F06 & R02–R08).');
+  // --- N03: Same Item with Two Uncorrected answered_wrong Events (Correcting One Leaves Second Visible!) ---
+  {
+    const stN03 = SnapCore.freshState(Curriculum);
+    const w16 = SnapCore.recordEvent(stN03, {
+      id: 'w_sat_16',
+      actor: 'student',
+      itemId: 'u5_saturday',
+      taskType: 'paper_check',
+      outcome: 'answered_wrong',
+      dateStr: '2026-11-16',
+      testedAt: 1794828600000
+    });
+    const w17 = SnapCore.recordEvent(stN03, {
+      id: 'w_sat_17',
+      actor: 'student',
+      itemId: 'u5_saturday',
+      taskType: 'paper_check',
+      outcome: 'answered_wrong',
+      dateStr: '2026-11-17',
+      testedAt: 1794915000000
+    });
+    assert.equal(SnapCore.getUncorrectedWrongEvents(stN03, 'student').length, 2);
+    assert.equal(stN03.mastery['u5_saturday'].pendingCorrection, true);
+
+    // Correct ONLY the 11-16 event -> 11-17 MUST remain in uncorrected list and pendingCorrection MUST stay true!
+    SnapCore.recordFollowUpCorrection(stN03, w16.id, '', { dateStr: '2026-11-18', timestamp: 1795001400000 });
+    const remaining = SnapCore.getUncorrectedWrongEvents(stN03, 'student');
+    assert.equal(remaining.length, 1);
+    assert.equal(remaining[0].id, w17.id);
+    assert.equal(stN03.mastery['u5_saturday'].pendingCorrection, true, 'N03: Item must stay pendingCorrection while second wrong event is uncorrected');
+    assert.equal(stN03.mastery['u5_saturday'].needsReview, true);
+
+    // Now correct the 11-17 event -> uncorrected list becomes empty, needsReview still true until cross-day recall
+    SnapCore.recordFollowUpCorrection(stN03, w17.id, '', { dateStr: '2026-11-18', timestamp: 1795002400000 });
+    assert.equal(SnapCore.getUncorrectedWrongEvents(stN03, 'student').length, 0);
+    assert.equal(stN03.mastery['u5_saturday'].pendingCorrection, false);
+    assert.equal(stN03.mastery['u5_saturday'].needsReview, true);
+  }
+
+  // --- N05: Two-Slot Suspended Draft Inspection, Fresh Import, Conflict Choice & Deduplication ---
+  {
+    const srcWithDraft = SnapCore.freshState(Curriculum);
+    const stuDraft = {
+      sessionId: 'sess_draft_stu_1',
+      lockedActor: 'student',
+      packId: 'pack-autumn-1',
+      packTitle: '01 · 秋假第1次',
+      draftStatus: 'suspended',
+      savedAt: 1794915000000,
+      step: 'paper',
+      paperPhase: 'reveal_grade',
+      paperIds: ['u5_saturday'],
+      itemContexts: { u5_saturday: { itemId: 'u5_saturday', testedDateStr: '2026-11-17', promptMode: 'audio_plus_zh', primary: 'Saturday', locked: true } },
+      paperGrades: { u5_saturday: { outcome: 'paper_independent', tags: [], paperRef: '2026-11-17 #1', testedDateStr: '2026-11-17' } }
+    };
+    const demoDraft = {
+      sessionId: 'sess_draft_demo_1',
+      lockedActor: 'parent_demo',
+      packId: 'pack-autumn-2',
+      packTitle: '02 · 演练草稿',
+      draftStatus: 'suspended',
+      savedAt: 1794916000000,
+      step: 'board',
+      paperIds: []
+    };
+    srcWithDraft.drafts = { student: stuDraft, parent_demo: demoDraft };
+    srcWithDraft.activeDraft = SnapCore.clone(stuDraft);
+
+    const freshTarget = SnapCore.freshState(Curriculum);
+    const diffFresh = SnapCore.inspectBackupJSON(srcWithDraft, freshTarget);
+    assert.equal(diffFresh.hasIncomingDrafts, true);
+    assert.equal(diffFresh.hasDraftConflicts, false);
+    assert.equal(diffFresh.draftSlots.student.status, 'incoming_only');
+    assert.equal(diffFresh.draftSlots.parent_demo.status, 'incoming_only');
+
+    const restoredFresh = SnapCore.mergeSnapwordBackup(freshTarget, srcWithDraft, { draftPolicy: 'restore_incoming' });
+    assert.equal(restoredFresh.drafts.student.sessionId, 'sess_draft_stu_1');
+    assert.equal(restoredFresh.drafts.student.paperGrades.u5_saturday.paperRef, '2026-11-17 #1');
+    assert.equal(restoredFresh.activeDraft.sessionId, 'sess_draft_stu_1');
+    assert.equal(restoredFresh.drafts.parent_demo.sessionId, 'sess_draft_demo_1');
+
+    // Repeat import of identical draft -> status 'identical', no conflict
+    const diffSame = SnapCore.inspectBackupJSON(srcWithDraft, restoredFresh);
+    assert.equal(diffSame.draftSlots.student.status, 'identical');
+    assert.equal(diffSame.hasDraftConflicts, false);
+
+    // Local already has a different student draft -> conflict choices keep_local vs restore_incoming!
+    const localDiff = SnapCore.freshState(Curriculum);
+    localDiff.drafts.student = { ...stuDraft, sessionId: 'sess_local_other', packTitle: '本机另一份草稿' };
+    localDiff.activeDraft = SnapCore.clone(localDiff.drafts.student);
+    const diffConflict = SnapCore.inspectBackupJSON(srcWithDraft, localDiff);
+    assert.equal(diffConflict.hasDraftConflicts, true);
+    assert.equal(diffConflict.draftSlots.student.status, 'conflict');
+
+    const keptLocalDraft = SnapCore.mergeSnapwordBackup(localDiff, srcWithDraft, { draftPolicy: 'keep_local' });
+    assert.equal(keptLocalDraft.drafts.student.sessionId, 'sess_local_other');
+    const replacedDraft = SnapCore.mergeSnapwordBackup(localDiff, srcWithDraft, { draftPolicy: 'restore_incoming' });
+    assert.equal(replacedDraft.drafts.student.sessionId, 'sess_draft_stu_1');
+  }
+
+  console.log('   ✔ SnapCore unit tests passed (F01–F06, R02–R08 & N03/N05).');
 }
 
 // ==================== F01–F07 + R01–R08: Adversarial Offline Chromium E2E Tests ====================
@@ -653,9 +753,28 @@ async function runBrowserE2E() {
       await page.locator('[data-start-mode="standard"]').click();
       assert.equal(await page.locator('.step-pill[data-jump-step="paper"]').count(), 0, 'R02: Pure oral lesson must have 0 paper step');
       await page.locator('.step-pill[data-jump-step="oral_wrapup"]').click();
+
+      // N04: Checkboxes MUST start unchecked! Submitting with 0 confirmed records 0 items and shows 3 unconfirmed!
+      const initialChecked = await page.locator('[data-oral-check]:checked').count();
+      assert.equal(initialChecked, 0, 'N04: Pure oral checkboxes must start unchecked');
       await page.locator('[data-act="finish-oral-session"]').click();
       await page.getByText('本轮听读预读收工！').waitFor();
-      await page.locator('[data-goto-tab="ledger"]').click();
+      assert.equal((await page.locator('#oral-done-count').textContent()).trim(), '0 项');
+      assert.equal((await page.locator('#oral-unconfirmed-count').textContent()).trim(), '3 项');
+      await page.locator('[data-act="close-summary"]').click();
+      assert.equal((await page.locator('.stat-num').nth(2).textContent()).trim(), '0', 'N04: 0 confirmed oral items must grant 0 Bronze medals');
+
+      // N04: Confirming 2 of 3 items records exact 2 items and grants exact 2 Bronze medals!
+      await page.locator('[data-start-mode="standard"]').click();
+      await page.locator('.step-pill[data-jump-step="oral_wrapup"]').click();
+      await page.locator('[data-oral-check="fnd_homework"]').check();
+      await page.locator('[data-oral-check="fnd_football"]').check();
+      await page.locator('[data-act="finish-oral-session"]').click();
+      assert.equal((await page.locator('#oral-done-count').textContent()).trim(), '2 项');
+      assert.equal((await page.locator('#oral-unconfirmed-count').textContent()).trim(), '1 项');
+      await page.locator('[data-act="close-summary"]').click();
+      assert.equal((await page.locator('.stat-num').nth(2).textContent()).trim(), '2');
+      await page.locator('[data-nav="ledger"]').click();
       assert.equal((await page.locator('#ledger-ratio').textContent()).trim(), '1 / 1', 'R02: Pure oral wrap-up must not add paper_check items');
       await ctx.close();
     }
@@ -844,7 +963,189 @@ async function runBrowserE2E() {
       await ctx.close();
     }
 
-    console.log('   ✔ Adversarial Chromium E2E tests & screenshots passed (F01–F07 & R01–R08).');
+    // --- Scenario H (N01 + N03 + N05): Unified Mid-Lesson Actor Switch, Multi-Wrong Correction List & JSON Draft Import ---
+    {
+      const ctx = await browser.newContext({ offline: true, viewport: { width: 1280, height: 840 } });
+      const page = await ctx.newPage();
+      await page.goto(fileUrl);
+
+      // 1. Seed 1 student pending_verify item (exact N01 setup)
+      await page.locator('[data-quick-baseline="1"]').click();
+      await page.locator('[data-paper-phase="reveal_grade"]').click();
+      await page.locator('[data-grade-item="u5_saturday"][data-outcome="pending_verify"]').click();
+      await page.locator('[data-batch-rest="untested"]').click();
+      await page.locator('[data-act="finish-paper-session"]').click();
+      await page.locator('[data-act="close-summary"]').click();
+
+      // 2. N01: Switch to parent_demo -> start an active demo lesson -> go to Ledger -> click "切回学生正式模式核验"!
+      await page.locator('#actor-toggle').click();
+      await page.locator('#demo-banner').waitFor({ state: 'visible' });
+      await page.locator('[data-start-mode="quick8"]').click();
+      await page.locator('[data-nav="ledger"]').click();
+      await page.locator('[data-act="switch-to-student-ledger"]').click();
+
+      // MUST intercept with Role Switch Modal rather than splitting banner vs actorMode!
+      await page.locator('[data-role-modal="suspend_switch"]').waitFor();
+      await page.locator('[data-role-modal="suspend_switch"]').click();
+
+      // Now topbar, demo-banner, activeSession, and Ledger MUST all consistently be in student formal mode!
+      assert.equal(await page.locator('#demo-banner').isHidden(), true, 'N01: Demo banner must hide after switching back to student');
+      assert.equal((await page.locator('#actor-toggle').textContent()).trim(), '🎒 学生正式学习');
+
+      // Verify student pending Saturday in formal mode -> ratio updates to 1 / 1
+      const pvId = await page.locator('[data-pv-pick]').first().getAttribute('data-pv-pick');
+      await page.locator(`[data-pv-pick="${pvId}"][data-outcome="paper_independent"]`).click();
+      await page.locator(`[data-confirm-verify="${pvId}"]`).click();
+      assert.equal((await page.locator('#ledger-ratio').textContent()).trim(), '1 / 1');
+
+      // 3. N03: Record TWO answered_wrong sessions on Sunday; correcting ONE must keep the SECOND visible!
+      await page.locator('[data-nav="learn"]').click();
+      for (let r = 0; r < 2; r++) {
+        await page.locator('[data-quick-baseline="1"]').click();
+        await page.locator('[data-paper-phase="reveal_grade"]').click();
+        await page.locator('[data-grade-item="u5_sunday"][data-outcome="answered_wrong"]').click();
+        await page.locator('[data-batch-rest="untested"]').click();
+        await page.locator('[data-act="finish-paper-session"]').click();
+        await page.locator('[data-act="close-summary"]').click();
+      }
+      await page.locator('[data-nav="ledger"]').click();
+      assert.equal(await page.locator('[data-followup-corr]').count(), 2, 'N03: Both wrong attempts on Sunday must appear');
+      await page.locator('[data-followup-corr]').first().click();
+      assert.equal(await page.locator('[data-followup-corr]').count(), 1, 'N03: Second uncorrected wrong attempt must stay visible');
+
+      // Switch back to parent_demo -> suspended demo lesson is intact on Lobby!
+      await page.locator('[data-nav="learn"]').click();
+      await page.locator('#actor-toggle').click();
+      await page.locator('#draft-resume-card').waitFor({ state: 'visible' });
+      await page.locator('[data-act="resume-draft"]').click();
+      assert.ok((await page.locator('#actor-toggle').textContent()).includes('家长演练试用中 🔒'));
+      await page.locator('#actor-toggle').click();
+      await page.locator('[data-role-modal="discard_switch"]').click();
+      assert.equal(await page.locator('#demo-banner').isHidden(), true);
+
+      // 4. N05: Create a suspended student draft (morning = paper_independent, paperRef = 'CarryOver #3') and export JSON!
+      await page.locator('[data-start-mode="standard"]').click();
+      if (await page.locator('[data-act="finish-due-precheck"]').count()) {
+        await page.locator('[data-act="finish-due-precheck"]').click();
+      }
+      await page.locator('.step-pill[data-jump-step="paper"]').click();
+      await page.locator('[data-paper-phase="blind_check"]').click();
+      await page.locator('[data-paper-phase="reveal_grade"]').click();
+      await page.locator('[data-grade-item="fnd_morning"][data-outcome="paper_independent"]').click();
+      await page.locator('[data-paper-ref="fnd_morning"]').fill('CarryOver #3');
+      await page.locator('[data-paper-ref="fnd_morning"]').dispatchEvent('change');
+      await page.locator('[data-act="pause-session"]').click();
+      await page.locator('#draft-resume-card').waitFor();
+
+      const fullBackupJson = await page.evaluate(() => {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open('snapword_workbench_v1', 1);
+          req.onsuccess = () => {
+            const tx = req.result.transaction('kv', 'readonly');
+            const g = tx.objectStore('kv').get('main');
+            g.onsuccess = () => resolve(JSON.stringify(g.result));
+          };
+          req.onerror = () => reject(req.error);
+        });
+      });
+      await ctx.close();
+
+      // Open a BRAND-NEW browser context -> import JSON backup -> verify suspended draft is restored!
+      const ctxFresh = await browser.newContext({ offline: true, viewport: { width: 1280, height: 840 } });
+      const pageFresh = await ctxFresh.newPage();
+      await pageFresh.goto(fileUrl);
+      await pageFresh.locator('[data-nav="ledger"]').click();
+      await pageFresh.locator('#import-file-input').setInputFiles({
+        name: 'with_draft.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(fullBackupJson, 'utf8')
+      });
+      await pageFresh.locator('#import-draft-preview').waitFor();
+      await pageFresh.locator('[data-act="confirm-import-snapword"]').click();
+
+      await pageFresh.locator('[data-nav="learn"]').click();
+      await pageFresh.locator('#draft-resume-card').waitFor({ state: 'visible' });
+      await pageFresh.locator('[data-act="resume-draft"]').click();
+      await pageFresh.locator('[data-grade-item="fnd_morning"].selected-good').waitFor();
+      assert.equal(await pageFresh.locator('[data-paper-ref="fnd_morning"]').inputValue(), 'CarryOver #3', 'N05: Imported draft must preserve grades & paperRef');
+      await ctxFresh.close();
+    }
+
+    // --- Scenario I (N02): 16 -> 17 -> 18 -> 19 Answer-Revealed Cross-Day Retest Must Preserve Hint Evidence ---
+    {
+      const ctx = await browser.newContext({ offline: true, viewport: { width: 1280, height: 840 } });
+      await ctx.addInitScript(() => {
+        const OrigDate = Date;
+        const defaultMs = new OrigDate('2026-11-16T20:00:00+08:00').getTime();
+        const curMs = () => Number(sessionStorage.getItem('__MOCK_NOW')) || defaultMs;
+        class MockDate extends OrigDate {
+          constructor(...args) {
+            if (args.length === 0) super(curMs());
+            else super(...args);
+          }
+          static now() { return curMs(); }
+        }
+        window.Date = MockDate;
+      });
+      const page = await ctx.newPage();
+      await page.goto(fileUrl);
+
+      // Day 1 (2026-11-16): Saturday independent pass -> Silver medal (D0 = 11-16, due 11-17)
+      await page.locator('[data-quick-baseline="1"]').click();
+      await page.locator('[data-paper-phase="reveal_grade"]').click();
+      await page.locator('[data-grade-item="u5_saturday"][data-outcome="paper_independent"]').click();
+      await page.locator('[data-batch-rest="untested"]').click();
+      await page.locator('[data-act="finish-paper-session"]').click();
+      await page.locator('[data-act="close-summary"]').click();
+      assert.deepEqual((await page.locator('.stat-num').allTextContents()).map(s => s.trim()), ['0', '1', '0', '0']);
+
+      // Day 2 (2026-11-17): Enter due_only -> reveal Saturday answer -> leave unjudged -> pause draft!
+      await page.evaluate(() => { sessionStorage.setItem('__MOCK_NOW', String(new Date('2026-11-17T20:00:00+08:00').getTime())); });
+      await page.reload();
+      await page.locator('[data-start-mode="due_only"]').click();
+      await page.locator('[data-paper-phase="blind_check"]').click();
+      await page.locator('[data-paper-phase="reveal_grade"]').click();
+      await page.locator('[data-act="pause-session"]').click();
+      await page.locator('#draft-resume-card').waitFor();
+
+      // Day 3 (2026-11-18): Resume the answer-revealed card -> click [data-retest-today="u5_saturday"]!
+      await page.evaluate(() => { sessionStorage.setItem('__MOCK_NOW', String(new Date('2026-11-18T20:00:00+08:00').getTime())); });
+      await page.reload();
+      await page.locator('[data-act="resume-draft"]').click();
+      await page.locator('[data-retest-today="u5_saturday"]').click();
+
+      // Must open a blind dictate screen (no English answer shown!) with spelling hint locked!
+      const blindRetestPrompt = await page.locator('.paper-list').innerText();
+      assert.ok(!/Saturday/i.test(blindRetestPrompt), 'N02: Fresh retest must enter answer-hidden dictate view');
+      await page.locator('[data-paper-phase="blind_check"]').click();
+      await page.locator('[data-paper-phase="reveal_grade"]').click();
+      assert.equal(await page.locator('[data-toggle-hinted="u5_saturday"]').isChecked(), true, 'N02: Hint must be locked after prior answer reveal');
+      assert.equal(await page.locator('[data-toggle-hinted="u5_saturday"]').isDisabled(), true);
+
+      await page.locator('[data-grade-item="u5_saturday"][data-outcome="paper_independent"]').click();
+      await page.locator('[data-act="finish-paper-session"]').click();
+      assert.equal((await page.locator('#sum-ratio').textContent()).trim(), '0 / 1', 'N02: Retest after seeing answer must record hinted_correct, not independent');
+      await page.locator('[data-act="close-summary"]').click();
+      // Medal MUST still be 0 Gold, 1 Silver, 0 Bronze, and 1 Due for next-day review!
+      assert.deepEqual((await page.locator('.stat-num').allTextContents()).map(s => s.trim()), ['0', '1', '0', '1']);
+
+      // Day 4 (2026-11-19): True subsequent blind recall day -> earns Gold medal!
+      await page.evaluate(() => { sessionStorage.setItem('__MOCK_NOW', String(new Date('2026-11-19T20:00:00+08:00').getTime())); });
+      await page.reload();
+      await page.locator('[data-start-mode="due_only"]').click();
+      await page.locator('[data-paper-phase="blind_check"]').click();
+      await page.locator('[data-paper-phase="reveal_grade"]').click();
+      assert.equal(await page.locator('[data-toggle-hinted="u5_saturday"]').isChecked(), false);
+      await page.locator('[data-grade-item="u5_saturday"][data-outcome="paper_independent"]').click();
+      await page.locator('[data-act="finish-paper-session"]').click();
+      assert.equal((await page.locator('#sum-ratio').textContent()).trim(), '1 / 1');
+      await page.locator('[data-act="close-summary"]').click();
+      assert.equal((await page.locator('.stat-num').nth(0).textContent()).trim(), '1', 'N02: True next-day blind pass upgrades to Gold');
+
+      await ctx.close();
+    }
+
+    console.log('   ✔ Adversarial Chromium E2E tests & screenshots passed (F01–F07, R01–R08 & N01–N05).');
   } finally {
     await browser.close();
   }
@@ -854,7 +1155,7 @@ async function runBrowserE2E() {
   runPrivacyGate();
   runUnitTests();
   await runBrowserE2E();
-  console.log('4/4 All SnapWord v0.1.2 verifications succeeded!');
+  console.log('4/4 All SnapWord v0.1.3 verifications succeeded!');
 })().catch(err => {
   console.error(err);
   process.exit(1);

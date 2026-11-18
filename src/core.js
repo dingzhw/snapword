@@ -1,13 +1,10 @@
-/* 词哒 · SnapWord Core Pedagogical & Ledger Engine (v0.1.2)
- * Closes F01–F07 and R01–R08:
- * - R01: Explicit 3-state draft model ('in_progress' | 'suspended' | null); save never wipes suspended drafts.
- * - R02: Supports 0-paper pure oral/preread lessons & blocks empty all-deferred starts without fallback mutation.
- * - R03: Actor-guarded resolvePendingVerify & isolated demo ledger so demo mode NEVER mutates student records.
- * - R04: Strict spacing gate (dateStr >= nextDueDate) so early daily practice logs cleanly without skipping D0+3/D0+7.
- * - R05: Pre-answer word-form exposure tracking locks hadSpellingHint when navigating to answers before due submission.
- * - R06: Conflict resolution strictly obeys keep_local vs prefer_incoming regardless of rev, with itemized diff list.
- * - R07: Per-item administration snapshot (testedDateStr, promptMode, expectedAnswer, spokenText) decoupled from submit date.
- * - R08: Full 5-outcome pending verification (including answered_wrong + errorTags) & non-destructive follow-up correction log.
+/* 词哒 · SnapWord Core Pedagogical & Ledger Engine (v0.1.3)
+ * Closes F01–F07, R01–R08, and Round-3 findings N01–N05:
+ * - N01: Unified actor-mode switching across topbar & ledger so activeSession, drafts & UI banners never split.
+ * - N02: Answer-exposure tracking & clean separation of backfilling original paper date vs launching blind retest.
+ * - N03: Event-level uncorrected wrong tracking (per eventId <-> linkedEventId) so multi-error items stay visible.
+ * - N04: Explicit unchecked initial state for pure oral wrap-up with optional batch confirm & unconfirmed summary.
+ * - N05: Two-slot draft preview & conflict-aware restoration during JSON backup import.
  */
 const SnapCore = (() => {
   const clone = x => JSON.parse(JSON.stringify(x));
@@ -137,6 +134,7 @@ const SnapCore = (() => {
       stabilized: false,
       recentSlip: false,
       pendingCorrection: false,
+      uncorrectedEventIds: [],
       lastPassDate: null,
       lastFailDate: null,
       independentDates: [],
@@ -172,6 +170,8 @@ const SnapCore = (() => {
       packs: clone(curriculum.PACKS),
       events: [],
       mastery: {},
+      lastAnswerSeenDate: {},
+      unjudgedRevealDate: {},
       drafts: { student: null, parent_demo: null },
       activeDraft: null,
       boardNotes: [
@@ -335,6 +335,22 @@ const SnapCore = (() => {
     return next;
   }
 
+  // N03: Per-event uncorrected wrong query (matches each answered_wrong eventId against red_pen_correction.linkedEventId)
+  function getUncorrectedWrongEvents(state, targetActor = 'student') {
+    const correctedIds = new Set(
+      (state.events || [])
+        .filter(c => c.actor === targetActor && c.taskType === 'red_pen_correction' && c.linkedEventId)
+        .map(c => c.linkedEventId)
+    );
+    return (state.events || []).filter(e =>
+      e.actor === targetActor &&
+      e.taskType === 'paper_check' &&
+      e.verificationStatus === 'verified' &&
+      e.outcome === 'answered_wrong' &&
+      !correctedIds.has(e.id)
+    );
+  }
+
   function rebuildMastery(state) {
     const mastery = {};
     const sorted = [...state.events].sort((a, b) => {
@@ -346,6 +362,18 @@ const SnapCore = (() => {
       if (evt.actor !== 'student') continue;
       const updated = applyEventToMastery(mastery[evt.itemId], evt);
       if (updated) mastery[evt.itemId] = updated;
+    }
+    // N03: Summarize item-level pendingCorrection strictly from remaining uncorrected answered_wrong events
+    const uncorrMap = new Map();
+    for (const ev of getUncorrectedWrongEvents(state, 'student')) {
+      const arr = uncorrMap.get(ev.itemId) || [];
+      arr.push(ev.id);
+      uncorrMap.set(ev.itemId, arr);
+    }
+    for (const [itemId, m] of Object.entries(mastery)) {
+      const ids = uncorrMap.get(itemId) || [];
+      m.uncorrectedEventIds = ids;
+      m.pendingCorrection = ids.length > 0;
     }
     state.mastery = mastery;
     return mastery;
@@ -771,11 +799,62 @@ const SnapCore = (() => {
       (a.note || '') === (b.note || '');
   }
 
+  // N05: Two-slot draft extraction, comparison & summary helpers
+  function extractDraftSlots(obj) {
+    const slots = { student: null, parent_demo: null };
+    if (!obj || typeof obj !== 'object') return slots;
+    if (obj.drafts && typeof obj.drafts === 'object') {
+      if (obj.drafts.student && typeof obj.drafts.student === 'object') {
+        slots.student = clone(obj.drafts.student);
+      }
+      if (obj.drafts.parent_demo && typeof obj.drafts.parent_demo === 'object') {
+        slots.parent_demo = clone(obj.drafts.parent_demo);
+      }
+    }
+    if (obj.activeDraft && typeof obj.activeDraft === 'object') {
+      const actor = obj.activeDraft.lockedActor === 'parent_demo' ? 'parent_demo' : 'student';
+      if (!slots[actor]) slots[actor] = clone(obj.activeDraft);
+    }
+    return slots;
+  }
+
+  function draftSlotEqual(a, b) {
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    return a.sessionId === b.sessionId &&
+      a.step === b.step &&
+      a.paperPhase === b.paperPhase &&
+      JSON.stringify(a.paperGrades || {}) === JSON.stringify(b.paperGrades || {}) &&
+      JSON.stringify(a.oralChecked || {}) === JSON.stringify(b.oralChecked || {});
+  }
+
+  function summarizeDraft(d) {
+    if (!d) return null;
+    const gradedCount = Object.values(d.paperGrades || {}).filter(g => g?.outcome && g.outcome !== 'unjudged').length;
+    const oralCount = Object.values(d.oralChecked || {}).filter(Boolean).length;
+    return {
+      sessionId: d.sessionId || null,
+      lockedActor: d.lockedActor || 'student',
+      packId: d.packId || null,
+      packTitle: d.packTitle || '未完课草稿',
+      draftStatus: d.draftStatus || 'suspended',
+      savedAt: d.savedAt || d.startedAt || 0,
+      paperCount: Array.isArray(d.paperIds) ? d.paperIds.length : 0,
+      gradedCount,
+      oralCount
+    };
+  }
+
   function restoreLocalState(curriculum, saved) {
     const base = freshState(curriculum);
     if (!saved || saved.app !== 'snapword') return base;
 
-    const merged = mergeSnapwordBackup(base, saved, { includeDemo: true, conflictPolicy: 'prefer_incoming' });
+    const merged = mergeSnapwordBackup(base, saved, {
+      includeDemo: true,
+      conflictPolicy: 'prefer_incoming',
+      draftPolicy: 'restore_incoming',
+      preserveDraftStatus: true
+    });
     merged.actorMode = saved.actorMode === 'parent_demo' ? 'parent_demo' : 'student';
     if (saved.selectedPackId && merged.packs.some(p => p.id === saved.selectedPackId)) {
       merged.selectedPackId = saved.selectedPackId;
@@ -789,19 +868,11 @@ const SnapCore = (() => {
     if (saved.audioCheckLog) {
       merged.audioCheckLog = clone(saved.audioCheckLog);
     }
-    merged.drafts = { student: null, parent_demo: null };
-    if (saved.drafts && typeof saved.drafts === 'object') {
-      if (saved.drafts.student) merged.drafts.student = clone(saved.drafts.student);
-      if (saved.drafts.parent_demo) merged.drafts.parent_demo = clone(saved.drafts.parent_demo);
-    }
-    if (saved.activeDraft && saved.activeDraft.lockedActor) {
-      merged.drafts[saved.activeDraft.lockedActor] = clone(saved.activeDraft);
-    }
     merged.activeDraft = merged.drafts[merged.actorMode] ? clone(merged.drafts[merged.actorMode]) : null;
     return merged;
   }
 
-  // R06: Itemized diff & strict conflict classification
+  // R06 + N05: Itemized diff, strict conflict classification & two-slot draft preview
   function inspectBackupJSON(rawObj, currentState) {
     if (!rawObj || typeof rawObj !== 'object') throw new Error('不是有效的 JSON 备份文件');
 
@@ -849,6 +920,31 @@ const SnapCore = (() => {
         }
       }
 
+      const localSlots = extractDraftSlots(currentState);
+      const incomingSlots = extractDraftSlots(rawObj);
+      const draftSlots = {};
+      let hasIncomingDrafts = false;
+      let hasDraftConflicts = false;
+
+      for (const actor of ['student', 'parent_demo']) {
+        const locD = localSlots[actor];
+        const incD = incomingSlots[actor];
+        if (incD) hasIncomingDrafts = true;
+        let status = 'none';
+        if (incD && !locD) status = 'incoming_only';
+        else if (!incD && locD) status = 'local_only';
+        else if (incD && locD) {
+          status = draftSlotEqual(locD, incD) ? 'identical' : 'conflict';
+          if (status === 'conflict') hasDraftConflicts = true;
+        }
+        draftSlots[actor] = {
+          actor,
+          status,
+          local: summarizeDraft(locD),
+          incoming: summarizeDraft(incD)
+        };
+      }
+
       return {
         kind: 'snapword',
         itemCount: rawObj.items.length,
@@ -861,6 +957,9 @@ const SnapCore = (() => {
         conflicts: conflictDetails.length,
         upgradeDetails,
         conflictDetails,
+        draftSlots,
+        hasIncomingDrafts,
+        hasDraftConflicts,
         payload: rawObj
       };
     }
@@ -878,10 +977,12 @@ const SnapCore = (() => {
     throw new Error('无法识别的备份格式（仅支持词哒 SnapWord 或旧版词汇撤离 JSON）');
   }
 
-  // R06: Strict obedience to conflictPolicy ('keep_local' vs 'prefer_incoming') regardless of rev!
+  // R06 + N05: Strict obedience to conflictPolicy AND draftPolicy across both actor slots!
   function mergeSnapwordBackup(currentState, backupObj, options = {}) {
     const includeDemo = Boolean(options.includeDemo);
     const conflictPolicy = options.conflictPolicy || 'prefer_incoming'; // 'prefer_incoming' | 'keep_local'
+    const draftPolicy = options.draftPolicy || 'restore_incoming'; // 'restore_incoming' | 'keep_local' | 'skip_incoming'
+    const preserveDraftStatus = Boolean(options.preserveDraftStatus);
     const next = clone(currentState);
     const preservedActorMode = next.actorMode;
 
@@ -980,7 +1081,49 @@ const SnapCore = (() => {
       }
     }
 
+    next.lastAnswerSeenDate = { ...(next.lastAnswerSeenDate || {}) };
+    if (backupObj.lastAnswerSeenDate && typeof backupObj.lastAnswerSeenDate === 'object') {
+      for (const [k, v] of Object.entries(backupObj.lastAnswerSeenDate)) {
+        if (typeof v === 'string' && (!next.lastAnswerSeenDate[k] || v > next.lastAnswerSeenDate[k])) {
+          next.lastAnswerSeenDate[k] = v;
+        }
+      }
+    }
+    next.unjudgedRevealDate = { ...(next.unjudgedRevealDate || {}) };
+    if (backupObj.unjudgedRevealDate && typeof backupObj.unjudgedRevealDate === 'object') {
+      for (const [k, v] of Object.entries(backupObj.unjudgedRevealDate)) {
+        if (typeof v === 'string' && (!next.unjudgedRevealDate[k] || v > next.unjudgedRevealDate[k])) {
+          next.unjudgedRevealDate[k] = v;
+        }
+      }
+    }
+
+    // N05: Merge suspended/in-progress drafts for both student & parent_demo slots
+    const localSlots = extractDraftSlots(next);
+    const incomingSlots = extractDraftSlots(backupObj);
+    next.drafts = { student: localSlots.student, parent_demo: localSlots.parent_demo };
+    for (const actor of ['student', 'parent_demo']) {
+      const locD = localSlots[actor];
+      const incD = incomingSlots[actor];
+      if (!incD) continue;
+      const normalizedInc = clone(incD);
+      normalizedInc.lockedActor = actor;
+      if (!preserveDraftStatus) {
+        normalizedInc.draftStatus = 'suspended';
+      }
+      if (!locD) {
+        if (draftPolicy !== 'skip_incoming') {
+          next.drafts[actor] = normalizedInc;
+        }
+      } else if (draftSlotEqual(locD, incD)) {
+        next.drafts[actor] = clone(locD);
+      } else if (draftPolicy === 'restore_incoming') {
+        next.drafts[actor] = normalizedInc;
+      }
+    }
+
     next.actorMode = preservedActorMode;
+    next.activeDraft = next.drafts[next.actorMode] ? clone(next.drafts[next.actorMode]) : null;
     rebuildMastery(next);
     return next;
   }
@@ -1041,6 +1184,7 @@ const SnapCore = (() => {
     freshState,
     restoreLocalState,
     rebuildMastery,
+    getUncorrectedWrongEvents,
     recordEvent,
     resolvePendingVerify,
     recordFollowUpCorrection,

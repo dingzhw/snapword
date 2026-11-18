@@ -1,4 +1,4 @@
-/* 词哒 · SnapWord Built-in Curriculum & Fun Gadget Decks (v0.1.2)
+/* 词哒 · SnapWord Built-in Curriculum & Fun Gadget Decks (v0.1.3)
  * Textbook alignment: 2026 Autumn Jiangsu Grade 5 Volume 1 (Units 5 & 6 verified against print p.58–81, p.111–113).
  * Unit 6 official wordlist strictly contains 24 items (19 core unstarred + 5 starred non-core).
  * Foundation review items use sourceScope: 'foundation_bridge' so unit counts stay 100% faithful to print textbook.

@@ -3,6 +3,20 @@
 All notable changes to **词哒 · SnapWord** are documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/lang/zh-CN/).
 
+## [0.1.3] - 2026-11-18
+
+### Fixed & Changed
+- **全入口身份切换统一流转与演练标识一致性（修复 N01 · P1）**：
+  - 统一顶栏身份胶囊与账本「切回学生正式模式核验」入口为同一 `requestActorSwitch` 流程：课中切换身份时统一弹出确认框，支持「暂存原课草稿并切换」或「结束原课并切换」，同步更新全局角色、当前会话、草稿槽与页面横幅标识，消除课中切身份后的标识分裂；恢复原草稿时自动回到原锁定身份。
+- **跨日已亮答案卡片的新测防泄题与原纸面日期补登分离（修复 N02 · P1）**：
+  - 记录每题在判分台的亮答案状态（`answerRevealed`）：区分「补登原纸面日期」（若在已亮答案卡片上将日期往后改则自动锁定 `含拼写提示` 证据）与「归档原题并发起今日无答案新测」；发起新测时将原未完结卡归档保存，进入隐藏英文的无答案盲写题面，并对发起前已见过答案的题目锁定 `hadSpellingHint: true`（计为 `hinted_correct` 练习，需后续真正隔日独立盲写全对才升金章）。
+- **同词多次错答按原事件 ID 逐条追踪红笔订正（修复 N03 · P1）**：
+  - 新增 `getUncorrectedWrongEvents` 并重构 `rebuildMastery` 中 `pendingCorrection` 的汇总逻辑：严格按每条 `answered_wrong` 事件 ID 与 `red_pen_correction.linkedEventId` 一一核销；同一词存在多条未订正错答时，登记其中一条不会隐藏其余未订正条目，账本流水同步展示关联原题状态。
+- **纯认读收工改为显式勾选确认（改进 N04 · P2）**：
+  - 纯听读认义收工页起始默认不勾选，仅对家长显式勾选确认的词条登记 `read_aloud` 与铜章，并提供「已确认本组均完成」快捷按钮；结算单如实分别展示已确认项数与未确认词条清单。
+- **JSON 备份双槽草稿预览与冲突恢复（修复 N05 · P1）**：
+  - `inspectBackupJSON` 与 `mergeSnapwordBackup` 完整纳入 `drafts.student` 与 `drafts.parent_demo` 双身份槽草稿（含题面快照、判分与纸本备注）；导入预览展示本机与备份双槽草稿详情，支持新档一键恢复、本机已有草稿时选择覆盖或保留本机，重复导入同一备份自动去重。
+
 ## [0.1.2] - 2026-11-18
 
 ### Fixed & Changed

@@ -1,5 +1,5 @@
-/* 词哒 · SnapWord Main Interactive Workbench Controller (v0.1.2)
- * Closes F01–F07 and Party A second-round findings R01–R08.
+/* 词哒 · SnapWord Main Interactive Workbench Controller (v0.1.3)
+ * Closes F01–F07, R01–R08, and Round-3 findings N01–N05.
  */
 'use strict';
 
@@ -13,10 +13,11 @@
   let lastSaveOk = true;
   let currentTab = 'learn';
   let activeSession = null;
-  let roleSwitchModalOpen = false;
+  let roleSwitchModalOpen = null; // null | { targetActor: 'student'|'parent_demo' }
   let dueNavGate = null; // { kind: 'step'|'tab', target: string }
   let pendingImportPreview = null;
   let importConflictPolicy = 'prefer_incoming';
+  let importDraftPolicy = 'restore_incoming';
   let pendingVerifyDrafts = {}; // { [eventId]: { outcome, tags } }
   let highlightUnjudged = false;
   let submitLock = false;
@@ -324,14 +325,15 @@
     });
   }
 
-  // ==================== Session Creation & Lifecycle (R02, R05, R07) ====================
-  async function startSession(mode = 'standard', explicitDueIds = null) {
+  // ==================== Session Creation & Lifecycle (R02, R05, R07, N02) ====================
+  async function startSession(mode = 'standard', explicitDueIds = null, sessionOpts = {}) {
     SnapAudio.stop();
     highlightUnjudged = false;
     dueNavGate = null;
     const lockedActor = state.actorMode;
     const sessionId = SnapCore.uid('sess');
     const pack = selectedPack();
+    const exposedSet = new Set(sessionOpts.exposedIds || []);
 
     if (mode === 'due_only') {
       const duePick = explicitDueIds && explicitDueIds.length
@@ -341,12 +343,22 @@
         toast('当前没有到期抽查词');
         return;
       }
+      const hintedOnPaper = {};
+      const lockedHint = {};
+      const exposureSources = {};
+      for (const id of duePick) {
+        if (exposedSet.has(id)) {
+          hintedOnPaper[id] = true;
+          lockedHint[id] = true;
+          exposureSources[id] = 'retest_after_answer_revealed';
+        }
+      }
       activeSession = {
         sessionId,
         lockedActor,
         mode: 'due_only',
         packId: pack.id,
-        packTitle: '课前到期独立复测',
+        packTitle: sessionOpts.packTitle || '课前到期独立复测',
         startedAt: Date.now(),
         step: 'paper',
         stepsDone: {},
@@ -358,9 +370,11 @@
         paperIds: [...duePick],
         promptMode: 'audio_plus_zh',
         itemContexts: {},
-        hintedOnPaper: {},
-        lockedHint: {},
-        exposureSources: {},
+        hintedOnPaper,
+        showChunkHint: {},
+        answerRevealed: {},
+        lockedHint,
+        exposureSources,
         paperPhase: 'dictate',
         oralPhase: 'active',
         oralChecked: {},
@@ -398,6 +412,8 @@
         promptMode: 'audio_plus_zh',
         itemContexts: {},
         hintedOnPaper: {},
+        showChunkHint: {},
+        answerRevealed: {},
         lockedHint: {},
         exposureSources: {},
         paperPhase: 'dictate',
@@ -554,16 +570,42 @@
     bindEvents();
   }
 
+  // N01: Unified actor-switching flow across topbar & ledger (suspends or ends active lesson first)
+  async function requestActorSwitch(explicitTarget = null) {
+    const curActor = effectiveSessionActor();
+    const targetActor = explicitTarget || (curActor === 'student' ? 'parent_demo' : 'student');
+    if (curActor === targetActor && (!activeSession || activeSession.lockedActor === targetActor)) {
+      return;
+    }
+    if (activeSession && activeSession.paperPhase !== 'summary' && activeSession.oralPhase !== 'summary') {
+      roleSwitchModalOpen = { targetActor };
+      render();
+      return;
+    }
+    if (activeSession) {
+      setActorDraft(activeSession.lockedActor || state.actorMode, null);
+      activeSession = null;
+    }
+    state.actorMode = targetActor;
+    syncActiveDraftFromActor();
+    pendingVerifyDrafts = {};
+    render();
+    await saveState();
+    toast(targetActor === 'parent_demo' ? '已切至「家长演练模式」' : '已切回「学生正式学习模式」');
+  }
+
   function renderRoleSwitchModal() {
     const curLabel = effectiveSessionActor() === 'parent_demo' ? '🛠️ 家长演练试用' : '🎒 学生正式学习';
-    const nextLabel = effectiveSessionActor() === 'parent_demo' ? '🎒 学生正式学习' : '🛠️ 家长演练试用';
+    const targetActor = roleSwitchModalOpen?.targetActor || (effectiveSessionActor() === 'parent_demo' ? 'student' : 'parent_demo');
+    const nextLabel = targetActor === 'parent_demo' ? '🛠️ 家长演练试用' : '🎒 学生正式学习';
     return `
       <div class="modal-backdrop no-print" role="dialog" aria-modal="true" aria-label="切换身份确认">
         <div class="modal-card">
           <h3 style="margin-top:0">🔒 当前课程已锁定身份：${curLabel}</h3>
-          <p class="muted">为防止演练数据与孩子的正式账本串号，已开始的课不能中途变换身份。若要切换到<strong>「${nextLabel}」</strong>，请先结束当前课：</p>
-          <div class="row" style="margin-top:16px">
-            <button type="button" class="btn btn-primary btn-sm" data-role-modal="discard_switch">结束放弃当前课，并切换身份</button>
+          <p class="muted">为保证页面演练标识、当前会话与正式账本完全一致，切换至<strong>「${nextLabel}」</strong>前，请先选择如何处理当前未完结的课：</p>
+          <div style="display:grid;gap:10px;margin-top:16px">
+            <button type="button" class="btn btn-mint btn-sm" data-role-modal="suspend_switch">⏸️ 暂存当前课草稿，并切换至「${nextLabel}」</button>
+            <button type="button" class="btn btn-primary btn-sm" data-role-modal="discard_switch">🗑️ 结束放弃当前课，并切换至「${nextLabel}」</button>
             <button type="button" class="btn btn-sm" data-role-modal="cancel">取消（继续当前课）</button>
           </div>
         </div>
@@ -816,18 +858,29 @@
     `;
   }
 
-  // R02: Dedicated completion screen when paperIds.length === 0 (Pure Oral / Pre-read Lesson)
+  // R02 + N04: Dedicated completion screen when paperIds.length === 0 (Explicit confirmation, starts unchecked!)
   function renderOralWrapupStep(s) {
     const oralItems = (s.oralOnlyIds || []).map(itemById).filter(Boolean);
+    const checkedCount = oralItems.filter(it => Boolean(s.oralChecked?.[it.id])).length;
+    const allChecked = oralItems.length > 0 && checkedCount === oralItems.length;
     return `
       <section class="card">
-        <span class="pill pill-star">Step 4 · 纯听读认义收工（与预览一致：本轮纸写默写 0 项）</span>
-        <h2 style="margin:8px 0 6px">🗣️ 请确认今日听读认义与预读理解表现</h2>
-        <p class="muted" style="margin:0 0 14px">本轮词条均设为“仅听读认义”，不安排纸上默写。勾选已听熟认义的词条即可点亮铜章收工：</p>
+        <div class="row between">
+          <div>
+            <span class="pill pill-star">Step 4 · 纯听读认义收工（与预览一致：本轮纸写默写 0 项）</span>
+            <h2 style="margin:8px 0 6px">🗣️ 请按实际表现勾选已听熟认义的词条（已确认 ${checkedCount} / ${oralItems.length} 项）</h2>
+          </div>
+          ${oralItems.length ? `
+            <button type="button" class="btn btn-sm" data-act="check-all-oral">
+              ${allChecked ? '取消全部勾选' : `✅ 已确认本组 ${oralItems.length} 项均完成`}
+            </button>
+          ` : ''}
+        </div>
+        <p class="muted" style="margin:0 0 14px">起始均保持未确认；请家长听孩子实际跟读与认义后逐项勾选（未确认项将如实保留为未确认，不自动发章）：</p>
 
         <div class="paper-list">
           ${oralItems.map((it, idx) => {
-            const checked = s.oralChecked?.[it.id] !== false;
+            const checked = Boolean(s.oralChecked?.[it.id]);
             return `
               <div class="paper-item row between">
                 <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:700">
@@ -842,7 +895,7 @@
 
         <div class="row between" style="margin-top:18px">
           <button type="button" class="btn btn-sm" data-jump-step="board">← 返回黑板/预读</button>
-          <button type="button" class="btn btn-mint" data-act="finish-oral-session">🎉 完成今日听读收工 →</button>
+          <button type="button" class="btn btn-mint" data-act="finish-oral-session">🎉 完成今日听读收工（已确认 ${checkedCount}/${oralItems.length} 项）→</button>
         </div>
       </section>
     `;
@@ -918,11 +971,15 @@
             ${promptHtml}
             ${isDueBadge ? '<span class="pill" style="background:#dbeafe;color:#1e40af;margin-left:8px">📅 到期复测</span>' : ''}
             <span class="muted" style="font-size:12px;margin-left:6px">施测日：${esc(ctx.testedDateStr)}</span>
-            ${hinted ? `<div class="help-callout" style="margin:6px 0 0;padding:6px 10px">💡 已给拆块提示：<b class="english">${esc(ctx.displayChunks)}</b>（本题已标为“含拼写提示”）</div>` : ''}
+            ${s.showChunkHint?.[it.id] ? `
+              <div class="help-callout" style="margin:6px 0 0;padding:6px 10px">💡 已给拆块提示：<b class="english">${esc(ctx.displayChunks)}</b>（本题已标为“含拼写提示”）</div>
+            ` : hinted ? `
+              <div class="help-callout" style="margin:6px 0 0;padding:6px 10px">💡 发起新测前已见过本题答案/词形，本次无答案盲写按「含拼写提示/订正」登记（隔日独立盲写全对再升金章）</div>
+            ` : ''}
           </div>
           <div class="row">
             ${mode !== 'zh_prompt' ? `<button type="button" class="btn btn-sm" data-speak-context="${esc(it.id)}" data-speak-item="${esc(it.id)}">🔊 听发音</button>` : ''}
-            ${!hinted ? `<button type="button" class="btn btn-sm" data-give-paper-hint="${esc(it.id)}">💡 给拆块提示</button>` : ''}
+            ${!s.showChunkHint?.[it.id] ? `<button type="button" class="btn btn-sm" data-give-paper-hint="${esc(it.id)}">💡 给拆块提示</button>` : ''}
           </div>
         </div>
       </div>
@@ -1278,6 +1335,7 @@
       `;
     }
 
+    markSessionAnswersRevealed(s, items);
     const unjudgedCount = items.filter(it => !s.paperGrades[it.id]?.outcome || s.paperGrades[it.id].outcome === 'unjudged').length;
     const allMasked = items.every(it => Boolean(s.maskedAnswers[it.id]));
 
@@ -1314,6 +1372,21 @@
     `;
   }
 
+  function markSessionAnswersRevealed(s, items) {
+    if (!s || !state) return;
+    const today = SnapCore.todayISO();
+    s.answerRevealed = s.answerRevealed || {};
+    state.lastAnswerSeenDate = state.lastAnswerSeenDate || {};
+    for (const it of items) {
+      if (!s.maskedAnswers?.[it.id]) {
+        s.answerRevealed[it.id] = true;
+        if (effectiveSessionActor() === 'student') {
+          state.lastAnswerSeenDate[it.id] = today;
+        }
+      }
+    }
+  }
+
   function renderPaperGradeCard(s, it, idx) {
     const ctx = ensureItemContext(s, it.id, { preserveExisting: true });
     const defaultRef = `${ctx.testedDateStr} #${idx + 1}`;
@@ -1323,6 +1396,9 @@
     const hintLocked = Boolean(s.lockedHint?.[it.id]);
     const isDue = s.dueIds.includes(it.id);
     const isUnjudged = !g.outcome || g.outcome === 'unjudged';
+    const curDateStr = g.testedDateStr || ctx.testedDateStr;
+    const todayStr = SnapCore.todayISO();
+    const isCrossDay = curDateStr !== todayStr;
 
     return `
       <div class="paper-item ${highlightUnjudged && isUnjudged ? 'unjudged-highlight' : ''}" data-grade-card="${esc(it.id)}">
@@ -1330,9 +1406,11 @@
           <div>
             <strong>#${idx + 1}　${esc(ctx.promptZh || it.zh)}</strong>
             ${isDue ? '<span class="pill" style="background:#dbeafe;color:#1e40af;margin-left:6px">📅 到期复测</span>' : ''}
-            <span class="pill" style="margin-left:4px">${esc(ctx.promptMode)} · 施测日 ${esc(g.testedDateStr || ctx.testedDateStr)}</span>
-            ${isUnjudged && (g.testedDateStr || ctx.testedDateStr) !== SnapCore.todayISO() ? `
-              <button type="button" class="btn btn-sm" style="padding:2px 8px;font-size:12px;margin-left:4px" data-retest-today="${esc(it.id)}">📅 改为今日新测 (${esc(SnapCore.todayISO())})</button>
+            <span class="pill" style="margin-left:4px">${esc(ctx.promptMode)} · 施测日 ${esc(curDateStr)}</span>
+            ${isCrossDay && isUnjudged ? `
+              <button type="button" class="btn btn-sm" style="padding:2px 8px;font-size:12px;margin-left:4px" data-fresh-retest="${esc(it.id)}" data-retest-today="${esc(it.id)}" title="归档当前未判卡（保留已见答案状态）并进入今日无答案盲写题面">
+                🔄 归档原题并发起今日新测 (${esc(todayStr)})
+              </button>
             ` : ''}
             ${isUnjudged ? '<span class="pill" style="background:#fef3c7;color:#92400e;margin-left:6px">⚠️ 未判定</span>' : ''}
             ${!masked ? `<span class="muted" style="margin-left:8px">拆块提示：${esc(ctx.displayChunks)}</span>` : ''}
@@ -1355,8 +1433,12 @@
 
         <div style="margin-top:8px" class="row">
           <label class="muted" style="font-size:13px;display:inline-flex;align-items:center;gap:5px;cursor:pointer">
-            <input type="checkbox" data-toggle-hinted="${esc(it.id)}" ${hinted ? 'checked' : ''} ${hintLocked ? 'disabled title="交首答前已接触词形，系统已锁定提示状态"' : ''}>
+            <input type="checkbox" data-toggle-hinted="${esc(it.id)}" ${hinted ? 'checked' : ''} ${hintLocked ? 'disabled title="交首答前已接触词形或已亮过答案，系统已锁定提示状态"' : ''}>
             💡 交首答前给过/接触过词形提示${hintLocked ? '（已自动锁定）' : ''}
+          </label>
+          <label class="muted" style="font-size:13px">
+            补登原纸面日期：
+            <input type="date" data-backfill-date="${esc(it.id)}" value="${esc(curDateStr)}" style="padding:2px 6px;font-size:12.5px">
           </label>
           <label class="muted" style="font-size:13px">
             纸本题号备注：
@@ -1423,6 +1505,7 @@
       `;
     }
 
+    markSessionAnswersRevealed(s, items);
     return `
       <section class="card">
         <div class="row between">
@@ -1469,6 +1552,7 @@
     const tally = s.summary?.tally || { independent: 0, denominator: 0, ratioText: '0 / 0', blindSelfFixed: 0, answerCorrected: 0, answeredWrong: 0, hintedCorrect: 0, blank: 0, untested: 0, pendingVerify: 0 };
     const needReviewIds = s.summary?.needReviewIds || [];
     const oralDoneCount = s.summary?.oralDoneCount || 0;
+    const oralUnconfirmedIds = s.summary?.oralUnconfirmedIds || [];
     const isDemo = s.lockedActor === 'parent_demo';
 
     return `
@@ -1487,8 +1571,13 @@
         `}
 
         ${isOralSummary ? `
-          <div class="bridge-callout" style="text-align:left;margin:18px 0">
-            🗣️ 已登记完成 <b>${oralDoneCount} 项</b> 听读认义记录（纸写默写 <b>0 项</b>，与课前预览完全一致）。
+          <div class="bridge-callout" style="text-align:left;margin:18px 0" id="oral-summary-box">
+            <div>🗣️ 已确认完成 <b id="oral-done-count">${oralDoneCount} 项</b> 听读认义记录 · 未确认 <b id="oral-unconfirmed-count">${oralUnconfirmedIds.length} 项</b>（纸写默写 <b>0 项</b>，与课前预览完全一致）。</div>
+            ${oralUnconfirmedIds.length ? `
+              <div class="muted" style="margin-top:6px">
+                ⏭️ 本次未勾选确认项（未自动发章，留待下次继续听读）：<b>${oralUnconfirmedIds.map(id => esc(itemById(id)?.zh || id)).join('、')}</b>
+              </div>
+            ` : ''}
           </div>
         ` : `
           <div class="grid-4" style="margin:20px 0;text-align:left">
@@ -1613,10 +1702,10 @@
     `;
   }
 
-  // ==================== Tab 3: Ledger (R03 Demo Isolation + R08 Full Pending Verify + R06 Diff) ====================
+  // ==================== Tab 3: Ledger (N01 Unified Actor + N03 Per-Event Correction + N05 Draft Preview) ====================
   function renderLedgerTab() {
-    const isDemo = state.actorMode === 'parent_demo';
-    const targetActor = isDemo ? 'parent_demo' : 'student';
+    const targetActor = effectiveSessionActor();
+    const isDemo = targetActor === 'parent_demo';
     const dueInfo = SnapCore.getDueQueue(state, SnapCore.todayISO(), 3);
     const studentSummary = SnapCore.getStatsSummary(state, 'student');
     const activeSummary = SnapCore.getStatsSummary(state, targetActor);
@@ -1626,17 +1715,13 @@
     );
     const lockedStudentPendingCount = isDemo ? studentSummary.pendingVerifyCount : 0;
 
-    // R08: Items verified as answered_wrong still awaiting red-pen correction
-    const unCorrectedWrongEvents = !isDemo
-      ? state.events.filter(e =>
-        e.actor === 'student' &&
-        e.taskType === 'paper_check' &&
-        e.verificationStatus === 'verified' &&
-        e.outcome === 'answered_wrong' &&
-        state.mastery[e.itemId]?.pendingCorrection &&
-        !state.events.some(c => c.taskType === 'red_pen_correction' && c.linkedEventId === e.id)
-      )
-      : [];
+    // N03: Per-event uncorrected wrong query (each answered_wrong stays visible until its own linkedEventId is logged!)
+    const unCorrectedWrongEvents = SnapCore.getUncorrectedWrongEvents(state, targetActor);
+    const linkedCorrMap = new Map(
+      state.events
+        .filter(c => c.actor === targetActor && c.taskType === 'red_pen_correction' && c.linkedEventId)
+        .map(c => [c.linkedEventId, c])
+    );
 
     const recentEvents = state.events.filter(e => e.actor === targetActor).slice().reverse().slice(0, 40);
 
@@ -1789,11 +1874,17 @@
               <tbody>
                 ${recentEvents.map(e => {
                   const it = itemById(e.itemId);
+                  let corrTrace = '';
+                  if (e.outcome === 'answered_wrong') {
+                    corrTrace = linkedCorrMap.has(e.id) ? ' · ✅已关联红笔订正' : ' · ⏳待补红笔订正';
+                  } else if (e.taskType === 'red_pen_correction' && e.linkedEventId) {
+                    corrTrace = ` · 🔗关联原题(${e.linkedEventId})`;
+                  }
                   return `<tr style="border-bottom:1px solid var(--border)">
                     <td style="padding:7px">${esc(e.dateStr)}</td>
                     <td style="padding:7px"><b>${esc(it?.zh || e.itemId)}</b> <span class="muted">(${esc(e.paperRef || '')})</span></td>
                     <td style="padding:7px">${esc(e.promptMode || '—')} · <span class="english">${esc(e.expectedAnswer || '')}</span>${e.hadSpellingHint ? ' · <span style="color:#b45309;font-weight:700">含提示</span>' : ''}</td>
-                    <td style="padding:7px">${esc(e.outcome)}</td>
+                    <td style="padding:7px">${esc(e.outcome)}${esc(corrTrace)}</td>
                     <td style="padding:7px">${esc(e.verificationStatus)} (${esc(e.verifiedBy || '—')})</td>
                     <td style="padding:7px" class="muted">${esc((e.errorTags || []).join(', ') || e.note || '—')}</td>
                   </tr>`;
@@ -1806,12 +1897,21 @@
     `;
   }
 
-  // R06: Explicit itemized upgrade & conflict preview
+  function formatDraftBrief(d) {
+    if (!d) return '无草稿';
+    const timeLabel = d.savedAt ? new Date(d.savedAt).toLocaleString('zh-CN', { hour12: false }) : '未知时间';
+    return `${d.packTitle}（已判纸写 ${d.gradedCount}/${d.paperCount} 项 · 保存于 ${timeLabel}）`;
+  }
+
+  // R06 + N05: Explicit itemized upgrade, conflict & two-slot draft preview
   function renderImportPreviewCard(preview) {
     if (preview.kind === 'snapword') {
+      const stuSlot = preview.draftSlots?.student;
+      const demoSlot = preview.draftSlots?.parent_demo;
+      const keepDraftValue = preview.hasDraftConflicts ? 'keep_local' : 'skip_incoming';
       return `
         <div class="help-callout" style="margin-top:14px">
-          <strong>🔍 备份四分类差异预览（导入后保持本机角色「${state.actorMode === 'parent_demo' ? '家长演练' : '学生正式'}」不变）：</strong>
+          <strong>🔍 备份四分类差异预览（导入后保持本机角色「${effectiveSessionActor() === 'parent_demo' ? '家长演练' : '学生正式'}」不变）：</strong>
           <ul style="margin:6px 0;padding-left:20px">
             <li>新增正式记录：<b>${preview.added}</b> 条</li>
             <li>完全相同跳过：<b>${preview.identical}</b> 条</li>
@@ -1841,6 +1941,27 @@
               </ul>
             </div>
           ` : ''}
+
+          <div style="margin:8px 0;padding:10px;background:#fff;border-radius:10px;border:1px solid #93c5fd" id="import-draft-preview">
+            <div style="font-weight:800;margin-bottom:6px">📝 未完课草稿槽预览（双身份槽核对）：</div>
+            <ul class="muted" style="margin:0 0 8px;padding-left:18px;font-size:13px">
+              <li><b>🎒 学生正式草稿槽</b>：本机「${esc(formatDraftBrief(stuSlot?.local))}」 ｜ 备份「${esc(formatDraftBrief(stuSlot?.incoming))}」</li>
+              <li><b>🛠️ 家长演练草稿槽</b>：本机「${esc(formatDraftBrief(demoSlot?.local))}」 ｜ 备份「${esc(formatDraftBrief(demoSlot?.incoming))}」</li>
+            </ul>
+            ${preview.hasIncomingDrafts ? `
+              <div>
+                <label style="margin-right:14px;cursor:pointer">
+                  <input type="radio" name="draft-pol" value="restore_incoming" ${importDraftPolicy === 'restore_incoming' ? 'checked' : ''}>
+                  ${preview.hasDraftConflicts ? '采用备份草稿覆盖本机同槽草稿' : '恢复备份中的挂起草稿（含题面快照、判分与纸本备注）'}
+                </label>
+                <label style="cursor:pointer">
+                  <input type="radio" name="draft-pol" value="${keepDraftValue}" ${importDraftPolicy !== 'restore_incoming' ? 'checked' : ''}>
+                  保留本机现有草稿状态（不导入备份草稿）
+                </label>
+              </div>
+            ` : `<div class="muted" style="font-size:12.5px">备份中不含未完课草稿，本机现有草稿将原样保留。</div>`}
+          </div>
+
           <div class="row" style="margin-top:10px">
             <button type="button" class="btn btn-sm btn-mint" data-act="confirm-import-snapword">确认执行合并</button>
             <button type="button" class="btn btn-sm" data-act="cancel-import">取消</button>
@@ -1973,44 +2094,42 @@
 
     const actorBtn = $('#actor-toggle');
     if (actorBtn) {
-      actorBtn.onclick = async () => {
-        if (activeSession && activeSession.paperPhase !== 'summary' && activeSession.oralPhase !== 'summary') {
-          roleSwitchModalOpen = true;
-          render();
-          return;
-        }
-        if (activeSession) {
-          setActorDraft(activeSession.lockedActor || state.actorMode, null);
-          activeSession = null;
-        }
-        state.actorMode = state.actorMode === 'student' ? 'parent_demo' : 'student';
-        syncActiveDraftFromActor();
-        render();
-        await saveState();
-        toast(state.actorMode === 'parent_demo' ? '已切至「家长演练模式」' : '已切回「学生正式学习模式」');
-      };
+      actorBtn.onclick = () => requestActorSwitch();
     }
 
-    document.querySelector('[data-act="switch-to-student-ledger"]')?.addEventListener('click', async () => {
-      state.actorMode = 'student';
-      syncActiveDraftFromActor();
-      pendingVerifyDrafts = {};
-      render();
-      await saveState();
-      toast('已切回「学生正式学习模式」，现在可以安全核验学生照片记录');
+    document.querySelector('[data-act="switch-to-student-ledger"]')?.addEventListener('click', () => {
+      requestActorSwitch('student');
     });
 
     document.querySelectorAll('[data-role-modal]').forEach(btn => {
       btn.onclick = async () => {
         const act = btn.dataset.roleModal;
-        roleSwitchModalOpen = false;
-        if (act === 'discard_switch') {
+        const targetActor = roleSwitchModalOpen?.targetActor || (effectiveSessionActor() === 'student' ? 'parent_demo' : 'student');
+        roleSwitchModalOpen = null;
+        if (act === 'suspend_switch') {
+          SnapAudio.stop();
+          const prevActor = activeSession?.lockedActor || state.actorMode;
+          if (activeSession) {
+            const suspended = SnapCore.clone(activeSession);
+            suspended.draftStatus = 'suspended';
+            suspended.savedAt = Date.now();
+            setActorDraft(prevActor, suspended);
+            activeSession = null;
+          }
+          state.actorMode = targetActor;
+          syncActiveDraftFromActor();
+          pendingVerifyDrafts = {};
+          render();
+          await saveState();
+          toast('已暂存原课草稿并完成身份切换');
+        } else if (act === 'discard_switch') {
           SnapAudio.stop();
           const prevActor = activeSession?.lockedActor || state.actorMode;
           activeSession = null;
           setActorDraft(prevActor, null);
-          state.actorMode = state.actorMode === 'student' ? 'parent_demo' : 'student';
+          state.actorMode = targetActor;
           syncActiveDraftFromActor();
+          pendingVerifyDrafts = {};
           render();
           await saveState();
           toast('已结束原课并切换至新身份');
@@ -2192,8 +2311,10 @@
       btn.onclick = async () => {
         if (!activeSession) return;
         const id = btn.dataset.givePaperHint;
+        activeSession.showChunkHint = activeSession.showChunkHint || {};
         activeSession.hintedOnPaper = activeSession.hintedOnPaper || {};
         activeSession.lockedHint = activeSession.lockedHint || {};
+        activeSession.showChunkHint[id] = true;
         activeSession.hintedOnPaper[id] = true;
         activeSession.lockedHint[id] = true;
         render();
@@ -2439,7 +2560,17 @@
       };
     });
 
-    // R02: Pure Oral Wrap-up handlers
+    // R02 + N04: Pure Oral Wrap-up explicit confirmation handlers
+    document.querySelector('[data-act="check-all-oral"]')?.addEventListener('click', async () => {
+      if (!activeSession) return;
+      activeSession.oralChecked = activeSession.oralChecked || {};
+      const ids = activeSession.oralOnlyIds || [];
+      const allChecked = ids.length > 0 && ids.every(id => Boolean(activeSession.oralChecked[id]));
+      ids.forEach(id => { activeSession.oralChecked[id] = !allChecked; });
+      render();
+      await saveState();
+    });
+
     document.querySelectorAll('[data-oral-check]').forEach(chk => {
       chk.onchange = async () => {
         if (!activeSession) return;
@@ -2455,8 +2586,9 @@
       submitLock = true;
       try {
         let oralDoneCount = 0;
+        const oralUnconfirmedIds = [];
         for (const id of (activeSession.oralOnlyIds || [])) {
-          if (activeSession.oralChecked?.[id] !== false) {
+          if (Boolean(activeSession.oralChecked?.[id])) {
             oralDoneCount++;
             SnapCore.recordEvent(state, {
               id: `oral_${activeSession.sessionId}_${id}`,
@@ -2466,11 +2598,13 @@
               itemId: id,
               taskType: 'read_aloud',
               outcome: 'done',
-              note: '完成本轮听读认义'
+              note: '家长确认已完成本轮听读认义'
             });
+          } else {
+            oralUnconfirmedIds.push(id);
           }
         }
-        activeSession.summary = { oralDoneCount, needReviewIds: [] };
+        activeSession.summary = { oralDoneCount, oralUnconfirmedIds, needReviewIds: [] };
         activeSession.oralPhase = 'summary';
         setActorDraft(activeSession.lockedActor || state.actorMode, null);
         await saveState();
@@ -2548,27 +2682,92 @@
       };
     });
 
+    // N02: Backfilling original paper date vs archiving & launching a fresh blind retest!
+    document.querySelectorAll('[data-backfill-date]').forEach(inp => {
+      inp.onchange = async () => {
+        if (!activeSession || !inp.value) return;
+        const id = inp.dataset.backfillDate;
+        const newDate = inp.value;
+        const qNo = activeSession.paperIds.indexOf(id) + 1;
+        const ctx = ensureItemContext(activeSession, id, { preserveExisting: true });
+        const origDate = ctx.testedDateStr;
+        const [y, m, d] = newDate.split('-').map(Number);
+        const backfillTs = Date.UTC(y, m - 1, d, 12, 0, 0);
+        const prev = activeSession.paperGrades[id] || { outcome: 'unjudged', tags: [] };
+
+        // N02 Guard: Advancing date on an already answer-revealed card MUST lock spelling-hint evidence!
+        if (newDate > origDate && activeSession.answerRevealed?.[id]) {
+          activeSession.hintedOnPaper = activeSession.hintedOnPaper || {};
+          activeSession.lockedHint = activeSession.lockedHint || {};
+          activeSession.exposureSources = activeSession.exposureSources || {};
+          activeSession.hintedOnPaper[id] = true;
+          activeSession.lockedHint[id] = true;
+          activeSession.exposureSources[id] = 'date_advanced_after_answer_reveal';
+        }
+
+        activeSession.paperGrades[id] = {
+          ...prev,
+          testedDateStr: newDate,
+          testedAt: backfillTs,
+          paperRef: `${newDate} #${qNo}`
+        };
+        render();
+        await saveState();
+      };
+    });
+
     document.querySelectorAll('[data-retest-today]').forEach(btn => {
       btn.onclick = async () => {
         if (!activeSession) return;
         const id = btn.dataset.retestToday;
-        const now = Date.now();
-        const today = SnapCore.todayISO(now);
-        const qNo = activeSession.paperIds.indexOf(id) + 1;
-        const ctx = ensureItemContext(activeSession, id, { preserveExisting: true });
-        if (ctx) {
-          ctx.testedAt = now;
-          ctx.testedDateStr = today;
-        }
-        const prev = activeSession.paperGrades[id] || { outcome: 'unjudged', tags: [] };
-        activeSession.paperGrades[id] = {
-          ...prev,
-          testedAt: now,
-          testedDateStr: today,
-          paperRef: `${today} #${qNo}`
-        };
-        render();
-        await saveState();
+        const s = activeSession;
+        const submittedAt = Date.now();
+        const today = SnapCore.todayISO(submittedAt);
+        const wasExposed = Boolean(
+          s.answerRevealed?.[id] ||
+          s.hintedOnPaper?.[id] ||
+          (effectiveSessionActor() === 'student' && state.lastAnswerSeenDate?.[id] === today)
+        );
+
+        // Archive original items from the suspended cross-day session so original attempt & reveal state are preserved!
+        s.paperIds.forEach((pid, idx) => {
+          const pCtx = ensureItemContext(s, pid, { preserveExisting: true, lock: true });
+          const pg = s.paperGrades[pid];
+          const pDate = pg?.testedDateStr || pCtx.testedDateStr;
+          const pAt = pg?.testedAt || pCtx.testedAt;
+          const pOut = (pid !== id && pg?.outcome && pg.outcome !== 'unjudged') ? pg.outcome : 'untested';
+          SnapCore.recordEvent(state, {
+            sessionId: s.sessionId,
+            stageTag: pid === id ? 'archived_before_retest' : 'paper',
+            actor: s.lockedActor,
+            recordedBy: 'parent',
+            itemId: pid,
+            questionNo: idx + 1,
+            testedAt: pAt,
+            submittedAt,
+            dateStr: pDate,
+            paperRef: pg?.paperRef || `${pDate} #${idx + 1}`,
+            promptMode: pCtx.promptMode,
+            variantKey: pCtx.variantKey,
+            expectedAnswer: pCtx.primary,
+            spokenText: pCtx.spokenText,
+            hadSpellingHint: Boolean(s.answerRevealed?.[pid] || s.hintedOnPaper?.[pid]),
+            exposureSource: s.answerRevealed?.[pid] ? 'answer_revealed_before_retest' : (s.exposureSources?.[pid] || null),
+            taskType: 'paper_check',
+            outcome: pOut,
+            errorTags: pg?.tags || [],
+            note: pid === id ? '原题未完结归档（已保留原施测日与亮答案状态），另起新测' : ''
+          });
+        });
+
+        setActorDraft(s.lockedActor || state.actorMode, null);
+        await startSession('due_only', [id], {
+          exposedIds: wasExposed ? [id] : [],
+          packTitle: '今日无答案新测'
+        });
+        toast(wasExposed
+          ? '已归档原题并开启无答案新测（因先前已亮过答案，本次再写按含提示练习登记，隔日独立盲写升金章）'
+          : '已归档原题并开启今日无答案盲写新测');
       };
     });
 
@@ -2760,7 +2959,7 @@
           draft.outcome,
           draft.tags || [],
           '',
-          { actorMode: state.actorMode }
+          { actorMode: effectiveSessionActor() }
         );
 
         if (res?.blocked) {
@@ -2778,7 +2977,7 @@
     document.querySelectorAll('[data-followup-corr]').forEach(btn => {
       btn.onclick = async () => {
         const origId = btn.dataset.followupCorr;
-        const res = SnapCore.recordFollowUpCorrection(state, origId, '', { actorMode: state.actorMode });
+        const res = SnapCore.recordFollowUpCorrection(state, origId, '', { actorMode: effectiveSessionActor() });
         if (res?.blocked) {
           toast('🔒 演练模式下禁止修改学生正式记录！');
           return;
@@ -2818,6 +3017,7 @@
       try {
         if (file.size > 20 * 1024 * 1024) throw new Error('文件超过 20MB 上限');
         const parsed = JSON.parse(await file.text());
+        importDraftPolicy = 'restore_incoming';
         pendingImportPreview = SnapCore.inspectBackupJSON(parsed, state);
         render();
       } catch (err) {
@@ -2834,12 +3034,31 @@
       };
     });
 
+    document.querySelectorAll('input[name="draft-pol"]').forEach(r => {
+      r.onchange = () => {
+        importDraftPolicy = r.value;
+        render();
+      };
+    });
+
     document.querySelector('[data-act="confirm-import-snapword"]')?.addEventListener('click', async () => {
       if (!pendingImportPreview) return;
+      const curActor = effectiveSessionActor();
+      const replacesActiveDraft = Boolean(
+        activeSession &&
+        importDraftPolicy === 'restore_incoming' &&
+        pendingImportPreview.draftSlots?.[curActor]?.incoming
+      );
+      if (replacesActiveDraft) {
+        SnapAudio.stop();
+        activeSession = null;
+      }
       state = SnapCore.mergeSnapwordBackup(state, pendingImportPreview.payload, {
         includeDemo: false,
-        conflictPolicy: importConflictPolicy
+        conflictPolicy: importConflictPolicy,
+        draftPolicy: importDraftPolicy
       });
+      syncActiveDraftFromActor();
       pendingImportPreview = null;
       render();
       await saveState();

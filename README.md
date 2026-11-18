@@ -5,7 +5,7 @@
 
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Runtime](https://img.shields.io/badge/Runtime-Offline%20Single%20HTML-blue.svg)
-![Version](https://img.shields.io/badge/Version-v0.1.4-teal.svg)
+![Version](https://img.shields.io/badge/Version-v0.1.5-teal.svg)
 
 ---
 
@@ -24,7 +24,7 @@
 
 ---
 
-## 界面预览 · Screenshots (`v0.1.4`)
+## 界面预览 · Screenshots (`v0.1.5`)
 
 | 今日闯关大厅与金银铜徽章栏 | 老爸整蛊造句机与同屏口语黑板 |
 | :---: | :---: |
@@ -51,17 +51,17 @@
 
 ## 快速开始 · Quick Start
 
-### 方式一：直接打开便携单文件（推荐家庭日常使用）
-直接用 Chrome 或 Edge 浏览器打开仓库中的 `dist/SnapWord-词哒.html`（Windows 下也可双击根目录 `启动词哒工作台.cmd`）。
+### 方式一：发送 `release/` 离线解压即用压缩包（推荐远程传给学习电脑）
+直接将 [`release/`](release/) 目录下最新版本的 `SnapWord-词哒-v*-离线解压即用包.zip` 发送到目标电脑，解压到固定文件夹（如桌面 `SnapWord-词哒`）后双击 `启动词哒工作台.cmd` 或 `SnapWord-词哒.html` 即可全屏使用（内含完整 `audio/` 真人发音目录，后续升级直接覆盖同名文件夹即可保留全部金银铜徽章与复测进度）。
 
-### 方式二：从源码修改与重新构建
-项目采用零第三方前端框架依赖的原生模块化结构，使用 Python 3 标准库即可完成打包：
+### 方式二：从源码修改、构建与打包发布
+项目采用零第三方前端框架依赖的原生模块化结构，使用 Python 3 标准库即可完成打包与发版归档：
 
 ```bash
-# 1. 重新打包生成 dist/SnapWord-词哒.html 与 dist/index.html
-python tools/build.py
+# 1. 重新打包生成 dist/ 并归档完整解压即用压缩包至 release/
+python tools/release.py
 
-# 2. 运行核心状态机单元测试与离线浏览器端到端回归测试
+# 2. 运行开源隐私门禁、核心状态机单元与离线浏览器端到端回归测试
 node tests/verify_snapword.cjs
 ```
 
@@ -82,10 +82,12 @@ node tests/verify_snapword.cjs
 │   ├── attribution.json    # 内置真人发音来源、作者与 CC 许可证明细
 │   └── *.mp3               # 来自 Wikimedia Commons 的公开授权真人发音切片
 ├── tools/
-│   ├── build.py            # 单文件离线便携包构建脚本
+│   ├── build.py            # 单文件离线主程序构建脚本
+│   ├── release.py          # 生成 release/ 完整离线解压即用压缩包（含 audio/ 与一键启动器）
 │   └── fetch_audio.py      # Wiktionary / Wikimedia 公开授权发音检索与转换工具
 ├── tests/
-│   └── verify_snapword.cjs # 单元测试 + 离线 Chromium 全链路自动化验证脚本
+│   └── verify_snapword.cjs # 隐私门禁 + 单元测试 + 离线 Chromium 全链路自动化验证脚本
+├── release/                # 历次发版归档区（离线解压即用 .zip 压缩包与 SHA256 校验清单）
 ├── docs/
 │   ├── ROADMAP.md          # 版本演进路线图
 │   └── media/              # 实机界面截图

@@ -1,4 +1,4 @@
-/* 词哒 · SnapWord Main Interactive Workbench Controller (v0.1.4)
+/* 词哒 · SnapWord Main Interactive Workbench Controller (v0.1.5)
  * Closes F01–F07, R01–R08, N01–N05, and Round-4 findings Q01–Q02.
  */
 'use strict';

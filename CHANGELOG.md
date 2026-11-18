@@ -3,6 +3,15 @@
 All notable changes to **词哒 · SnapWord** are documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/lang/zh-CN/).
 
+## [0.1.5] - 2026-11-18
+
+### Added
+- **`release/` 版本归档目录与「离线解压即用包 (`.zip`)」构建链路**：
+  - 新增 `tools/release.py` 自动打包生成 `release/SnapWord-词哒-vX.Y.Z-离线解压即用包.zip`、`release/SHA256SUMS.txt` 与 `release/README.md`。
+  - 压缩包内置固定顶层目录 `SnapWord-词哒/`，包含一键启动脚本 `启动词哒工作台.cmd`、离线主程序 `SnapWord-词哒.html`、完整独立 `audio/` 真人发音文件夹与署名清单、以及《使用与升级说明.txt》（指导后续覆盖升级同一目录以无缝保留本机徽章与复测记录）。
+- **扩充公开授权真人单词录音库与本地音频回退支持**：
+  - 补全五上 Unit 5 / Unit 6 核心词、补基础词及重点句核心词的 Wikimedia Commons 公开授权真人发音切片；`SnapAudio` 支持内嵌音频与同目录 `./audio/*.mp3` 双重兜底回退。
+
 ## [0.1.4] - 2026-11-18
 
 ### Added

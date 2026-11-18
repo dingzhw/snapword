@@ -1,4 +1,4 @@
-/* 词哒 · SnapWord Core Pedagogical & Ledger Engine (v0.1.4)
+/* 词哒 · SnapWord Core Pedagogical & Ledger Engine (v0.1.5)
  * Closes F01–F07, R01–R08, N01–N05, and Round-4 findings Q01–Q02:
  * - Q01: Strict separation of pre-attempt hadSpellingHint vs post-attempt answerRevealedDuringGrading when archiving sibling items.
  * - Q02: Canonical deep draft equality covering itemContexts, hintedOnPaper, lockedHint, answerRevealed, exposureSources, dates & item lists.

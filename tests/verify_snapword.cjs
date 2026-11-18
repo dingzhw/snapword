@@ -48,7 +48,7 @@ function runPrivacyGate() {
   assert.ok(!files.some(f => f.includes('评审')), 'Private review folder docs/评审/ must be ignored by Git');
 
   for (const rel of files) {
-    if (/\.(mp3|png|wav|ogg|jpg|jpeg)$/i.test(rel)) continue;
+    if (/\.(mp3|png|wav|ogg|jpg|jpeg|zip)$/i.test(rel)) continue;
     const full = path.join(SCAN_ROOT, rel);
     if (!fs.existsSync(full) || !fs.statSync(full).isFile()) continue;
     const content = fs.readFileSync(full, 'utf8');
@@ -1352,7 +1352,7 @@ async function runBrowserE2E() {
   runPrivacyGate();
   runUnitTests();
   await runBrowserE2E();
-  console.log('4/4 All SnapWord v0.1.4 verifications succeeded!');
+  console.log('4/4 All SnapWord v0.1.5 verifications succeeded!');
 })().catch(err => {
   console.error(err);
   process.exit(1);

@@ -33,3 +33,60 @@ Recorder: I learned some phrases | CC BY-SA 4.0 | https://commons.wikimedia.org/
 - live: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-live-verb.ogg
 - wonderful: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-wonderful.ogg
 - wall: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-wall.ogg
+- sometimes: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-sometimes.ogg
+- friend: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-friend.ogg
+- late: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-late.ogg
+- between: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-between.ogg
+- problem: Speaker: Vealhurl
+Recorder: Vealhurl | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-problem.wav
+- morning: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-morning.ogg
+- afternoon: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-afternoon.ogg
+- homework: Speaker: Vealhurl
+Recorder: Vealhurl | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-homework.wav
+- football: Commander Keane | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:En-au-football.oga
+- often: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-often.ogg
+- never: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-never.ogg
+- friends: No machine-readable author provided. Dvortygirl assumed (based on copyright claims). | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-friends.ogg
+- walk: Adam470 | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:En-uk-walk.ogg
+- work: Speaker: Vealhurl
+Recorder: Vealhurl | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-work.wav
+- ball: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-ball.ogg
+- with: Troll Control | CC0 | https://commons.wikimedia.org/wiki/File:En-uk-with.ogg
+- piano: Speaker: Vealhurl
+Recorder: Vealhurl | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-piano.wav
+- picnic: Speaker: Vealhurl
+Recorder: Vealhurl | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-picnic.wav
+- basketball: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-basketball.ogg
+- swimming: Neskaya | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-swimming.ogg
+- eats: Commander Keane | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:En-au-eats.ogg
+- goes: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-goes.ogg
+- tries: Neskaya | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-tries.ogg
+- try: Speaker: Vealhurl
+Recorder: Vealhurl | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-try.wav
+- stay: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-stay.ogg
+- neighbour: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-neighbour.ogg
+- neighbor: Speaker: Vininn126
+Recorder: Vininn126 | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vininn126-neighbor.wav
+- heavy: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-heavy.ogg
+- drink: Speaker: Naomi Persephone Amethyst
+Recorder: NaomiAmethyst | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Naomi_Persephone_Amethyst_(NaomiAmethyst)-drink.wav
+- some: Speaker: Back ache
+Recorder: Back ache | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Back_ache-some.wav
+- space: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-space.ogg
+- their: SeanCollins and Emily | Public domain | https://commons.wikimedia.org/wiki/File:En-gb-their.ogg
+- too: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-too.ogg
+- use: Speaker: Vealhurl
+Recorder: Vealhurl | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-use.wav
+- letter: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-letter.ogg
+- advice: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-advice.ogg
+- important: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-important.ogg
+- friendly: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-friendly.ogg
+- then: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-then.ogg
+- time: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-time.ogg
+- favourite: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-favourite.ogg
+- favorite: Speaker: Vealhurl
+Recorder: Vealhurl | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-favorite.wav
+- classmate: Speaker: Vealhurl
+Recorder: Vealhurl | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-classmate.wav
+- close: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-close-verb.ogg
+- next: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-next.ogg

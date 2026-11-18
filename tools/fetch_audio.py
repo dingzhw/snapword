@@ -16,13 +16,14 @@ MANIFEST = AUDIO_DIR / "attribution.json"
 
 TARGET_WORDS = [
     "morning", "afternoon", "homework", "football", "sometimes", "often", "never",
-    "friend", "friends", "walk", "work", "ball", "with",
-    "between", "wall", "neighbour", "heavy", "drink", "some", "space",
+    "friend", "friends", "walk", "work", "ball", "with", "piano", "picnic",
+    "basketball", "swimming", "watches", "eats", "goes", "tries", "try", "stay", "late",
+    "between", "wall", "neighbour", "neighbor", "heavy", "drink", "some", "space",
     "their", "too", "use", "letter", "advice", "important", "friendly",
-    "then", "time", "favourite", "problem", "classmate",
+    "then", "time", "favourite", "favorite", "problem", "classmate", "close", "next",
 ]
 
-UA = "SnapWordAudioFetcher/0.1 (open-source primary English learning tool)"
+UA = "SnapWord/0.1.5 (https://github.com/dingzhw/snapword; educational open-source project)"
 
 
 def read_bytes(url):
@@ -88,14 +89,10 @@ def build_catalog(words):
             src = urlsplit(info["url"])
             if src.scheme != "https" or src.hostname != "upload.wikimedia.org":
                 continue
-            mp3_ok = page.get("transcodestatus", {}).get("mp3", {}).get("time_success")
-            p = src.path
-            if mp3_ok:
-                fname = p.rsplit("/", 1)[-1]
-                p = p.replace("/commons/", "/commons/transcoded/", 1) + "/" + fname + ".mp3"
+            # Download static original .ogg/.wav from CDN (avoids rate-limited /transcoded/ endpoint; ffmpeg converts locally)
             found[w] = {
                 "file": name,
-                "media": urlunsplit(src._replace(path=p, query="")),
+                "media": urlunsplit(src._replace(query="")),
                 "page": info["descriptionurl"],
                 "license": lic,
                 "licenseUrl": meta.get("LicenseUrl", {}).get("value", ""),

@@ -27,6 +27,7 @@ def build_audio_payload():
             continue
         b64 = base64.b64encode(mp3_path.read_bytes()).decode("ascii")
         bundled[word] = {
+            "asset": info["asset"],
             "data": f"data:audio/mpeg;base64,{b64}",
             "author": info.get("author", ""),
             "license": info.get("license", ""),

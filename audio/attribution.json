@@ -223,5 +223,410 @@
     "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
     "author": "Dvortygirl",
     "asset": "wall.mp3"
+  },
+  "sometimes": {
+    "file": "en-us-sometimes.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/transcoded/c/c0/En-us-sometimes.ogg/En-us-sometimes.ogg.mp3",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-sometimes.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "sometimes.mp3"
+  },
+  "friend": {
+    "file": "En-us-friend.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/transcoded/8/89/En-us-friend.ogg/En-us-friend.ogg.mp3",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-friend.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "friend.mp3"
+  },
+  "late": {
+    "file": "en-us-late.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/transcoded/b/b2/En-us-late.ogg/En-us-late.ogg.mp3",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-late.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "late.mp3"
+  },
+  "between": {
+    "file": "en-us-between.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/transcoded/2/22/En-us-between.ogg/En-us-between.ogg.mp3",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-between.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "between.mp3"
+  },
+  "problem": {
+    "file": "LL-Q1860 (eng)-Vealhurl-problem.wav",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/transcoded/9/97/LL-Q1860_%28eng%29-Vealhurl-problem.wav/LL-Q1860_%28eng%29-Vealhurl-problem.wav.mp3",
+    "page": "https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-problem.wav",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Speaker: Vealhurl\nRecorder: Vealhurl",
+    "asset": "problem.mp3"
+  },
+  "morning": {
+    "file": "en-us-morning.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/9/9b/En-us-morning.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-morning.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "morning.mp3"
+  },
+  "afternoon": {
+    "file": "en-us-afternoon.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/2/27/En-us-afternoon.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-afternoon.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "afternoon.mp3"
+  },
+  "homework": {
+    "file": "LL-Q1860 (eng)-Vealhurl-homework.wav",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/6/68/LL-Q1860_%28eng%29-Vealhurl-homework.wav",
+    "page": "https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-homework.wav",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Speaker: Vealhurl\nRecorder: Vealhurl",
+    "asset": "homework.mp3"
+  },
+  "football": {
+    "file": "En-au-football.oga",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/a/a4/En-au-football.oga",
+    "page": "https://commons.wikimedia.org/wiki/File:En-au-football.oga",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Commander Keane",
+    "asset": "football.mp3"
+  },
+  "often": {
+    "file": "En-us-often.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/e/e6/En-us-often.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-often.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "often.mp3"
+  },
+  "never": {
+    "file": "en-us-never.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/6/6e/En-us-never.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-never.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "never.mp3"
+  },
+  "friends": {
+    "file": "en-us-friends.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/6/6e/En-us-friends.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-friends.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "No machine-readable author provided. Dvortygirl assumed (based on copyright claims).",
+    "asset": "friends.mp3"
+  },
+  "walk": {
+    "file": "en-uk-walk.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/6/63/En-uk-walk.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-uk-walk.ogg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Adam470",
+    "asset": "walk.mp3"
+  },
+  "work": {
+    "file": "LL-Q1860 (eng)-Vealhurl-work.wav",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/0/01/LL-Q1860_%28eng%29-Vealhurl-work.wav",
+    "page": "https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-work.wav",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Speaker: Vealhurl\nRecorder: Vealhurl",
+    "asset": "work.mp3"
+  },
+  "ball": {
+    "file": "En-us-ball.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/a/a8/En-us-ball.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-ball.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "ball.mp3"
+  },
+  "with": {
+    "file": "en-uk-with.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/0/00/En-uk-with.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-uk-with.ogg",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "author": "Troll Control",
+    "asset": "with.mp3"
+  },
+  "piano": {
+    "file": "LL-Q1860 (eng)-Vealhurl-piano.wav",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/1/1f/LL-Q1860_%28eng%29-Vealhurl-piano.wav",
+    "page": "https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-piano.wav",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Speaker: Vealhurl\nRecorder: Vealhurl",
+    "asset": "piano.mp3"
+  },
+  "picnic": {
+    "file": "LL-Q1860 (eng)-Vealhurl-picnic.wav",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/f/f0/LL-Q1860_%28eng%29-Vealhurl-picnic.wav",
+    "page": "https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-picnic.wav",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Speaker: Vealhurl\nRecorder: Vealhurl",
+    "asset": "picnic.mp3"
+  },
+  "basketball": {
+    "file": "En-us-basketball.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/f/f7/En-us-basketball.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-basketball.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "basketball.mp3"
+  },
+  "swimming": {
+    "file": "en-us-swimming.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/3/30/En-us-swimming.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-swimming.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Neskaya",
+    "asset": "swimming.mp3"
+  },
+  "eats": {
+    "file": "En-au-eats.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/0/02/En-au-eats.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-au-eats.ogg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Commander Keane",
+    "asset": "eats.mp3"
+  },
+  "goes": {
+    "file": "En-us-goes.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/0/02/En-us-goes.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-goes.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "goes.mp3"
+  },
+  "tries": {
+    "file": "en-us-tries.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/0/00/En-us-tries.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-tries.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Neskaya",
+    "asset": "tries.mp3"
+  },
+  "try": {
+    "file": "LL-Q1860 (eng)-Vealhurl-try.wav",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/a/a6/LL-Q1860_%28eng%29-Vealhurl-try.wav",
+    "page": "https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-try.wav",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Speaker: Vealhurl\nRecorder: Vealhurl",
+    "asset": "try.mp3"
+  },
+  "stay": {
+    "file": "en-us-stay.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/0/0a/En-us-stay.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-stay.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "stay.mp3"
+  },
+  "neighbour": {
+    "file": "En-us-neighbour.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/1/19/En-us-neighbour.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-neighbour.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "neighbour.mp3"
+  },
+  "neighbor": {
+    "file": "LL-Q1860 (eng)-Vininn126-neighbor.wav",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/7/78/LL-Q1860_%28eng%29-Vininn126-neighbor.wav",
+    "page": "https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vininn126-neighbor.wav",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Speaker: Vininn126\nRecorder: Vininn126",
+    "asset": "neighbor.mp3"
+  },
+  "heavy": {
+    "file": "en-us-heavy.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/f/fc/En-us-heavy.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-heavy.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "heavy.mp3"
+  },
+  "drink": {
+    "file": "LL-Q1860 (eng)-Naomi Persephone Amethyst (NaomiAmethyst)-drink.wav",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/9/9f/LL-Q1860_%28eng%29-Naomi_Persephone_Amethyst_%28NaomiAmethyst%29-drink.wav",
+    "page": "https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Naomi_Persephone_Amethyst_(NaomiAmethyst)-drink.wav",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Speaker: Naomi Persephone Amethyst\nRecorder: NaomiAmethyst",
+    "asset": "drink.mp3"
+  },
+  "some": {
+    "file": "LL-Q1860 (eng)-Back ache-some.wav",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/6/68/LL-Q1860_%28eng%29-Back_ache-some.wav",
+    "page": "https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Back_ache-some.wav",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Speaker: Back ache\nRecorder: Back ache",
+    "asset": "some.mp3"
+  },
+  "space": {
+    "file": "en-us-space.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/0/04/En-us-space.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-space.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "space.mp3"
+  },
+  "their": {
+    "file": "en-gb-their.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/9/9c/En-gb-their.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-gb-their.ogg",
+    "license": "Public domain",
+    "licenseUrl": "",
+    "author": "SeanCollins and Emily",
+    "asset": "their.mp3"
+  },
+  "too": {
+    "file": "en-us-too.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/b/bf/En-us-too.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-too.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "too.mp3"
+  },
+  "use": {
+    "file": "LL-Q1860 (eng)-Vealhurl-use.wav",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/9/94/LL-Q1860_%28eng%29-Vealhurl-use.wav",
+    "page": "https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-use.wav",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Speaker: Vealhurl\nRecorder: Vealhurl",
+    "asset": "use.mp3"
+  },
+  "letter": {
+    "file": "En-us-letter.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/a/a4/En-us-letter.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-letter.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "letter.mp3"
+  },
+  "advice": {
+    "file": "en-us-advice.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/f/ff/En-us-advice.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-advice.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "advice.mp3"
+  },
+  "important": {
+    "file": "en-us-important.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/9/9e/En-us-important.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-important.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "important.mp3"
+  },
+  "friendly": {
+    "file": "en-us-friendly.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/2/2c/En-us-friendly.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-friendly.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "friendly.mp3"
+  },
+  "then": {
+    "file": "en-us-then.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/a/a5/En-us-then.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-then.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "then.mp3"
+  },
+  "time": {
+    "file": "En-us-time.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/1/1b/En-us-time.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-time.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "time.mp3"
+  },
+  "favourite": {
+    "file": "en-us-favourite.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/3/38/En-us-favourite.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-favourite.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "favourite.mp3"
+  },
+  "favorite": {
+    "file": "LL-Q1860 (eng)-Vealhurl-favorite.wav",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/9/93/LL-Q1860_%28eng%29-Vealhurl-favorite.wav",
+    "page": "https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-favorite.wav",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Speaker: Vealhurl\nRecorder: Vealhurl",
+    "asset": "favorite.mp3"
+  },
+  "classmate": {
+    "file": "LL-Q1860 (eng)-Vealhurl-classmate.wav",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/9/96/LL-Q1860_%28eng%29-Vealhurl-classmate.wav",
+    "page": "https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-classmate.wav",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Speaker: Vealhurl\nRecorder: Vealhurl",
+    "asset": "classmate.mp3"
+  },
+  "close": {
+    "file": "en-us-close-verb.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/a/ab/En-us-close-verb.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-close-verb.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "close.mp3"
+  },
+  "next": {
+    "file": "en-us-next.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/d/d0/En-us-next.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-next.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "next.mp3"
   }
 }

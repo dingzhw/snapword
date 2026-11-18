@@ -94,10 +94,22 @@ const SnapAudio = (() => {
       activeAudio = player;
       player.onended = () => { if (activeAudio === player) activeAudio = null; };
       player.play().catch(() => {
-        if (activeAudio === player && token === seq) {
-          activeAudio = null;
-          speakTTS(info.text, token, onNotice);
+        if (activeAudio !== player || token !== seq) return;
+        // Fallback to local ./audio/<asset> inside unzipped portable folder before TTS
+        if (info.meta?.asset) {
+          const extPlayer = new Audio(`./audio/${info.meta.asset}`);
+          activeAudio = extPlayer;
+          extPlayer.onended = () => { if (activeAudio === extPlayer) activeAudio = null; };
+          extPlayer.play().catch(() => {
+            if (activeAudio === extPlayer && token === seq) {
+              activeAudio = null;
+              speakTTS(info.text, token, onNotice);
+            }
+          });
+          return;
         }
+        activeAudio = null;
+        speakTTS(info.text, token, onNotice);
       });
       return info;
     }

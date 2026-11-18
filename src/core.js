@@ -1,11 +1,13 @@
-/* 词哒 · SnapWord Core Pedagogical & Ledger Engine (v0.1.1)
- * Fixes F01–F06:
- * - F01: Mandatory explicit judgment ('unjudged' never auto-passes); 1/4 denominator (blank in denominator; untested & pending_verify separate); idempotent session records; full provenance.
- * - F02: Tracks hadSpellingHint so hinted items never count as unassisted paper_independent.
- * - F03: Persists local actorMode separately from cross-device backup imports; enforces session-locked actor & three role fields (actor, recordedBy, verifiedBy).
- * - F04: Strict D0-anchored checkpoints (D0+1, D0+3, D0+7 -> stabilized low-freq pool); same-night pass after error stays in review; Gold preserved with recentSlip flag on subsequent error.
- * - F05: Separates textbook_wordlist (exact 24 Unit 6 items: 19 core + 5 starred) vs foundation_bridge; connects textbookCore + classRequirement + sessionActivity without silent truncation; context/variant-aware answer resolution.
- * - F06: Restores selectedPackId, boardNotes, activeDraft; versioned event merge (added / identical / verifiedUpgrades / conflicts) + itemHistory snapshots.
+/* 词哒 · SnapWord Core Pedagogical & Ledger Engine (v0.1.2)
+ * Closes F01–F07 and R01–R08:
+ * - R01: Explicit 3-state draft model ('in_progress' | 'suspended' | null); save never wipes suspended drafts.
+ * - R02: Supports 0-paper pure oral/preread lessons & blocks empty all-deferred starts without fallback mutation.
+ * - R03: Actor-guarded resolvePendingVerify & isolated demo ledger so demo mode NEVER mutates student records.
+ * - R04: Strict spacing gate (dateStr >= nextDueDate) so early daily practice logs cleanly without skipping D0+3/D0+7.
+ * - R05: Pre-answer word-form exposure tracking locks hadSpellingHint when navigating to answers before due submission.
+ * - R06: Conflict resolution strictly obeys keep_local vs prefer_incoming regardless of rev, with itemized diff list.
+ * - R07: Per-item administration snapshot (testedDateStr, promptMode, expectedAnswer, spokenText) decoupled from submit date.
+ * - R08: Full 5-outcome pending verification (including answered_wrong + errorTags) & non-destructive follow-up correction log.
  */
 const SnapCore = (() => {
   const clone = x => JSON.parse(JSON.stringify(x));
@@ -28,10 +30,6 @@ const SnapCore = (() => {
     return dt.toISOString().slice(0, 10);
   }
 
-  function maxISO(a, b) {
-    return a >= b ? a : b;
-  }
-
   function uid(prefix = 'id') {
     const rand = typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID().slice(0, 8)
@@ -43,25 +41,50 @@ const SnapCore = (() => {
     return /[A-Z]/.test(str);
   }
 
-  // Context & class-setting aware target answer resolver (F05)
+  // R07 + F05: Unified per-item target, prompt & spoken text resolver
   function getTargetAnswers(item, options = {}) {
-    const mode = options.promptMode || 'zh_prompt';
+    const mode = options.promptMode || 'audio_plus_zh';
     const allowUS = Boolean(options.allowAmericanSpelling);
+    const variantKey = options.variantKey || null;
 
-    if (mode === 'sentence_context' && item.sentencePrompt?.expected) {
-      const primary = normText(item.sentencePrompt.expected);
+    if (mode === 'sentence_context' && (item.sentenceVariants?.length || item.sentencePrompt)) {
+      const chosenVar = (item.sentenceVariants || []).find(v => v.key === variantKey)
+        || (item.sentenceVariants || [])[0]
+        || item.sentencePrompt;
+      const primary = normText(chosenVar.expected || item.en);
       const list = [primary];
+      if (primary === normText(item.en) && item.acceptedVariants?.length) {
+        list.push(...item.acceptedVariants.map(normText));
+      }
       if (allowUS && item.usVariant && primary === normText(item.en)) {
         list.push(normText(item.usVariant));
       }
-      return { primary, accepted: [...new Set(list)] };
+      return {
+        promptMode: mode,
+        variantKey: chosenVar.key || null,
+        promptZh: chosenVar.zh || item.zh,
+        sentenceTemplate: chosenVar.template || null,
+        primary,
+        accepted: [...new Set(list)],
+        spokenText: primary,
+        displayChunks: chosenVar.chunks || item.displayChunks || primary
+      };
     }
 
     const primary = normText(item.en);
     const list = [primary, ...(item.acceptedVariants || []).map(normText)];
     if (allowUS && item.usVariant) list.push(normText(item.usVariant));
     if (options.allowSelfPronoun && item.selfVariant) list.push(normText(item.selfVariant));
-    return { primary, accepted: [...new Set(list)] };
+    return {
+      promptMode: mode,
+      variantKey: null,
+      promptZh: item.zh,
+      sentenceTemplate: null,
+      primary,
+      accepted: [...new Set(list)],
+      spokenText: primary,
+      displayChunks: item.displayChunks || primary
+    };
   }
 
   function judgeSpelling(item, rawInput, options = {}) {
@@ -83,7 +106,6 @@ const SnapCore = (() => {
       }
     }
 
-    // Check unaccepted American / pronoun variant for clear feedback
     if (item.usVariant && input.toLowerCase() === normText(item.usVariant).toLowerCase()) {
       return { ok: false, kind: 'us_variant_blocked', suggestedTag: 'letter_swap', note: `当前按江苏教材要求英式拼写「${item.en}」` };
     }
@@ -114,6 +136,7 @@ const SnapCore = (() => {
       checkpointIdx: 0, // 0: none/relearn, 1: waiting D0+1, 2: waiting D0+3, 3: waiting D0+7, 4: stabilized
       stabilized: false,
       recentSlip: false,
+      pendingCorrection: false,
       lastPassDate: null,
       lastFailDate: null,
       independentDates: [],
@@ -143,12 +166,13 @@ const SnapCore = (() => {
       },
       actorMode: 'student', // 'student' | 'parent_demo'
       selectedPackId: 'pack-autumn-1',
-      packOverrides: {}, // { [packId]: { [itemId]: 'paper_dictation' | 'oral_only' | 'next_candidate' } }
+      packOverrides: {},
       items: clone(curriculum.ITEMS),
-      itemHistory: [], // Archived snapshots when an item is edited
+      itemHistory: [],
       packs: clone(curriculum.PACKS),
       events: [],
       mastery: {},
+      drafts: { student: null, parent_demo: null },
       activeDraft: null,
       boardNotes: [
         {
@@ -181,7 +205,7 @@ const SnapCore = (() => {
     return outcome;
   }
 
-  // F01 + F04: Strict D0-anchored mastery & slip state machine
+  // F04 + R04 + R08: Strict spacing-gated D0 mastery & follow-up correction state machine
   function applyEventToMastery(m, evt) {
     if (evt.actor !== 'student') return m;
     if (evt.verificationStatus === 'pending' || evt.verificationStatus === 'rejected') {
@@ -191,11 +215,19 @@ const SnapCore = (() => {
     }
 
     const next = m ? clone(m) : emptyMastery();
-    const dateStr = evt.dateStr || todayISO(evt.timestamp);
-    next.lastAt = Math.max(next.lastAt || 0, evt.timestamp || 0);
+    const dateStr = evt.dateStr || todayISO(evt.testedAt ?? evt.timestamp);
+    next.lastAt = Math.max(next.lastAt || 0, evt.testedAt ?? evt.timestamp ?? 0);
 
     for (const tag of (evt.errorTags || [])) {
       next.errorCounts[tag] = (next.errorCounts[tag] || 0) + 1;
+    }
+
+    // R08: Follow-up red-pen correction for an earlier answered_wrong paper attempt
+    if (evt.taskType === 'red_pen_correction') {
+      next.badge = maxBadge(next.badge, 'bronze');
+      next.pendingCorrection = false;
+      // Still requires an unassisted cross-day paper recall!
+      return next;
     }
 
     if (['scaffold_snap', 'scaffold_cloze', 'read_aloud', 'oral_comprehension'].includes(evt.taskType)) {
@@ -215,8 +247,9 @@ const SnapCore = (() => {
     next.lastOutcome = effectiveOutcome;
 
     if (effectiveOutcome === 'paper_independent') {
-      // F04 Critical Rule: If this word ALREADY failed/needed help earlier on the SAME dateStr,
-      // same-night re-writing is consolidation, NOT an unassisted cross-day pass!
+      next.pendingCorrection = false;
+
+      // Same-night pass after failing earlier on the SAME dateStr stays in review
       if (next.lastFailDate === dateStr) {
         next.badge = maxBadge(next.badge, 'bronze');
         next.needsReview = true;
@@ -243,28 +276,35 @@ const SnapCore = (() => {
 
       next.recentSlip = false;
 
+      // Establish fresh D0 if starting new or recovering from review
       if (next.needsReview || !next.anchorD0 || next.checkpointIdx === 0) {
-        // Establish fresh D0 anchor
         next.anchorD0 = dateStr;
-        next.checkpointIdx = 1; // Next check: D0 + 1
+        next.checkpointIdx = 1; // Waiting for D0 + 1
         next.stabilized = false;
         next.needsReview = false;
         next.nextDueDate = addDaysISO(dateStr, 1);
-      } else if (next.checkpointIdx === 1) {
-        // Passed D0 + 1 -> schedule D0 + 3
-        next.checkpointIdx = 2;
+        return next;
+      }
+
+      // R04 Critical Spacing Gate: If already stabilized OR practiced BEFORE scheduled nextDueDate,
+      // keep existing checkpoint & nextDueDate intact (do NOT prematurely finish delayed checks!)
+      if (next.stabilized || (next.nextDueDate && dateStr < next.nextDueDate)) {
+        return next;
+      }
+
+      // Reached or passed scheduled checkpoint date (dateStr >= next.nextDueDate)
+      if (next.checkpointIdx === 1) {
+        next.checkpointIdx = 2; // Waiting for D0 + 3
         next.needsReview = false;
         const target = addDaysISO(next.anchorD0, 3);
         next.nextDueDate = target > dateStr ? target : addDaysISO(dateStr, 2);
       } else if (next.checkpointIdx === 2) {
-        // Passed D0 + 3 -> schedule D0 + 7
-        next.checkpointIdx = 3;
+        next.checkpointIdx = 3; // Waiting for D0 + 7
         next.needsReview = false;
         const target = addDaysISO(next.anchorD0, 7);
         next.nextDueDate = target > dateStr ? target : addDaysISO(dateStr, 4);
       } else {
-        // Passed D0 + 7 -> Graduate to 'stabilized' (exits mandatory daily queue, enters low-freq sampling)
-        next.checkpointIdx = 4;
+        next.checkpointIdx = 4; // Passed D0 + 7 -> Graduated to stabilized low-freq pool
         next.stabilized = true;
         next.needsReview = false;
         next.nextDueDate = null;
@@ -275,6 +315,9 @@ const SnapCore = (() => {
     // Non-independent outcomes: hinted_correct, blind_self_fixed, answer_corrected, answered_wrong, blank
     if (['blind_self_fixed', 'answer_corrected', 'hinted_correct'].includes(effectiveOutcome)) {
       next.badge = maxBadge(next.badge, 'bronze');
+      next.pendingCorrection = false;
+    } else if (effectiveOutcome === 'answered_wrong' || effectiveOutcome === 'blank') {
+      next.pendingCorrection = effectiveOutcome === 'answered_wrong';
     }
 
     if (effectiveOutcome !== 'hinted_correct') {
@@ -288,13 +331,17 @@ const SnapCore = (() => {
     next.checkpointIdx = 0;
     next.stabilized = false;
     next.needsReview = true;
-    next.nextDueDate = maxISO(dateStr, next.nextDueDate ? dateStr : dateStr);
+    next.nextDueDate = addDaysISO(dateStr, 1);
     return next;
   }
 
   function rebuildMastery(state) {
     const mastery = {};
-    const sorted = [...state.events].sort((a, b) => (a.timestamp - b.timestamp) || String(a.id).localeCompare(String(b.id)));
+    const sorted = [...state.events].sort((a, b) => {
+      const ta = a.testedAt ?? a.timestamp ?? 0;
+      const tb = b.testedAt ?? b.timestamp ?? 0;
+      return (ta - tb) || ((a.timestamp || 0) - (b.timestamp || 0)) || String(a.id).localeCompare(String(b.id));
+    });
     for (const evt of sorted) {
       if (evt.actor !== 'student') continue;
       const updated = applyEventToMastery(mastery[evt.itemId], evt);
@@ -304,14 +351,16 @@ const SnapCore = (() => {
     return mastery;
   }
 
+  // R07: Separate testedAt / dateStr (administration date) from submittedAt (submission timestamp)
   function recordEvent(state, payload) {
     if (!payload || !payload.itemId) throw new Error('recordEvent requires itemId');
     if (payload.taskType === 'paper_check' && (!payload.outcome || payload.outcome === 'unjudged')) {
-      return null; // F01: Never write unjudged items
+      return null;
     }
 
-    const now = payload.timestamp ?? Date.now();
-    const dateStr = payload.dateStr ?? todayISO(now);
+    const submittedAt = payload.submittedAt ?? payload.timestamp ?? Date.now();
+    const testedAt = payload.testedAt ?? payload.timestamp ?? submittedAt;
+    const dateStr = payload.dateStr || todayISO(testedAt);
     const actor = payload.actor || 'student';
     const item = state.items.find(x => x.id === payload.itemId);
     const hadSpellingHint = Boolean(payload.hadSpellingHint);
@@ -334,13 +383,17 @@ const SnapCore = (() => {
     const evt = {
       id: deterministicId,
       rev: existingIdx >= 0 ? (state.events[existingIdx].rev || 1) + 1 : (payload.rev || 1),
-      updatedAt: now,
+      updatedAt: submittedAt,
+      submittedAt,
+      testedAt: existingIdx >= 0 ? state.events[existingIdx].testedAt : testedAt,
+      verifiedAt: isPending ? null : (payload.verifiedAt ?? submittedAt),
       sessionId: payload.sessionId || null,
       stageTag: payload.stageTag || null,
-      timestamp: existingIdx >= 0 ? state.events[existingIdx].timestamp : now,
+      linkedEventId: payload.linkedEventId || null,
+      timestamp: existingIdx >= 0 ? state.events[existingIdx].timestamp : testedAt,
       dateStr,
-      isoTime: new Date(now).toISOString(),
-      actor, // 'student' | 'parent_demo'
+      isoTime: new Date(testedAt).toISOString(),
+      actor,
       recordedBy: payload.recordedBy || 'parent',
       verifiedBy,
       verificationStatus,
@@ -348,7 +401,11 @@ const SnapCore = (() => {
       itemVersion: item?.version ?? 1,
       paperRef: payload.paperRef || `${dateStr} #${payload.questionNo || 1}`,
       promptMode: payload.promptMode || 'audio_plus_zh',
+      variantKey: payload.variantKey || null,
+      expectedAnswer: payload.expectedAnswer || item?.en || '',
+      spokenText: payload.spokenText || payload.expectedAnswer || item?.en || '',
       hadSpellingHint,
+      exposureSource: payload.exposureSource || null,
       taskType: payload.taskType,
       outcome: finalOutcome,
       errorTags: Array.isArray(payload.errorTags) ? [...new Set(payload.errorTags)] : [],
@@ -360,29 +417,73 @@ const SnapCore = (() => {
       rebuildMastery(state);
     } else {
       state.events.push(evt);
-      if (actor === 'student') {
-        const updated = applyEventToMastery(state.mastery[evt.itemId], evt);
-        if (updated) state.mastery[evt.itemId] = updated;
-      }
+      rebuildMastery(state);
     }
     return evt;
   }
 
-  function resolvePendingVerify(state, eventId, finalOutcome, errorTags = [], note = '') {
+  // R03 + R08: Strict actor-isolated pending verification + full 5 outcomes + errorTags
+  function resolvePendingVerify(state, eventId, finalOutcome, errorTags = [], note = '', options = {}) {
     const evt = state.events.find(e => e.id === eventId);
     if (!evt || !VERIFIED_DENOMINATOR_OUTCOMES.has(finalOutcome)) return null;
+
+    // R03 Hard Guard: Never allow parent_demo mode to mutate a student event (or vice versa)!
+    const activeActor = options.actorMode ?? state.actorMode ?? 'student';
+    if (evt.actor !== activeActor) {
+      return { blocked: true, reason: 'ACTOR_MODE_MISMATCH' };
+    }
+
+    // Idempotent guard: only verify pending events once unless explicit override
+    if (evt.verificationStatus === 'verified' && !options.allowReverify) {
+      return evt;
+    }
+
+    const now = options.verifiedAt ?? Date.now();
     evt.outcome = normalizePaperOutcome(finalOutcome, evt.hadSpellingHint);
     evt.errorTags = Array.isArray(errorTags) ? [...new Set(errorTags)] : [];
     evt.verificationStatus = 'verified';
-    evt.verifiedBy = 'parent';
+    evt.verifiedBy = activeActor === 'parent_demo' ? 'demo' : 'parent';
+    evt.verifiedAt = now;
     evt.rev = (evt.rev || 1) + 1;
-    evt.updatedAt = Date.now();
+    evt.updatedAt = now;
     if (note) evt.note = String(note).slice(0, 300);
-    rebuildMastery(state);
+
+    if (activeActor === 'student') {
+      rebuildMastery(state);
+    }
     return evt;
   }
 
-  // F01: Exact batch tally helper (used by both session settlement and ledger)
+  // R08: Append follow-up correction without overwriting original answered_wrong first-attempt record
+  function recordFollowUpCorrection(state, originalEventId, note = '', options = {}) {
+    const orig = state.events.find(e => e.id === originalEventId);
+    if (!orig) return null;
+    const activeActor = options.actorMode ?? state.actorMode ?? 'student';
+    if (orig.actor !== activeActor) {
+      return { blocked: true, reason: 'ACTOR_MODE_MISMATCH' };
+    }
+    const existingCorr = state.events.find(e => e.taskType === 'red_pen_correction' && e.linkedEventId === originalEventId);
+    if (existingCorr) return existingCorr;
+
+    const now = options.timestamp ?? Date.now();
+    return recordEvent(state, {
+      id: `corr_${originalEventId}`,
+      linkedEventId: originalEventId,
+      actor: orig.actor,
+      recordedBy: 'parent',
+      verifiedBy: orig.actor === 'parent_demo' ? 'demo' : 'parent',
+      itemId: orig.itemId,
+      paperRef: orig.paperRef,
+      promptMode: orig.promptMode,
+      testedAt: now,
+      submittedAt: now,
+      dateStr: options.dateStr || todayISO(now),
+      taskType: 'red_pen_correction',
+      outcome: 'corrected_followup',
+      note: note || `已完成对 ${orig.paperRef}（原首答错）的红笔订正`
+    });
+  }
+
   function summarizePaperEvents(events) {
     let independent = 0;
     let hintedCorrect = 0;
@@ -426,7 +527,6 @@ const SnapCore = (() => {
     };
   }
 
-  // F04: Due queue (priority 1: needsReview / recentSlip; priority 2: D0+1/3/7 due; separate lowFreqPool for stabilized)
   function getDueQueue(state, dateStr = todayISO(), limit = 3) {
     const candidates = [];
     const lowFreqPool = [];
@@ -441,7 +541,7 @@ const SnapCore = (() => {
       if (m.needsReview) {
         const reason = m.recentSlip
           ? '最近失手，下次课优先复测'
-          : '上次订正/含提示/留白，优先独立复测';
+          : (m.pendingCorrection ? '上次已答仍错（待补订正并复测）' : '上次订正/含提示/留白，优先独立复测');
         candidates.push({ item, m, priority: 1, reason });
       } else if (m.nextDueDate && m.nextDueDate <= dateStr) {
         const label = m.checkpointIdx === 1 ? `D+1 隔日抽查（D0=${m.anchorD0}）`
@@ -465,26 +565,28 @@ const SnapCore = (() => {
     };
   }
 
-  function getStatsSummary(state) {
+  function getStatsSummary(state, targetActor = 'student') {
     let bronze = 0, silver = 0, gold = 0, goldSlip = 0, stabilizedCount = 0;
-    for (const item of state.items) {
-      const m = state.mastery[item.id];
-      const b = m?.badge || 'none';
-      if (b === 'bronze') bronze++;
-      else if (b === 'silver') silver++;
-      else if (b === 'gold') {
-        gold++;
-        if (m?.recentSlip) goldSlip++;
+    if (targetActor === 'student') {
+      for (const item of state.items) {
+        const m = state.mastery[item.id];
+        const b = m?.badge || 'none';
+        if (b === 'bronze') bronze++;
+        else if (b === 'silver') silver++;
+        else if (b === 'gold') {
+          gold++;
+          if (m?.recentSlip) goldSlip++;
+        }
+        if (m?.stabilized) stabilizedCount++;
       }
-      if (m?.stabilized) stabilizedCount++;
     }
 
-    const studentPaperEvents = state.events.filter(e => e.actor === 'student' && e.taskType === 'paper_check');
-    const paperBreakdown = summarizePaperEvents(studentPaperEvents);
+    const actorPaperEvents = state.events.filter(e => e.actor === targetActor && e.taskType === 'paper_check');
+    const paperBreakdown = summarizePaperEvents(actorPaperEvents);
 
     const errorTotals = {};
     for (const e of state.events) {
-      if (e.actor !== 'student' || e.verificationStatus === 'pending') continue;
+      if (e.actor !== targetActor || e.verificationStatus === 'pending') continue;
       for (const t of (e.errorTags || [])) {
         errorTotals[t] = (errorTotals[t] || 0) + 1;
       }
@@ -499,6 +601,7 @@ const SnapCore = (() => {
       totalBadges: bronze + silver + gold,
       paperTestedCount: paperBreakdown.denominator,
       independentPass: paperBreakdown.independent,
+      answeredWrongCount: paperBreakdown.answeredWrong,
       blankCount: paperBreakdown.blank,
       untestedCount: paperBreakdown.untested,
       pendingVerifyCount: paperBreakdown.pendingVerify,
@@ -507,21 +610,20 @@ const SnapCore = (() => {
     };
   }
 
-  // F05: Derive default session activity from classRequirement + textbookCore + packOverrides
   function defaultActivityForItem(item, packOverride) {
     if (packOverride) return packOverride;
     if (item.classRequirement === 'dictation_verified') return 'paper_dictation';
     if (item.classRequirement === 'read_meaning_use') return 'oral_only';
-    // 'unverified_family': default core/custom/bridge words selected in a pack to practice dictation, starred to oral
     return item.textbookCore === false && item.sourceScope === 'textbook_wordlist'
       ? 'oral_only'
       : 'paper_dictation';
   }
 
+  // R02 + F05: Exact allocation without forced fallback to paper items
   function planPackAllocation(state, packId, itemIds, options = {}) {
     const totalPaperCap = options.totalPaperCap ?? 5;
     const dueIds = options.dueIds || [];
-    const remainingPaperSlots = Math.max(1, totalPaperCap - dueIds.length);
+    const remainingPaperSlots = Math.max(0, totalPaperCap - dueIds.length);
     const overrides = state.packOverrides?.[packId] || {};
 
     const paperNowIds = [];
@@ -551,11 +653,11 @@ const SnapCore = (() => {
       paperNowIds,
       oralOnlyIds,
       deferredIds,
-      combinedPaperIds: [...dueIds, ...paperNowIds]
+      combinedPaperIds: [...dueIds, ...paperNowIds],
+      hasAnyActiveTask: (dueIds.length + paperNowIds.length + oralOnlyIds.length) > 0
     };
   }
 
-  // Update item with version archive (F06)
   function updateCurriculumItem(state, itemId, patch) {
     const idx = state.items.findIndex(x => x.id === itemId);
     if (idx < 0) return null;
@@ -669,7 +771,6 @@ const SnapCore = (() => {
       (a.note || '') === (b.note || '');
   }
 
-  // F03 + F06: Restore local machine snapshot (preserves actorMode, selectedPackId, activeDraft, boardNotes!)
   function restoreLocalState(curriculum, saved) {
     const base = freshState(curriculum);
     if (!saved || saved.app !== 'snapword') return base;
@@ -688,15 +789,19 @@ const SnapCore = (() => {
     if (saved.audioCheckLog) {
       merged.audioCheckLog = clone(saved.audioCheckLog);
     }
-    if (saved.activeDraft && saved.activeDraft.lockedActor === merged.actorMode) {
-      merged.activeDraft = clone(saved.activeDraft);
-    } else {
-      merged.activeDraft = null;
+    merged.drafts = { student: null, parent_demo: null };
+    if (saved.drafts && typeof saved.drafts === 'object') {
+      if (saved.drafts.student) merged.drafts.student = clone(saved.drafts.student);
+      if (saved.drafts.parent_demo) merged.drafts.parent_demo = clone(saved.drafts.parent_demo);
     }
+    if (saved.activeDraft && saved.activeDraft.lockedActor) {
+      merged.drafts[saved.activeDraft.lockedActor] = clone(saved.activeDraft);
+    }
+    merged.activeDraft = merged.drafts[merged.actorMode] ? clone(merged.drafts[merged.actorMode]) : null;
     return merged;
   }
 
-  // F06: Detailed 4-way diff preview for SnapWord backups + Legacy isolation
+  // R06: Itemized diff & strict conflict classification
   function inspectBackupJSON(rawObj, currentState) {
     if (!rawObj || typeof rawObj !== 'object') throw new Error('不是有效的 JSON 备份文件');
 
@@ -705,22 +810,42 @@ const SnapCore = (() => {
         throw new Error('词哒备份结构不完整');
       }
       const localMap = new Map(currentState.events.map(e => [e.id, e]));
+      const itemLookup = new Map([...currentState.items, ...rawObj.items].map(it => [it.id, it]));
       const studentEvents = rawObj.events.filter(e => e.actor === 'student');
       const demoEvents = rawObj.events.filter(e => e.actor !== 'student');
 
-      let added = 0, identical = 0, verifiedUpgrades = 0, conflicts = 0;
+      let added = 0, identical = 0;
+      const upgradeDetails = [];
+      const conflictDetails = [];
+
       for (const inc of studentEvents) {
         const loc = localMap.get(inc.id);
+        const label = itemLookup.get(inc.itemId)?.zh || inc.itemId;
         if (!loc) {
           added++;
         } else if (eventContentEqual(loc, inc)) {
           identical++;
         } else if (loc.verificationStatus === 'pending' && inc.verificationStatus === 'verified') {
-          verifiedUpgrades++;
+          upgradeDetails.push({
+            id: inc.id,
+            itemId: inc.itemId,
+            label,
+            dateStr: inc.dateStr || loc.dateStr,
+            toOutcome: inc.outcome
+          });
         } else if (inc.verificationStatus === 'pending' && loc.verificationStatus === 'verified') {
-          identical++; // Local is already verified; keep local without conflict
+          identical++;
         } else {
-          conflicts++;
+          conflictDetails.push({
+            id: inc.id,
+            itemId: inc.itemId,
+            label,
+            dateStr: loc.dateStr || inc.dateStr,
+            localOutcome: loc.outcome,
+            localRev: loc.rev || 1,
+            incomingOutcome: inc.outcome,
+            incomingRev: inc.rev || 1
+          });
         }
       }
 
@@ -732,8 +857,10 @@ const SnapCore = (() => {
         demoEventCount: demoEvents.length,
         added,
         identical,
-        verifiedUpgrades,
-        conflicts,
+        verifiedUpgrades: upgradeDetails.length,
+        conflicts: conflictDetails.length,
+        upgradeDetails,
+        conflictDetails,
         payload: rawObj
       };
     }
@@ -751,12 +878,12 @@ const SnapCore = (() => {
     throw new Error('无法识别的备份格式（仅支持词哒 SnapWord 或旧版词汇撤离 JSON）');
   }
 
-  // F03 + F06: Cross-device backup merge (NEVER overwrites local actorMode!)
+  // R06: Strict obedience to conflictPolicy ('keep_local' vs 'prefer_incoming') regardless of rev!
   function mergeSnapwordBackup(currentState, backupObj, options = {}) {
     const includeDemo = Boolean(options.includeDemo);
     const conflictPolicy = options.conflictPolicy || 'prefer_incoming'; // 'prefer_incoming' | 'keep_local'
     const next = clone(currentState);
-    const preservedActorMode = next.actorMode; // F03: Keep local machine's selected role!
+    const preservedActorMode = next.actorMode;
 
     if (backupObj.profile?.nickname) next.profile.nickname = String(backupObj.profile.nickname).slice(0, 24);
     if (Number.isFinite(backupObj.profile?.budgetMinutes)) next.profile.budgetMinutes = backupObj.profile.budgetMinutes;
@@ -767,7 +894,6 @@ const SnapCore = (() => {
       next.packOverrides = { ...next.packOverrides, ...backupObj.packOverrides };
     }
 
-    // Merge itemHistory
     const histKey = h => `${h.id}@v${h.version}`;
     const histMap = new Map((next.itemHistory || []).map(h => [histKey(h), h]));
     for (const h of (backupObj.itemHistory || [])) {
@@ -775,7 +901,6 @@ const SnapCore = (() => {
     }
     next.itemHistory = [...histMap.values()];
 
-    // Merge items (preserve user classRequirement edits and higher versions)
     const itemMap = new Map(next.items.map(it => [it.id, it]));
     for (const it of backupObj.items) {
       if (!it?.id || !it?.en) continue;
@@ -783,7 +908,6 @@ const SnapCore = (() => {
       if (!existing) {
         itemMap.set(it.id, it);
       } else if ((it.version || 1) > (existing.version || 1)) {
-        // Archive older version if not yet archived
         if (!histMap.has(histKey(existing))) {
           next.itemHistory.push({
             id: existing.id,
@@ -801,14 +925,12 @@ const SnapCore = (() => {
     }
     next.items = [...itemMap.values()];
 
-    // Merge packs
     const packMap = new Map(next.packs.map(p => [p.id, p]));
     for (const p of backupObj.packs) {
       if (p?.id && Array.isArray(p.itemIds)) packMap.set(p.id, p);
     }
     next.packs = [...packMap.values()];
 
-    // Merge boardNotes (F06 fix!)
     if (Array.isArray(backupObj.boardNotes)) {
       const noteMap = new Map((next.boardNotes || []).map(n => [n.id, n]));
       for (const n of backupObj.boardNotes) {
@@ -817,7 +939,6 @@ const SnapCore = (() => {
       next.boardNotes = [...noteMap.values()].sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 30);
     }
 
-    // Merge events with pending -> verified upgrade & conflict policy (F06 fix!)
     const eventMap = new Map(next.events.map(e => [e.id, e]));
     for (const inc of backupObj.events) {
       if (!inc?.id || !inc?.itemId) continue;
@@ -828,17 +949,23 @@ const SnapCore = (() => {
       } else if (eventContentEqual(loc, inc)) {
         continue;
       } else if (loc.verificationStatus === 'pending' && inc.verificationStatus === 'verified') {
-        // Always upgrade pending -> verified!
+        // Pending -> Verified upgrade
         eventMap.set(inc.id, { ...inc, rev: Math.max((loc.rev || 1) + 1, inc.rev || 2) });
       } else if (inc.verificationStatus === 'pending' && loc.verificationStatus === 'verified') {
-        continue; // Keep local verified
-      } else if ((inc.rev || 1) > (loc.rev || 1)) {
-        eventMap.set(inc.id, inc);
-      } else if ((inc.rev || 1) === (loc.rev || 1) && conflictPolicy === 'prefer_incoming') {
-        eventMap.set(inc.id, inc);
+        continue;
+      } else {
+        // R06: True verified conflict -> strictly obey user's conflictPolicy regardless of rev!
+        if (conflictPolicy === 'prefer_incoming') {
+          eventMap.set(inc.id, { ...inc, rev: Math.max(loc.rev || 1, inc.rev || 1) });
+        }
+        // When conflictPolicy === 'keep_local', keep `loc` untouched!
       }
     }
-    next.events = [...eventMap.values()].sort((a, b) => (a.timestamp - b.timestamp) || String(a.id).localeCompare(String(b.id)));
+    next.events = [...eventMap.values()].sort((a, b) => {
+      const ta = a.testedAt ?? a.timestamp ?? 0;
+      const tb = b.testedAt ?? b.timestamp ?? 0;
+      return (ta - tb) || ((a.timestamp || 0) - (b.timestamp || 0)) || String(a.id).localeCompare(String(b.id));
+    });
 
     if (backupObj.recordings && typeof backupObj.recordings === 'object') {
       next.recordings = { ...next.recordings, ...backupObj.recordings };
@@ -878,7 +1005,6 @@ const SnapCore = (() => {
       }
     });
 
-    // Store legacy typing events separately in legacyTypingArchive (never mixed into paper events)
     next.legacyTypingArchive = next.legacyTypingArchive || [];
     const seenArch = new Set(next.legacyTypingArchive.map(x => x.id));
     for (const ev of (legacyObj.events || [])) {
@@ -917,6 +1043,7 @@ const SnapCore = (() => {
     rebuildMastery,
     recordEvent,
     resolvePendingVerify,
+    recordFollowUpCorrection,
     summarizePaperEvents,
     getDueQueue,
     getStatsSummary,

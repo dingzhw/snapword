@@ -1,4 +1,4 @@
-/* 词哒 · SnapWord Built-in Curriculum & Fun Gadget Decks (v0.1.1)
+/* 词哒 · SnapWord Built-in Curriculum & Fun Gadget Decks (v0.1.2)
  * Textbook alignment: 2026 Autumn Jiangsu Grade 5 Volume 1 (Units 5 & 6 verified against print p.58–81, p.111–113).
  * Unit 6 official wordlist strictly contains 24 items (19 core unstarred + 5 starred non-core).
  * Foundation review items use sourceScope: 'foundation_bridge' so unit counts stay 100% faithful to print textbook.
@@ -363,6 +363,10 @@ const SNAPWORD_CURRICULUM = (() => {
       snap: { pieces: ['on', '␣', "one's", '␣', 'way', '␣', 'back'], decoys: [{ text: 'in', tip: '🛣️ 在路上介词用 on 哦！' }] },
       cloze: { prefix: 'on their ', blank: 'way back', suffix: '', hint: '回去的路：w-a-y 空格 b-a-c-k' },
       sentencePrompt: { template: 'Bobby, Sam and Billy are ______.', zh: 'Bobby、Sam 和 Billy 在他们回去的路上。', expected: 'on their way back' },
+      sentenceVariants: [
+        { key: 'their', label: '第三人称复数 (their)', template: 'Bobby, Sam and Billy are ______.', zh: 'Bobby、Sam 和 Billy 在他们回去的路上。', expected: 'on their way back', chunks: 'on ␣ their ␣ way ␣ back' },
+        { key: 'my', label: '第一人称 (my)', template: 'I meet my friend ______.', zh: '我在我回去的路上遇到了朋友。', expected: 'on my way back', chunks: 'on ␣ my ␣ way ␣ back' }
+      ],
       context: { en: 'Bobby, Sam and Billy are on their way back.', zh: 'Bobby、Sam 和 Billy 在他们回去的路上。', origin: '教材五上 U6 p.73' }
     },
 
@@ -547,7 +551,11 @@ const SNAPWORD_CURRICULUM = (() => {
       bridgeNote: '锁死后半截：home + work（不是 walk）！',
       snap: { pieces: ['do', '␣', 'your', '␣', 'homework'], decoys: [{ text: 'homewalk', tip: '🚶 又抓到一只伪装虫！做作业是 home-work，不是 walk！' }] },
       cloze: { prefix: 'do your home', blank: 'work', suffix: '', hint: '工作/作业 w-o-r-k' },
-      sentencePrompt: { template: 'I usually ______ before dinner.', zh: '我通常在晚饭前做（我的）家庭作业。', expected: 'do my homework' },
+      sentencePrompt: { template: 'I usually ______ before dinner.', zh: '我通常在晚饭前做我的家庭作业。', expected: 'do my homework' },
+      sentenceVariants: [
+        { key: 'my', label: '第一人称语境 (do my homework)', template: 'I usually ______ before dinner.', zh: '我通常在晚饭前做我的家庭作业。', expected: 'do my homework', chunks: 'do ␣ my ␣ home·work' },
+        { key: 'your', label: '第二人称语境 (do your homework)', template: 'At that time, you ______.', zh: '在那个时候，你在做你的家庭作业。', expected: 'do your homework', chunks: 'do ␣ your ␣ home·work' }
+      ],
       context: { en: 'At that time, you do your homework.', zh: '在那个时候，你在做家庭作业。', origin: '改编自教材五上 U6 p.79' }
     },
     {

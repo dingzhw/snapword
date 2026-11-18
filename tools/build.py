@@ -72,7 +72,7 @@ def main():
 
     sha = hashlib.sha256(portable_file.read_bytes()).hexdigest()
     size_kb = portable_file.stat().st_size / 1024
-    print(f"Built {portable_file.name} ({size_kb:.1f} KB) | SHA256: {sha[:16]}...")
+    print(f"Built {portable_file.name} ({size_kb:.1f} KB) | SHA256: {sha}")
 
 
 if __name__ == "__main__":

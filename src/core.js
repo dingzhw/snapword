@@ -1,10 +1,7 @@
-/* 词哒 · SnapWord Core Pedagogical & Ledger Engine (v0.1.3)
- * Closes F01–F07, R01–R08, and Round-3 findings N01–N05:
- * - N01: Unified actor-mode switching across topbar & ledger so activeSession, drafts & UI banners never split.
- * - N02: Answer-exposure tracking & clean separation of backfilling original paper date vs launching blind retest.
- * - N03: Event-level uncorrected wrong tracking (per eventId <-> linkedEventId) so multi-error items stay visible.
- * - N04: Explicit unchecked initial state for pure oral wrap-up with optional batch confirm & unconfirmed summary.
- * - N05: Two-slot draft preview & conflict-aware restoration during JSON backup import.
+/* 词哒 · SnapWord Core Pedagogical & Ledger Engine (v0.1.4)
+ * Closes F01–F07, R01–R08, N01–N05, and Round-4 findings Q01–Q02:
+ * - Q01: Strict separation of pre-attempt hadSpellingHint vs post-attempt answerRevealedDuringGrading when archiving sibling items.
+ * - Q02: Canonical deep draft equality covering itemContexts, hintedOnPaper, lockedHint, answerRevealed, exposureSources, dates & item lists.
  */
 const SnapCore = (() => {
   const clone = x => JSON.parse(JSON.stringify(x));
@@ -120,6 +117,13 @@ const SnapCore = (() => {
     for (const t of accepted) {
       if (t.includes(' ') && inputNoSpace === t.toLowerCase().replace(/\s+/g, '')) {
         return { ok: false, kind: 'space_missing', suggestedTag: 'space_missing' };
+      }
+    }
+
+    const stripPunct = s => s.replace(/[.?!,'"]/g, '').trim();
+    for (const t of accepted) {
+      if (stripPunct(input) === stripPunct(t) && stripPunct(t).length > 0) {
+        return { ok: false, kind: 'boundary_punct', suggestedTag: 'boundary_punct', note: '单词与大小写都对啦，请检查是否漏了撇号或句末标点符号！' };
       }
     }
 
@@ -433,6 +437,7 @@ const SnapCore = (() => {
       expectedAnswer: payload.expectedAnswer || item?.en || '',
       spokenText: payload.spokenText || payload.expectedAnswer || item?.en || '',
       hadSpellingHint,
+      answerRevealedDuringGrading: Boolean(payload.answerRevealedDuringGrading),
       exposureSource: payload.exposureSource || null,
       taskType: payload.taskType,
       outcome: finalOutcome,
@@ -717,12 +722,23 @@ const SnapCore = (() => {
   function suggestItemFromPair(enRaw, zhRaw, index = 0) {
     const en = normText(enRaw);
     const zh = normText(zhRaw);
-    const isPhrase = en.includes(' ');
+    const words = en.split(' ').filter(Boolean);
+    const isSentence = /[.?!]$/.test(en) || words.length >= 5;
+    const isPhrase = !isSentence && words.length > 1;
     let pieces = [];
     let cloze = null;
 
-    if (isPhrase) {
-      const words = en.split(' ');
+    if (isSentence) {
+      // Group sentence into 3–5 natural sense-group chunks (2–3 words each) for low-frustration magnetic building
+      const targetGroupSize = words.length <= 4 ? 1 : (words.length <= 8 ? 2 : 3);
+      for (let i = 0; i < words.length; i += targetGroupSize) {
+        pieces.push(words.slice(i, i + targetGroupSize).join(' '));
+      }
+      const midIdx = Math.min(words.length - 1, Math.max(1, Math.floor(words.length / 2)));
+      const prefix = words.slice(0, midIdx).join(' ') + ' ';
+      const suffix = midIdx + 1 < words.length ? ' ' + words.slice(midIdx + 1).join(' ') : '';
+      cloze = { prefix, blank: words[midIdx].replace(/[.?!]$/, ''), suffix: (/[.?!]$/.test(words[midIdx]) ? words[midIdx].slice(-1) : '') + suffix, hint: '补全句中关键单词' };
+    } else if (isPhrase) {
       words.forEach((w, idx) => {
         if (idx > 0) pieces.push('␣');
         pieces.push(w);
@@ -742,9 +758,11 @@ const SnapCore = (() => {
 
     const decoys = [];
     if (hasRequiredCapital(en[0])) {
-      decoys.push({ text: pieces[0].toLowerCase(), tip: '🎩 这个词开头需要首字母大写哦！' });
+      decoys.push({ text: pieces[0].toLowerCase(), tip: '🎩 开头第一个字母需要戴大写礼帽哦！' });
     }
-    if (isPhrase) {
+    if (isSentence && /[.?!]$/.test(pieces[pieces.length - 1])) {
+      decoys.push({ text: pieces[pieces.length - 1].replace(/[.?!]$/, ''), tip: '🔴 整句默写别漏掉句末的标点符号哦！' });
+    } else if (isPhrase) {
       decoys.push({ text: en.replace(/\s+/g, ''), tip: '✂️ 词与词之间记得留出空格 ␣ 哦！' });
     }
 
@@ -756,14 +774,14 @@ const SnapCore = (() => {
       bookPage: null,
       textbookCore: false,
       classRequirement: 'unverified_family',
-      type: isPhrase ? 'phrase' : 'word',
+      type: isSentence ? 'sentence' : (isPhrase ? 'phrase' : 'word'),
       en,
       acceptedVariants: [],
       zh,
-      helpKind: isPhrase ? 'word_boundary' : 'spelling_focus',
-      displayChunks: isPhrase ? en.replace(/\s+/g, ' ␣ ') : pieces.join(' ｜ '),
-      helpNote: isPhrase ? '先整句听读，注意词间留空。' : '先整词听读，留意分段拼写难点。',
-      bridgeNote: '家庭试排练习词条（可在词库标注本班要求）。',
+      helpKind: isSentence ? 'sentence_grammar' : (isPhrase ? 'word_boundary' : 'spelling_focus'),
+      displayChunks: isSentence ? pieces.join(' ｜ ') : (isPhrase ? en.replace(/\s+/g, ' ␣ ') : pieces.join(' ｜ ')),
+      helpNote: isSentence ? '先整句听读顺畅，写完重点查句首大写、动词变化、词间空格与句末标点。' : (isPhrase ? '先整句听读，注意词间留空。' : '先整词听读，留意分段拼写难点。'),
+      bridgeNote: '家庭试排练习词句（可在词库标注本班要求）。',
       snap: { pieces, decoys },
       cloze,
       sentencePrompt: { template: `Please write: ______ (${zh})`, zh, expected: en },
@@ -818,20 +836,90 @@ const SnapCore = (() => {
     return slots;
   }
 
+  function cleanBoolMap(obj) {
+    const out = {};
+    if (!obj || typeof obj !== 'object') return out;
+    for (const [k, v] of Object.entries(obj)) {
+      if (v) out[k] = true;
+    }
+    return out;
+  }
+
+  function cleanStrMap(obj) {
+    const out = {};
+    if (!obj || typeof obj !== 'object') return out;
+    for (const [k, v] of Object.entries(obj)) {
+      if (v != null && v !== '') out[k] = String(v);
+    }
+    return out;
+  }
+
+  function stableStringify(val) {
+    if (val === null || typeof val !== 'object') return JSON.stringify(val);
+    if (Array.isArray(val)) return '[' + val.map(stableStringify).join(',') + ']';
+    const keys = Object.keys(val).filter(k => val[k] !== undefined).sort();
+    return '{' + keys.map(k => JSON.stringify(k) + ':' + stableStringify(val[k])).join(',') + '}';
+  }
+
+  function draftCanonicalProjection(d) {
+    return {
+      sessionId: d.sessionId || null,
+      lockedActor: d.lockedActor || 'student',
+      mode: d.mode || 'standard',
+      packId: d.packId || null,
+      packTitle: d.packTitle || '',
+      step: d.step || '',
+      paperPhase: d.paperPhase || '',
+      oralPhase: d.oralPhase || 'active',
+      promptMode: d.promptMode || 'audio_plus_zh',
+      duePrewritten: Boolean(d.duePrewritten),
+      dueIds: Array.isArray(d.dueIds) ? d.dueIds : [],
+      paperNowIds: Array.isArray(d.paperNowIds) ? d.paperNowIds : [],
+      oralOnlyIds: Array.isArray(d.oralOnlyIds) ? d.oralOnlyIds : [],
+      deferredIds: Array.isArray(d.deferredIds) ? d.deferredIds : [],
+      focusIds: Array.isArray(d.focusIds) ? d.focusIds : [],
+      paperIds: Array.isArray(d.paperIds) ? d.paperIds : [],
+      itemContexts: d.itemContexts || {},
+      hintedOnPaper: cleanBoolMap(d.hintedOnPaper),
+      showChunkHint: cleanBoolMap(d.showChunkHint),
+      lockedHint: cleanBoolMap(d.lockedHint),
+      answerRevealed: cleanBoolMap(d.answerRevealed),
+      exposureSources: cleanStrMap(d.exposureSources),
+      maskedAnswers: cleanBoolMap(d.maskedAnswers),
+      blindChecks: {
+        cap: Boolean(d.blindChecks?.cap),
+        space: Boolean(d.blindChecks?.space),
+        chunk: Boolean(d.blindChecks?.chunk)
+      },
+      paperGrades: d.paperGrades || {},
+      oralChecked: cleanBoolMap(d.oralChecked),
+      prereadDone: Boolean(d.prereadDone),
+      prereadNote: String(d.prereadNote || ''),
+      sentenceNote: String(d.sentenceNote || '')
+    };
+  }
+
+  // Q02: Deep canonical comparison across all administration, context, hint, exposure, date & item-list fields!
   function draftSlotEqual(a, b) {
     if (!a && !b) return true;
     if (!a || !b) return false;
-    return a.sessionId === b.sessionId &&
-      a.step === b.step &&
-      a.paperPhase === b.paperPhase &&
-      JSON.stringify(a.paperGrades || {}) === JSON.stringify(b.paperGrades || {}) &&
-      JSON.stringify(a.oralChecked || {}) === JSON.stringify(b.oralChecked || {});
+    return stableStringify(draftCanonicalProjection(a)) === stableStringify(draftCanonicalProjection(b));
   }
 
   function summarizeDraft(d) {
     if (!d) return null;
     const gradedCount = Object.values(d.paperGrades || {}).filter(g => g?.outcome && g.outcome !== 'unjudged').length;
     const oralCount = Object.values(d.oralChecked || {}).filter(Boolean).length;
+    const hintedCount = Object.keys(cleanBoolMap(d.hintedOnPaper)).length;
+    const revealedCount = Object.keys(cleanBoolMap(d.answerRevealed)).length;
+    const modes = [...new Set([
+      ...Object.values(d.itemContexts || {}).map(c => c?.promptMode).filter(Boolean),
+      d.promptMode
+    ].filter(Boolean))];
+    const dates = [...new Set([
+      ...Object.values(d.paperGrades || {}).map(g => g?.testedDateStr).filter(Boolean),
+      ...Object.values(d.itemContexts || {}).map(c => c?.testedDateStr).filter(Boolean)
+    ])];
     return {
       sessionId: d.sessionId || null,
       lockedActor: d.lockedActor || 'student',
@@ -841,7 +929,11 @@ const SnapCore = (() => {
       savedAt: d.savedAt || d.startedAt || 0,
       paperCount: Array.isArray(d.paperIds) ? d.paperIds.length : 0,
       gradedCount,
-      oralCount
+      oralCount,
+      hintedCount,
+      revealedCount,
+      modes,
+      dates
     };
   }
 

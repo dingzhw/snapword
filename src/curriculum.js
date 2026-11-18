@@ -1,4 +1,4 @@
-/* 词哒 · SnapWord Built-in Curriculum & Fun Gadget Decks (v0.1.3)
+/* 词哒 · SnapWord Built-in Curriculum & Fun Gadget Decks (v0.1.4)
  * Textbook alignment: 2026 Autumn Jiangsu Grade 5 Volume 1 (Units 5 & 6 verified against print p.58–81, p.111–113).
  * Unit 6 official wordlist strictly contains 24 items (19 core unstarred + 5 starred non-core).
  * Foundation review items use sourceScope: 'foundation_bridge' so unit counts stay 100% faithful to print textbook.
@@ -569,6 +569,124 @@ const SNAPWORD_CURRICULUM = (() => {
       cloze: { prefix: 'class', blank: 'mate', suffix: '', hint: '班级 class + 伙伴 m-a-t-e' },
       sentencePrompt: { template: 'My ______ shares books with me.', zh: '我的同班同学和我分享书本。', expected: 'classmate' },
       context: { en: 'Your classmate uses your favourite pen.', zh: '你的同班同学用了你特别喜爱的钢笔。', origin: '教材五上 U6 p.79' }
+    },
+
+    // ==================== Unit 5 Key Dictation Sentences 01–06 (Cartoon time p.60–61, sourceScope: 'textbook_sentence') ====================
+    {
+      id: 'u5_sent_01', version: 1, unit: 5, sourceScope: 'textbook_sentence', bookPage: 60,
+      textbookCore: true, classRequirement: 'dictation_verified',
+      type: 'sentence', en: 'He always watches TV and eats a lot at weekends.', acceptedVariants: [],
+      zh: '01 · 他总是在周末看电视，还吃很多。',
+      helpKind: 'sentence_grammar', displayChunks: 'He always ｜ watches TV ｜ and eats ｜ a lot ｜ at weekends.',
+      helpNote: '抓牢5处得分点：①句首大写 He；②always 仅一个 l；③He 管两个动作，都要变三单 watches (+es) 与 eats (+s)，TV 全大写；④“很多”分写成两词 a lot；⑤“在周末” at weekends 带 s 加句号 .。',
+      bridgeNote: '并联三单口诀：主语是 He，and 前后 watches 和 eats 小尾巴齐步走！',
+      snap: {
+        pieces: ['He always', 'watches TV', 'and eats', 'a lot', 'at weekends.'],
+        decoys: [
+          { text: 'watch TV', tip: '📺 主语是单数 He，watch 以 ch 结尾要加 -es：watches TV！' },
+          { text: 'and eat', tip: '🍔 and 后面的吃也是 He 做的，eat 也要加 -s 变成 eats！' },
+          { text: 'alot', tip: '✂️ “很多”是两个独立的词 a lot，中间记得留空格！' }
+        ]
+      },
+      cloze: { prefix: 'He always ', blank: 'watches TV', suffix: ' and eats a lot at weekends.', hint: '补全“看电视”（注意三单 -es 和大写 TV）' },
+      sentencePrompt: { template: 'He always ______ and eats a lot at weekends.', zh: '他总是在周末看电视，还吃很多。（填“看电视”）', expected: 'watches TV' },
+      context: { en: 'He always watches TV and eats a lot at weekends.', zh: '他总是在周末看电视，还吃很多。', origin: '教材五上 U5 Cartoon time p.60 重点句01' }
+    },
+    {
+      id: 'u5_sent_02', version: 1, unit: 5, sourceScope: 'textbook_sentence', bookPage: 60,
+      textbookCore: true, classRequirement: 'dictation_verified',
+      type: 'sentence', en: 'He never goes out.', acceptedVariants: [],
+      zh: '02 · 他从不出去。',
+      helpKind: 'sentence_grammar', displayChunks: 'He ｜ never ｜ goes out.',
+      helpNote: '抓牢3处得分点：①句首大写 He；②从不 never (n-e-v-e-r)；③单数 He 后面 go 加 -es 变成 goes，句末写实心句号 .。',
+      bridgeNote: '加 -es 三兄弟串记：do → does，go → goes，watch → watches！',
+      snap: {
+        pieces: ['He', 'never', 'goes out.'],
+        decoys: [
+          { text: 'go out.', tip: '🚪 主语是单数 He，go 要加 -es 变成 goes out. 哦！' },
+          { text: 'he', tip: '🎩 句子开头第一个字母要戴大写礼帽 H（He）！' }
+        ]
+      },
+      cloze: { prefix: 'He never ', blank: 'goes', suffix: ' out.', hint: 'go 的第三人称单数形式（4个字母）' },
+      sentencePrompt: { template: 'He never ______.', zh: '他从不出去。（填“出去”注意三单）', expected: 'goes out' },
+      context: { en: 'He never goes out.', zh: '他从不出去。', origin: '教材五上 U5 Cartoon time p.60 重点句02' }
+    },
+    {
+      id: 'u5_sent_03', version: 1, unit: 5, sourceScope: 'textbook_sentence', bookPage: 60,
+      textbookCore: true, classRequirement: 'dictation_verified',
+      type: 'sentence', en: 'They often play basketball in spring.', acceptedVariants: [],
+      zh: '03 · 他们在春天经常打篮球。',
+      helpKind: 'sentence_grammar', displayChunks: 'They often ｜ play ｜ basketball ｜ in spring.',
+      helpNote: '抓牢4处得分点：①复数主语 They 后用动词原形 play（不加 s，球类前不加 the）；②经常 often 藏着不发音的 t；③合成词 basket+ball 连写；④季节前用 in（in spring 小写 s）加句号 .。',
+      bridgeNote: '主谓对比：单数 He 用 watches / goes，复数 They 用原形 play！',
+      snap: {
+        pieces: ['They often', 'play', 'basketball', 'in spring.'],
+        decoys: [
+          { text: 'plays', tip: '🏀 主语是复数“他们 They”，动词用原形 play，不加 s 哦！' },
+          { text: 'play the', tip: '🏀 球类运动中间不加 the，直接说 play basketball！' },
+          { text: 'on spring.', tip: '🌱 在某个季节前面介词固定用 in：in spring.！' }
+        ]
+      },
+      cloze: { prefix: 'They ', blank: 'often play', suffix: ' basketball in spring.', hint: '补全“经常打（篮球）”（注意 often 里的 t 与动词原形）' },
+      sentencePrompt: { template: 'They ______ in spring.', zh: '他们在春天经常打篮球。（填“经常打篮球”）', expected: 'often play basketball' },
+      context: { en: 'They often play basketball in spring.', zh: '他们在春天经常打篮球。', origin: '教材五上 U5 Cartoon time p.60 重点句03' }
+    },
+    {
+      id: 'u5_sent_04', version: 1, unit: 5, sourceScope: 'textbook_sentence', bookPage: 61,
+      textbookCore: true, classRequirement: 'dictation_verified',
+      type: 'sentence', en: "Let's go swimming.", acceptedVariants: [],
+      zh: '04 · 让我们去游泳吧。',
+      helpKind: 'sentence_grammar', displayChunks: "Let's ｜ go ｜ swimming.",
+      helpNote: "抓牢3处得分点：①句首大写 Let's（Let us 缩写，千万别漏撇号 's）；②后接动词原形 go；③去游泳 go swimming 双写两个 m（swim-ming）加句号 .。",
+      bridgeNote: "重读闭音节双写：swim → swimming（双写 m 再加 ing）！",
+      snap: {
+        pieces: ["Let's", 'go', 'swimming.'],
+        decoys: [
+          { text: 'swiming.', tip: '🏊 swim 变 -ing 时尾巴的 m 要双写变成双胞胎：swimming.！' },
+          { text: 'Lets', tip: "🎩 让我们 Let's 右上角有一顶小撇号 's 哦！" }
+        ]
+      },
+      cloze: { prefix: "Let's go ", blank: 'swimming', suffix: '.', hint: '拼出“游泳”（注意双写字母 m：s-w-i-m-m-i-n-g）' },
+      sentencePrompt: { template: "Let's ______.", zh: '让我们去游泳吧。（填“去游泳”）', expected: 'go swimming' },
+      context: { en: "Let's go swimming.", zh: '让我们去游泳吧。', origin: '教材五上 U5 Cartoon time p.61 重点句04' }
+    },
+    {
+      id: 'u5_sent_05', version: 1, unit: 5, sourceScope: 'textbook_sentence', bookPage: 61,
+      textbookCore: true, classRequirement: 'dictation_verified',
+      type: 'sentence', en: "Let's go and have a picnic.", acceptedVariants: [],
+      zh: '05 · 让我们去野餐吧。',
+      helpKind: 'sentence_grammar', displayChunks: "Let's ｜ go and ｜ have a ｜ picnic.",
+      helpNote: "抓牢4处得分点：①句首大写 Let's（带撇号 's）；②课本原句用 go and 连接两个原形动词；③野餐短语 have a picnic（别漏冠词 a，词间留空）；④句末加句号 .。",
+      bridgeNote: "两句邀请对比：Let's go swimming. vs Let's go and have a picnic.（多一个 go and）！",
+      snap: {
+        pieces: ["Let's", 'go and', 'have a', 'picnic.'],
+        decoys: [
+          { text: 'have picnic.', tip: '🧺 野餐中间别漏掉小冠词 a：have a picnic.！' },
+          { text: 'go to', tip: "🌳 课本原句用 go and 连接两个原形动词：Let's go and have a picnic.！" }
+        ]
+      },
+      cloze: { prefix: "Let's ", blank: 'go and have a picnic', suffix: '.', hint: '补全“去野餐”（5个词留清空格：go and have a picnic）' },
+      sentencePrompt: { template: "Let's ______.", zh: '让我们去野餐吧。（填 go and...）', expected: 'go and have a picnic' },
+      context: { en: "Let's go and have a picnic.", zh: '让我们去野餐吧。', origin: '教材五上 U5 Cartoon time p.61 重点句05' }
+    },
+    {
+      id: 'u5_sent_06', version: 1, unit: 5, sourceScope: 'textbook_sentence', bookPage: 61,
+      textbookCore: true, classRequirement: 'dictation_verified',
+      type: 'sentence', en: 'He tries to get out.', acceptedVariants: [],
+      zh: '06 · 他尝试出去。',
+      helpKind: 'sentence_grammar', displayChunks: 'He ｜ tries ｜ to get out.',
+      helpNote: '抓牢3处得分点：①句首大写 He；②“尝试”原形是 try，遇到单数 He 要把辅音后的 y 变成 i 再加 -es（tries，t-r-i-e-s）；③努力做某事 try to get out. 加句号。',
+      bridgeNote: '关键变形锁死：try（原形） → tries（y 变 i 加 es）＋ to get out！',
+      snap: {
+        pieces: ['He', 'tries', 'to get out.'],
+        decoys: [
+          { text: 'trys', tip: '🔑 辅音字母 r + y 结尾的 try，变三单要把 y 改成 i 再加 -es：tries！' },
+          { text: 'try', tip: '🚪 主语是单数 He，try 要变身成第三人称单数 tries 哦！' }
+        ]
+      },
+      cloze: { prefix: 'He ', blank: 'tries', suffix: ' to get out.', hint: 'try 的第三人称单数（把 y 变 i 再加 es）' },
+      sentencePrompt: { template: 'He ______.', zh: '他尝试出去。（填“尝试出去”）', expected: 'tries to get out' },
+      context: { en: 'He tries to get out.', zh: '他尝试出去。', origin: '教材五上 U5 Cartoon time p.61 重点句06' }
     }
   ];
 
@@ -653,6 +771,49 @@ const SNAPWORD_CURRICULUM = (() => {
       modeHint: 'standard',
       itemIds: ['u6_then', 'u6_time', 'u6_favourite', 'u6_problem', 'u6_classmate'],
       bugId: 'bug_7'
+    },
+    {
+      id: 'pack-u5-sent-all',
+      title: '08 · 📌 必默重点句：五上 U5 重点句子全通关（01–06 全6句）',
+      subtitle: '串成比利宅家吃胖卡门四格漫画记！一次练透三单 watches/goes/tries 与双写 swimming',
+      modeHint: 'standard',
+      paperCap: 6,
+      preserveFullPack: true,
+      slotDeckId: 'slot_u5_billy',
+      itemIds: ['u5_sent_01', 'u5_sent_02', 'u5_sent_03', 'u5_sent_04', 'u5_sent_05', 'u5_sent_06'],
+      preread: {
+        source: '教材五上 U5 Cartoon time 四幕故事串联记忆法 (p.60–61)',
+        lines: [
+          'Scene 1 (秋冬季宅家): He always watches TV and eats a lot at weekends. He never goes out.',
+          'Scene 2 (春天伙伴运动): They often play basketball in spring.',
+          "Scene 3 (连环邀约): Let's go swimming. Let's go and have a picnic.",
+          'Scene 4 (太胖卡门口): He tries to get out. (Oh no, Billy is too fat!)'
+        ],
+        question: '按上面四格漫画顺序回想：比利周末干什么（句01–02）？春天伙伴干什么（句03）？约他去哪两件事（句04–05）？最后发生了什么（句06）？'
+      },
+      bugId: 'bug_u5_sent_1'
+    },
+    {
+      id: 'pack-u5-sent-a',
+      title: '09 · 📌 必默重点句（上半场 01–03）：宅家日常与春日篮球',
+      subtitle: '轻量分步练前 3 句：攻克 watches TV / eats a lot / goes out / play basketball',
+      modeHint: 'standard',
+      paperCap: 3,
+      preserveFullPack: true,
+      slotDeckId: 'slot_u5_billy',
+      itemIds: ['u5_sent_01', 'u5_sent_02', 'u5_sent_03'],
+      bugId: 'bug_u5_sent_1'
+    },
+    {
+      id: 'pack-u5-sent-b',
+      title: '10 · 📌 必默重点句（下半场 04–06）：游泳野餐与卡门而出',
+      subtitle: "轻量分步练后 3 句：攻克 Let's 撇号 / swimming 双写 m / go and have a picnic / tries",
+      modeHint: 'standard',
+      paperCap: 3,
+      preserveFullPack: true,
+      slotDeckId: 'slot_u5_billy',
+      itemIds: ['u5_sent_04', 'u5_sent_05', 'u5_sent_06'],
+      bugId: 'bug_u5_sent_2'
     }
   ];
 
@@ -695,6 +856,27 @@ const SNAPWORD_CURRICULUM = (() => {
         { base: 'drink some water first?', sForm: 'drink some water first?', zh: '先喝点水呢？（答：Great!）', highlight: 'drink' },
         { base: 'write a letter to him?', sForm: 'write a letter to him?', zh: '给他写封信呢？（答：Good idea!）', highlight: 'letter' },
         { base: 'move our wall back?', sForm: 'move our wall back?', zh: '把我们的墙往后退呢？（答：That’s a good idea!）', highlight: 'wall' }
+      ]
+    },
+    {
+      id: 'slot_u5_billy',
+      name: '🐹 比利宅家与春日运动摇奖机（U5 重点句 01–06 主谓三单对比）',
+      subjects: [
+        { en: 'He', zh: '他', thirdSingular: true },
+        { en: 'Billy', zh: '比利', thirdSingular: true },
+        { en: 'They', zh: '他们', thirdSingular: false },
+        { en: 'We', zh: '我们', thirdSingular: false }
+      ],
+      adverbs: [
+        { en: 'always', zh: '总是' },
+        { en: 'often', zh: '经常' },
+        { en: 'never', zh: '从不' }
+      ],
+      actions: [
+        { base: 'watch TV and eat a lot at weekends.', sForm: 'watches TV and eats a lot at weekends.', zh: '在周末看电视，还吃很多。', highlight: 'watches TV' },
+        { base: 'go out.', sForm: 'goes out.', zh: '出去。', highlight: 'goes' },
+        { base: 'play basketball in spring.', sForm: 'plays basketball in spring.', zh: '在春天打篮球。', highlight: 'basketball' },
+        { base: 'try to get out.', sForm: 'tries to get out.', zh: '尝试出去。', highlight: 'tries' }
       ]
     }
   ];
@@ -776,17 +958,45 @@ const SNAPWORD_CURRICULUM = (() => {
         { text: 'faverite', isBug: true, fix: 'favourite', choices: ['favourite', 'faverite'], tip: '按江苏课本英式拼写是 fav-our-ite！' },
         { text: 'subject.' }
       ]
+    },
+    {
+      id: 'bug_u5_sent_1',
+      title: '🕵️ 比利的宅家病历单（揪出 3 只三单臭虫！）',
+      zh: '他总是在周末看电视吃很多，而且他从不出去。',
+      tokens: [
+        { text: 'He' }, { text: 'always' },
+        { text: 'watch', isBug: true, fix: 'watches', choices: ['watches', 'watch'], tip: '主语是单数 He，watch 要加 -es 变成 watches！' },
+        { text: 'TV' }, { text: 'and' },
+        { text: 'eat', isBug: true, fix: 'eats', choices: ['eats', 'eat'], tip: 'and 后面的动作也归 He 管，eat 要加 -s 变成 eats！' },
+        { text: 'a' }, { text: 'lot' }, { text: 'at' }, { text: 'weekends,' }, { text: 'and' }, { text: 'he' }, { text: 'never' },
+        { text: 'go', isBug: true, fix: 'goes', choices: ['goes', 'go'], tip: '单数 he 后面 go 要加 -es 变成 goes！' },
+        { text: 'out.' }
+      ]
+    },
+    {
+      id: 'bug_u5_sent_2',
+      title: '🕵️ 春日游泳野餐邀请函（揪出 3 只拼写臭虫！）',
+      zh: '让我们去游泳吧！他尝试出去。',
+      tokens: [
+        { text: 'Lets', isBug: true, fix: "Let's", choices: ["Let's", 'Lets'], tip: "让我们 Let's 是 Let us 的缩写，别漏撇号 's！" },
+        { text: 'go' },
+        { text: 'swiming.', isBug: true, fix: 'swimming.', choices: ['swimming.', 'swiming.'], tip: '去游泳 swimming 中间要双写两个 m！' },
+        { text: 'He' },
+        { text: 'trys', isBug: true, fix: 'tries', choices: ['tries', 'trys'], tip: 'try 遇到单数 He 要把 y 变成 i 再加 -es：tries！' },
+        { text: 'to' }, { text: 'get' }, { text: 'out.' }
+      ]
     }
   ];
 
   const ERROR_TAGS = [
     { id: 'missing_letter', label: '漏字母/漏块' },
     { id: 'letter_swap', label: '换错字母' },
+    { id: 'verb_form', label: '三单/词形漏变(watches/tries/swimming)' },
     { id: 'chunk_replace', label: '词块替换(如walk/work)' },
     { id: 'case_missing', label: '星期/句首未大写' },
     { id: 'space_missing', label: '词间缺空格' },
     { id: 'word_choice', label: '选词不当(如with/was)' },
-    { id: 'boundary_punct', label: '标点/句界缺失' }
+    { id: 'boundary_punct', label: '撇号/句末标点缺失' }
   ];
 
   return { ITEMS, PACKS, SLOT_DECKS, BUG_CARDS, ERROR_TAGS };

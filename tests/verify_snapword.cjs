@@ -1,5 +1,5 @@
-// Comprehensive Unit + Adversarial Offline Chromium E2E + Privacy Gate Suite for 词哒 · SnapWord (v0.1.3)
-// Covers Party A Round 1 (F01–F08), Round 2 (R01–R08), and Round 3 (N01–N05).
+// Comprehensive Unit + Adversarial Offline Chromium E2E + Privacy Gate Suite for 词哒 · SnapWord (v0.1.4)
+// Covers Party A Round 1 (F01–F08), Round 2 (R01–R08), Round 3 (N01–N05), Round 4 (Q01–Q02), and U5 Key Sentences (01–06).
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -470,9 +470,92 @@ function runUnitTests() {
     assert.equal(keptLocalDraft.drafts.student.sessionId, 'sess_local_other');
     const replacedDraft = SnapCore.mergeSnapwordBackup(localDiff, srcWithDraft, { draftPolicy: 'restore_incoming' });
     assert.equal(replacedDraft.drafts.student.sessionId, 'sess_draft_stu_1');
+
+    // --- Q02: Same sessionId/step/paperPhase/paperGrades, differing in itemContexts / hintedOnPaper / testedDateStr ---
+    const baseSameSess = SnapCore.freshState(Curriculum);
+    baseSameSess.drafts.student = {
+      sessionId: 'sess_q02',
+      lockedActor: 'student',
+      packId: 'pack-autumn-1',
+      packTitle: '01 · 秋假第1次',
+      draftStatus: 'suspended',
+      savedAt: 1794915000000,
+      step: 'paper',
+      paperPhase: 'dictate',
+      paperIds: ['u5_saturday'],
+      itemContexts: { u5_saturday: { itemId: 'u5_saturday', testedDateStr: '2026-11-17', promptMode: 'audio_only', primary: 'Saturday', locked: false } },
+      hintedOnPaper: {},
+      lockedHint: {},
+      answerRevealed: {},
+      exposureSources: {},
+      paperGrades: {},
+      oralChecked: {}
+    };
+    baseSameSess.activeDraft = SnapCore.clone(baseSameSess.drafts.student);
+
+    // Subcase A (Exact Q02 reproduction: promptMode + hintedOnPaper + lockedHint changed)
+    const incQ02A = SnapCore.clone(baseSameSess);
+    incQ02A.drafts.student.itemContexts.u5_saturday.promptMode = 'sentence_context';
+    incQ02A.drafts.student.hintedOnPaper = { u5_saturday: true };
+    incQ02A.drafts.student.lockedHint = { u5_saturday: true };
+    incQ02A.activeDraft = SnapCore.clone(incQ02A.drafts.student);
+
+    const diffQ02A = SnapCore.inspectBackupJSON(incQ02A, baseSameSess);
+    assert.equal(diffQ02A.draftSlots.student.status, 'conflict', 'Q02: Context/hint diff on same sessionId must be conflict, not identical');
+    assert.equal(diffQ02A.hasDraftConflicts, true);
+
+    const mergedKeepA = SnapCore.mergeSnapwordBackup(baseSameSess, incQ02A, { draftPolicy: 'keep_local' });
+    assert.equal(mergedKeepA.drafts.student.itemContexts.u5_saturday.promptMode, 'audio_only');
+    assert.equal(Boolean(mergedKeepA.drafts.student.hintedOnPaper?.u5_saturday), false);
+
+    const mergedAdoptA = SnapCore.mergeSnapwordBackup(baseSameSess, incQ02A, { draftPolicy: 'restore_incoming' });
+    assert.equal(mergedAdoptA.drafts.student.itemContexts.u5_saturday.promptMode, 'sentence_context', 'Q02: restore_incoming must adopt updated promptMode');
+    assert.equal(mergedAdoptA.drafts.student.hintedOnPaper.u5_saturday, true, 'Q02: restore_incoming must adopt hintedOnPaper');
+    assert.equal(mergedAdoptA.drafts.student.lockedHint.u5_saturday, true);
+
+    // Subcase B (Only hint modified), Subcase C (Only promptMode modified), Subcase D (Only testedDateStr modified)
+    for (const [label, mutator, verifier] of [
+      ['hint-only', d => { d.hintedOnPaper = { u5_saturday: true }; }, d => d.hintedOnPaper.u5_saturday === true],
+      ['context-only', d => { d.itemContexts.u5_saturday.promptMode = 'zh_prompt'; }, d => d.itemContexts.u5_saturday.promptMode === 'zh_prompt'],
+      ['date-only', d => { d.itemContexts.u5_saturday.testedDateStr = '2026-11-16'; }, d => d.itemContexts.u5_saturday.testedDateStr === '2026-11-16'],
+      ['reveal-only', d => { d.answerRevealed = { u5_saturday: true }; d.exposureSources = { u5_saturday: 'grading' }; }, d => d.answerRevealed.u5_saturday === true]
+    ]) {
+      const incVar = SnapCore.clone(baseSameSess);
+      mutator(incVar.drafts.student);
+      incVar.activeDraft = SnapCore.clone(incVar.drafts.student);
+      const diffVar = SnapCore.inspectBackupJSON(incVar, baseSameSess);
+      assert.equal(diffVar.draftSlots.student.status, 'conflict', `Q02 (${label}): must classify as conflict`);
+      const keptVar = SnapCore.mergeSnapwordBackup(baseSameSess, incVar, { draftPolicy: 'keep_local' });
+      assert.equal(verifier(keptVar.drafts.student), false, `Q02 (${label}): keep_local must preserve local draft`);
+      const adoptedVar = SnapCore.mergeSnapwordBackup(baseSameSess, incVar, { draftPolicy: 'restore_incoming' });
+      assert.equal(verifier(adoptedVar.drafts.student), true, `Q02 (${label}): restore_incoming must adopt incoming draft`);
+    }
   }
 
-  console.log('   ✔ SnapCore unit tests passed (F01–F06, R02–R08 & N03/N05).');
+  // --- U5 Key Dictation Sentences (01–06) & Pasted Sentence Sense-Chunk Builder ---
+  {
+    const stSent = SnapCore.freshState(Curriculum);
+    const u5Sents = stSent.items.filter(it => it.unit === 5 && it.sourceScope === 'textbook_sentence');
+    assert.equal(u5Sents.length, 6, 'Must contain exact 6 Unit 5 key dictation sentences (01–06)');
+    assert.deepEqual(u5Sents.map(s => s.en), [
+      'He always watches TV and eats a lot at weekends.',
+      'He never goes out.',
+      'They often play basketball in spring.',
+      "Let's go swimming.",
+      "Let's go and have a picnic.",
+      'He tries to get out.'
+    ]);
+    const s04 = u5Sents[3];
+    assert.equal(SnapCore.judgeSpelling(s04, 'Let’s go swimming.').ok, true, 'Curly apostrophe must match cleanly');
+    assert.equal(SnapCore.judgeSpelling(s04, 'Lets go swimming.').suggestedTag, 'boundary_punct');
+    assert.equal(SnapCore.judgeSpelling(s04, "let's go swimming.").suggestedTag, 'case_missing');
+
+    const customSent = SnapCore.suggestItemFromPair('She sometimes flies a kite in the park.', '她有时在公园放风筝。', 0);
+    assert.equal(customSent.type, 'sentence');
+    assert.ok(customSent.snap.pieces.length >= 3 && customSent.snap.pieces.length <= 5, 'Pasted sentences must group into 3–5 sense chunks');
+  }
+
+  console.log('   ✔ SnapCore unit tests passed (F01–F06, R02–R08, N03/N05, Q02 & U5 Sentences).');
 }
 
 // ==================== F01–F07 + R01–R08: Adversarial Offline Chromium E2E Tests ====================
@@ -1145,7 +1228,121 @@ async function runBrowserE2E() {
       await ctx.close();
     }
 
-    console.log('   ✔ Adversarial Chromium E2E tests & screenshots passed (F01–F07, R01–R08 & N01–N05).');
+    // --- Scenario J (Q01 Mixed-Item Retest Sibling Preservation + U5 Key Sentences 01–06 Full Flow) ---
+    {
+      const ctx = await browser.newContext({ offline: true, viewport: { width: 1280, height: 840 } });
+      await ctx.addInitScript(() => {
+        const OrigDate = Date;
+        const defaultMs = new OrigDate('2026-11-17T20:00:00+08:00').getTime();
+        const curMs = () => Number(sessionStorage.getItem('__MOCK_Q01_NOW')) || defaultMs;
+        class MockDate extends OrigDate {
+          constructor(...args) {
+            if (args.length === 0) super(curMs());
+            else super(...args);
+          }
+          static now() { return curMs(); }
+        }
+        window.Date = MockDate;
+      });
+
+      const page = await ctx.newPage();
+      await page.goto(fileUrl);
+
+      // 1. Q01 Reproduction: On 2026-11-17 start baseline -> reveal_grade:
+      // Sunday = paper_independent (unhinted!), morning = blind_self_fixed, homework = answer_corrected;
+      // Saturday, football, sometimes = unjudged -> pause draft!
+      await page.locator('[data-quick-baseline="1"]').click();
+      await page.locator('[data-paper-phase="reveal_grade"]').click();
+      await page.locator('[data-grade-item="u5_sunday"][data-outcome="paper_independent"]').click();
+      await page.locator('[data-grade-item="fnd_morning"][data-outcome="blind_self_fixed"]').click();
+      await page.locator('[data-grade-item="fnd_homework"][data-outcome="answer_corrected"]').click();
+      await page.locator('[data-act="pause-session"]').click();
+      await page.locator('#draft-resume-card').waitFor();
+
+      // Advance to 2026-11-18 -> resume draft -> click retest ONLY on unjudged Saturday!
+      await page.evaluate(() => { sessionStorage.setItem('__MOCK_Q01_NOW', String(new Date('2026-11-18T20:00:00+08:00').getTime())); });
+      await page.reload();
+      await page.locator('[data-act="resume-draft"]').click();
+      await page.locator('[data-retest-today="u5_saturday"]').click();
+
+      // Banner must explicitly list settled judged items and archived untested items!
+      await page.locator('#archived-retest-banner').waitFor();
+      const bannerTxt = await page.locator('#archived-retest-banner').innerText();
+      assert.ok(bannerTxt.includes('星期日') && bannerTxt.includes('paper_independent'), 'Q01: Banner must show Sunday settled as paper_independent');
+      assert.ok(bannerTxt.includes('足球') && bannerTxt.includes('有时'), 'Q01: Banner must explicitly show other unjudged items archived as untested');
+
+      // Inspect persisted state: Sunday MUST be paper_independent with hadSpellingHint=false (NOT hinted_correct)!
+      const q01Saved = await page.evaluate(() => {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open('snapword_workbench_v1', 1);
+          req.onsuccess = () => {
+            const tx = req.result.transaction('kv', 'readonly');
+            const g = tx.objectStore('kv').get('main');
+            g.onsuccess = () => resolve(g.result);
+          };
+          req.onerror = () => reject(req.error);
+        });
+      });
+
+      const sunEvt = q01Saved.events.find(e => e.itemId === 'u5_sunday' && e.taskType === 'paper_check');
+      const morEvt = q01Saved.events.find(e => e.itemId === 'fnd_morning' && e.taskType === 'paper_check');
+      const hwEvt = q01Saved.events.find(e => e.itemId === 'fnd_homework' && e.taskType === 'paper_check');
+      const fbEvt = q01Saved.events.find(e => e.itemId === 'fnd_football' && e.taskType === 'paper_check');
+
+      assert.equal(sunEvt.outcome, 'paper_independent', 'Q01: Sunday must keep paper_independent, NOT downgrade to hinted_correct');
+      assert.equal(sunEvt.hadSpellingHint, false, 'Q01: Grading reveal must not mark Sunday hadSpellingHint=true');
+      assert.equal(sunEvt.dateStr, '2026-11-17');
+      assert.equal(q01Saved.mastery['u5_sunday'].badge, 'silver');
+
+      assert.equal(morEvt.outcome, 'blind_self_fixed');
+      assert.equal(morEvt.hadSpellingHint, false);
+      assert.equal(hwEvt.outcome, 'answer_corrected');
+      assert.equal(fbEvt.outcome, 'untested');
+
+      // Meanwhile Saturday (retest target after seeing answer) STILL locks hint and records hinted_correct on 11-18!
+      await page.locator('[data-paper-phase="blind_check"]').click();
+      await page.locator('[data-paper-phase="reveal_grade"]').click();
+      assert.equal(await page.locator('[data-toggle-hinted="u5_saturday"]').isChecked(), true);
+      await page.locator('[data-grade-item="u5_saturday"][data-outcome="paper_independent"]').click();
+      await page.locator('[data-act="finish-paper-session"]').click();
+      assert.equal((await page.locator('#sum-ratio').textContent()).trim(), '0 / 1');
+      await page.locator('[data-act="close-summary"]').click();
+
+      // 2. U5 Key Sentences (01–06) One-Click Lobby Switch & Full 6-Sentence Practice Verification!
+      await page.locator('[data-select-pack="pack-u5-sent-all"]').click();
+      await page.getByText('本轮新排纸写（6 项）').waitFor();
+
+      await page.locator('[data-start-mode="standard"]').click();
+      if (await page.locator('[data-act="finish-due-precheck"]').count()) {
+        await page.locator('[data-act="finish-due-precheck"]').click();
+      }
+      // Step 1 loads Billy slot deck & 4-scene cartoon pre-read
+      await page.getByText('四幕故事串联记忆法').waitFor();
+
+      // Step 2 sense-group magnetic sentence assembly on Sentence 01
+      await page.locator('.step-pill[data-jump-step="snap"]').click();
+      await page.locator('.magnet-tile[data-tile-text="watch TV"]').click();
+      await page.locator('.bounce-bubble').waitFor(); // Decoy catches missing -es!
+      for (const chunk of ['He always', 'watches TV', 'and eats', 'a lot', 'at weekends.']) {
+        await page.locator(`.magnet-tile[data-tile-text="${chunk}"]`).click();
+      }
+      await page.getByText('咔嗒合拢成功！').waitFor();
+
+      // Step 3 Bug Hunter catches 3rd-person singular bugs
+      await page.locator('.step-pill[data-jump-step="bug"]').click();
+      await page.locator('.bug-token', { hasText: /^watch$/ }).click();
+      await page.locator('[data-bug-fix="watches"]').click();
+
+      // Step 4 Paper Dictation contains all 6 sentences (+ any due precheck items)
+      await page.locator('.step-pill[data-jump-step="paper"]').click();
+      const paperPromptText = await page.locator('.paper-list').innerText();
+      assert.ok(paperPromptText.includes('01 · 他总是在周末看电视，还吃很多。'));
+      assert.ok(paperPromptText.includes('06 · 他尝试出去。'));
+
+      await ctx.close();
+    }
+
+    console.log('   ✔ Adversarial Chromium E2E tests & screenshots passed (F01–F07, R01–R08, N01–N05, Q01–Q02 & U5 Sentences).');
   } finally {
     await browser.close();
   }
@@ -1155,7 +1352,7 @@ async function runBrowserE2E() {
   runPrivacyGate();
   runUnitTests();
   await runBrowserE2E();
-  console.log('4/4 All SnapWord v0.1.3 verifications succeeded!');
+  console.log('4/4 All SnapWord v0.1.4 verifications succeeded!');
 })().catch(err => {
   console.error(err);
   process.exit(1);

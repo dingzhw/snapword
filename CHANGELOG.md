@@ -3,6 +3,19 @@
 All notable changes to **词哒 · SnapWord** are documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/lang/zh-CN/).
 
+## [0.1.4] - 2026-11-18
+
+### Added
+- **五上 Unit 5 必默重点句（01–06）全套趣味闯关与整句拆拼支持**：
+  - 新增教材五上 U5 Cartoon time（p.60–61）重点默写句 `01–06`（`sourceScope: 'textbook_sentence'`，与单词表严格分层，保持 U6 官方词表 24 项不变），大厅新增一键快捷切换入口，同时提供「01–06 全通关（6句完整容量）」及「上半场 01–03 / 下半场 04–06」轻量分步包。
+  - 为整句题型定制「四格漫画故事串联预读」、「🐹 比利宅家与春日运动主谓三单摇奖机」、3–5 块意群语块磁吸拼句（精准拦截 `watch/watches`、`eat/eats`、`go/goes`、`swiming/swimming`、`Lets/Let's`、`trys/tries` 等高频失分点）及专属三单/双写抓臭虫侦探卡；新增 `三单/词形漏变` 错误标签及粘贴整句自动意群切块能力。
+
+### Fixed
+- **单题发起新测时保护同课已判题首答状态不被降级（修复 Q01 · P1）**：
+  - 严格区分「交首答前接触词形提示 (`hintedOnPaper`)」与「核验阶段正常亮答案 (`answerRevealedDuringGrading`)」：对单题发起新测并归档原课时，同课其余已判题（如 `Sunday` 首答独立全对）完整保留原结果、`hadSpellingHint: false` 与原施测日，不再被核验亮答案误降为 `hinted_correct`；新测页顶部横幅同步明确展示原课已判题入账结果与其余未判题归档为 `untested` 的明细。
+- **草稿深层规范化比对，修复题面/提示差异被误判相同（修复 Q02 · P1）**：
+  - 重构 `draftSlotEqual` 为键序无关的深层规范化投影比对，全面覆盖 `itemContexts`（出题方式、施测日期、目标答案）、`hintedOnPaper`、`lockedHint`、`answerRevealed`、`exposureSources` 及各题目列表；仅修改提示、出题方式或施测日期的草稿均能准确识别冲突并严格执行所选「保留本机 / 采用备份」策略，完全相同备份继续幂等去重。
+
 ## [0.1.3] - 2026-11-18
 
 ### Fixed & Changed

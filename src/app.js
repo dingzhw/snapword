@@ -1,5 +1,5 @@
-/* 词哒 · SnapWord Main Interactive Workbench Controller (v0.1.3)
- * Closes F01–F07, R01–R08, and Round-3 findings N01–N05.
+/* 词哒 · SnapWord Main Interactive Workbench Controller (v0.1.4)
+ * Closes F01–F07, R01–R08, N01–N05, and Round-4 findings Q01–Q02.
  */
 'use strict';
 
@@ -381,6 +381,7 @@
         blindChecks: { cap: false, space: false, chunk: false },
         maskedAnswers: {},
         paperGrades: {},
+        archivedSiblings: sessionOpts.archivedSiblings || null,
         summary: null
       };
       duePick.forEach(id => ensureItemContext(activeSession, id));
@@ -434,9 +435,18 @@
 
     // Standard / Quick8: R02 strict adherence to allocation preview (NO fallback to slice(0,3)!)
     const dueLimit = 2;
-    const totalPaperCap = mode === 'quick8' ? 3 : 5;
     const dueIds = SnapCore.getDueQueue(state, SnapCore.todayISO(), dueLimit).todayPick.map(d => d.item.id);
+    const baseCap = (pack.paperCap || 5) + (pack.preserveFullPack ? dueIds.length : 0);
+    const totalPaperCap = mode === 'quick8' ? Math.min(baseCap, 3 + (pack.preserveFullPack ? dueIds.length : 0)) : baseCap;
     const alloc = SnapCore.planPackAllocation(state, pack.id, pack.itemIds, { totalPaperCap, dueIds });
+
+    if (pack.slotDeckId) {
+      const deckIdx = SNAPWORD_CURRICULUM.SLOT_DECKS.findIndex(d => d.id === pack.slotDeckId);
+      if (deckIdx >= 0) {
+        slotUI.deckIndex = deckIdx;
+        slotUI.subj = 0; slotUI.adv = 0; slotUI.act = 0; slotUI.customEn = '';
+      }
+    }
 
     if (!alloc.hasAnyActiveTask && !pack.preread) {
       toast('当前课程包全部词条均被设为「下轮候选」，请先在预览中至少选 1 项为「本轮纸写」或「仅听读认义」再开课！');
@@ -644,7 +654,8 @@
     const dueInfo = SnapCore.getDueQueue(state, SnapCore.todayISO(), 3);
     const pack = selectedPack();
     const dueIds = dueInfo.todayPick.slice(0, 2).map(d => d.item.id);
-    const alloc = SnapCore.planPackAllocation(state, pack.id, pack.itemIds, { totalPaperCap: 5, dueIds });
+    const previewCap = (pack.paperCap || 5) + (pack.preserveFullPack ? dueIds.length : 0);
+    const alloc = SnapCore.planPackAllocation(state, pack.id, pack.itemIds, { totalPaperCap: previewCap, dueIds });
     const hasDraft = Boolean(state.activeDraft && state.activeDraft.lockedActor === state.actorMode);
     const canStartPack = pack.modeHint === 'baseline' || alloc.hasAnyActiveTask || Boolean(pack.preread);
 
@@ -705,6 +716,12 @@
           <select id="pack-select" style="width:100%;max-width:580px;font-weight:700">
             ${state.packs.map(p => `<option value="${esc(p.id)}" ${p.id === pack.id ? 'selected' : ''}>${esc(p.title)}（共 ${p.itemIds.length} 项）</option>`).join('')}
           </select>
+          <div class="row" style="gap:6px;margin-top:8px">
+            <span class="muted" style="font-size:12.5px;font-weight:700">📌 重点句快捷入口：</span>
+            <button type="button" class="btn btn-sm ${pack.id === 'pack-u5-sent-all' ? 'btn-primary' : ''}" data-select-pack="pack-u5-sent-all">📝 U5重点句全通关 (01–06)</button>
+            <button type="button" class="btn btn-sm ${pack.id === 'pack-u5-sent-a' ? 'btn-primary' : ''}" data-select-pack="pack-u5-sent-a">上半场 (01–03)</button>
+            <button type="button" class="btn btn-sm ${pack.id === 'pack-u5-sent-b' ? 'btn-primary' : ''}" data-select-pack="pack-u5-sent-b">下半场 (04–06)</button>
+          </div>
           <p class="muted" style="margin:8px 0 0">${esc(pack.subtitle || '')}</p>
 
           ${pack.modeHint !== 'baseline' ? renderAllocationPreview(pack, alloc, dueInfo.todayPick.slice(0, 2)) : ''}
@@ -797,6 +814,7 @@
     }
 
     if (s.mode === 'due_only') {
+      const sib = s.archivedSiblings;
       return `
         <div class="session-bar no-print">
           <div><strong>📅 课前到期词独立纸写抽查（共 ${s.paperIds.length} 项）</strong></div>
@@ -805,6 +823,17 @@
             <button type="button" class="btn btn-sm" data-act="abandon-session">放弃退出</button>
           </div>
         </div>
+        ${sib && (sib.settledJudged?.length || sib.archivedUntested?.length) ? `
+          <div class="bridge-callout no-print" id="archived-retest-banner" style="margin-bottom:14px">
+            <strong>📌 原课其余题目的归档处理结果（已与本次新测独立分离）：</strong>
+            ${sib.settledJudged?.length ? `
+              <div style="margin-top:4px">✅ <b>已判题按原施测日与原首答结果原样入账</b>：${sib.settledJudged.map(x => `${esc(x.zh)}（<code>${esc(x.outcome)}</code> · ${esc(x.dateStr)}${x.hadSpellingHint ? ' · 含提示' : ''}）`).join('；')}</div>
+            ` : ''}
+            ${sib.archivedUntested?.length ? `
+              <div style="margin-top:4px">⏭️ <b>其余未判题已明确归档为「未测 (untested)」</b>：${sib.archivedUntested.map(x => `${esc(x.zh)}（${esc(x.dateStr)}）`).join('、')}</div>
+            ` : ''}
+          </div>
+        ` : ''}
         ${renderPaperStep(s)}
       `;
     }
@@ -1097,44 +1126,46 @@
     const pieces = item.snap?.pieces || [item.en];
     const audioInfo = SnapAudio.resolveSourceInfo(state, item);
     const isOralOnly = s.oralOnlyIds?.includes(item.id);
+    const isSentence = item.type === 'sentence';
 
     return `
       <section class="card">
         <div class="row between" style="margin-bottom:10px">
           <div>
-            <span class="pill pill-core">Step 2 · 咔嗒磁吸拆词（第 ${s.snapIndex + 1} / ${s.focusIds.length} 项）</span>
-            ${isOralOnly ? '<span class="pill pill-star">🗣️ 本轮仅听读认义（不进纸写默写）</span>' : '<span class="pill pill-core">✍️ 本轮纸写目标词</span>'}
+            <span class="pill pill-core">Step 2 · ${isSentence ? '咔嗒语块拼句' : '咔嗒磁吸拆词'}（第 ${s.snapIndex + 1} / ${s.focusIds.length} 项）</span>
+            ${isOralOnly ? '<span class="pill pill-star">🗣️ 本轮仅听读认义（不进纸写默写）</span>' : `<span class="pill pill-core">✍️ ${isSentence ? '本轮整句默写目标' : '本轮纸写目标词'}</span>`}
             ${badgeLabel(state.mastery[item.id])}
           </div>
           <button type="button" class="btn btn-sm btn-mint" data-act="skip-to-next-word">
-            ⚡ ${isOralOnly ? '已听熟认清意思，下一项 →' : '这词我会写，跳过直接留到纸上验 →'}
+            ⚡ ${isOralOnly ? '已听熟认清意思，下一项 →' : (isSentence ? '这句我会写，跳过直接留到纸上验 →' : '这词我会写，跳过直接留到纸上验 →')}
           </button>
         </div>
 
         <div class="word-hero">
-          <div class="muted">${isOralOnly ? '听准整词发音、记住中文意思与句中用法即可' : '先听整词发音、看清难写处，再动手吸合磁吸片'}</div>
+          <div class="muted">${isOralOnly ? '听准发音、记住中文意思与句中用法即可' : (isSentence ? '先听整句朗读、看清三单与标点得分点，再按语块顺序咔嗒拼成整句' : '先听整词发音、看清难写处，再动手吸合磁吸片')}</div>
           <div class="word-zh-big">${esc(item.zh)}</div>
           ${st.hideModel ? `
-            <div class="chunk-display" style="color:#64748b;border-style:dashed">🙈 原词已遮住，凭记忆拼出来吧！</div>
+            <div class="chunk-display" style="color:#64748b;border-style:dashed">🙈 ${isSentence ? '原句已遮住，按语块顺序凭记忆拼出来吧！' : '原词已遮住，凭记忆拼出来吧！'}</div>
           ` : `
-            <div class="chunk-display english">${esc(item.displayChunks || item.en)}</div>
+            <div class="chunk-display english" style="${isSentence ? 'font-size:21px' : ''}">${esc(item.displayChunks || item.en)}</div>
           `}
           <div style="margin-top:8px">
-            <button type="button" class="btn btn-primary" data-speak-item="${esc(item.id)}">🔊 听完整发音</button>
-            <button type="button" class="btn btn-sm" data-act="toggle-model-mask">${st.hideModel ? '👀 看一眼原词' : '🙈 遮住原词盲拼'}</button>
+            <button type="button" class="btn btn-primary" data-speak-item="${esc(item.id)}">🔊 ${isSentence ? '听整句朗读' : '听完整发音'}</button>
+            <button type="button" class="btn btn-sm" data-act="toggle-model-mask">${st.hideModel ? (isSentence ? '👀 看一眼原句' : '👀 看一眼原词') : (isSentence ? '🙈 遮住原句盲拼' : '🙈 遮住原词盲拼')}</button>
             <span class="audio-tag">${esc(audioInfo.label)}</span>
           </div>
         </div>
 
-        <div class="help-callout"><strong>💡 拆词锦囊：</strong>${esc(item.helpNote)}</div>
+        <div class="help-callout"><strong>💡 ${isSentence ? '拼句与默写锦囊' : '拆词锦囊'}：</strong>${esc(item.helpNote)}</div>
         ${item.bridgeNote ? `<div class="bridge-callout"><strong>🔗 顺手串记（只看 1 处）：</strong>${esc(item.bridgeNote)}</div>` : ''}
 
-        <h3 style="margin:12px 0 6px">🧲 咔嗒磁吸槽（按顺序点击下方磁吸片归位）：</h3>
+        <h3 style="margin:12px 0 6px">🧲 咔嗒磁吸槽（按顺序点击下方${isSentence ? '语块' : '磁吸片'}归位）：</h3>
         <div class="snap-tray" aria-label="磁吸拼装槽">
           ${pieces.map((p, idx) => {
             const isFilled = idx < st.filled.length;
             const label = p === '␣' ? '␣ 空格' : p;
-            return `<span class="snap-slot english ${isFilled ? 'filled' : ''}" ${isFilled && idx === st.filled.length - 1 && !st.completedSnap ? 'data-act="undo-snap" title="点击撤回最后一块"' : ''}>${isFilled ? esc(label) : (p === '␣' ? '空格' : '？')}</span>`;
+            const emptyHint = p === '␣' ? '空格' : (isSentence ? `语块${idx + 1}` : '？');
+            return `<span class="snap-slot english ${isFilled ? 'filled' : ''}" ${isFilled && idx === st.filled.length - 1 && !st.completedSnap ? 'data-act="undo-snap" title="点击撤回最后一块"' : ''}>${isFilled ? esc(label) : emptyHint}</span>`;
           }).join('')}
         </div>
 
@@ -1321,7 +1352,7 @@
             </label>
             <label class="blind-check-row">
               <input type="checkbox" data-blind-box="chunk" ${s.blindChecks.chunk ? 'checked' : ''}>
-              <span>③ 查腰与尾：今天提醒容易漏写的那一截字母和句末标点写上了吗？</span>
+              <span>③ 查腰与尾：三单尾巴 (-s/-es/tries)、双写字母 (swimming)、易漏字母块和句末标点写上了吗？</span>
             </label>
           </div>
 
@@ -1633,10 +1664,12 @@
     const u6Official = state.items.filter(it => it.unit === 6 && it.sourceScope === 'textbook_wordlist');
     const u6CoreCount = u6Official.filter(it => it.textbookCore).length;
     const u6StarCount = u6Official.filter(it => !it.textbookCore).length;
+    const keySentences = state.items.filter(it => it.sourceScope === 'textbook_sentence' || it.type === 'sentence');
 
     const items = state.items.filter(it => {
       if (vaultFilter === 'u6') return it.unit === 6 && it.sourceScope === 'textbook_wordlist';
       if (vaultFilter === 'u5') return it.unit === 5 && it.sourceScope === 'textbook_wordlist';
+      if (vaultFilter === 'sentences') return it.sourceScope === 'textbook_sentence' || it.type === 'sentence';
       if (vaultFilter === 'bridge') return it.sourceScope === 'foundation_bridge' || it.sourceScope === 'custom';
       if (vaultFilter === 'medals') return (state.mastery[it.id]?.badge || 'none') !== 'none';
       return true;
@@ -1646,11 +1679,12 @@
       <section class="card">
         <div class="row between">
           <div>
-            <h2 style="margin:0 0 4px">🏅 金银铜徽章图鉴 & 词表分层管理</h2>
-            <p class="muted" style="margin:0">Unit 6 官方单元词表已核准为 <b>${u6Official.length} 项（核心词 ${u6CoreCount} 项 · 带 * 非核心词 ${u6StarCount} 项）</b>；补基础词独立归入扩展区。</p>
+            <h2 style="margin:0 0 4px">🏅 金银铜徽章图鉴 & 词句分层管理</h2>
+            <p class="muted" style="margin:0">Unit 6 官方单元词表已核准为 <b>${u6Official.length} 项（核心词 ${u6CoreCount} 项 · 带 * 非核心词 ${u6StarCount} 项）</b>；重点默写句（${keySentences.length} 句）与补基础词独立分层。</p>
           </div>
           <div class="row">
             <button type="button" class="btn btn-sm ${vaultFilter === 'all' ? 'btn-primary' : ''}" data-vault-filter="all">全部 (${state.items.length})</button>
+            <button type="button" class="btn btn-sm ${vaultFilter === 'sentences' ? 'btn-primary' : ''}" data-vault-filter="sentences">重点句子 (${keySentences.length})</button>
             <button type="button" class="btn btn-sm ${vaultFilter === 'u6' ? 'btn-primary' : ''}" data-vault-filter="u6">U6教材词表 (${u6Official.length})</button>
             <button type="button" class="btn btn-sm ${vaultFilter === 'u5' ? 'btn-primary' : ''}" data-vault-filter="u5">U5教材词表</button>
             <button type="button" class="btn btn-sm ${vaultFilter === 'bridge' ? 'btn-primary' : ''}" data-vault-filter="bridge">扩展补基础区</button>
@@ -1665,7 +1699,7 @@
           const audioInfo = SnapAudio.resolveSourceInfo(state, it);
           const scopeBadge = it.sourceScope === 'textbook_wordlist'
             ? `<span class="pill ${it.textbookCore ? 'pill-core' : 'pill-star'}">${it.textbookCore ? '教材核心词' : '带 * 非核心词'}</span>`
-            : `<span class="pill">扩展/家庭补基础</span>`;
+            : (it.sourceScope === 'textbook_sentence' ? `<span class="pill pill-core">教材重点句</span>` : `<span class="pill">扩展/家庭补基础</span>`);
 
           return `
             <article class="card" style="margin-bottom:0" data-vault-item="${esc(it.id)}">
@@ -1900,7 +1934,10 @@
   function formatDraftBrief(d) {
     if (!d) return '无草稿';
     const timeLabel = d.savedAt ? new Date(d.savedAt).toLocaleString('zh-CN', { hour12: false }) : '未知时间';
-    return `${d.packTitle}（已判纸写 ${d.gradedCount}/${d.paperCount} 项 · 保存于 ${timeLabel}）`;
+    const modeStr = d.modes?.length ? ` · 出题:${d.modes.join('/')}` : '';
+    const hintStr = d.hintedCount ? ` · 提示:${d.hintedCount}项` : ' · 无提示';
+    const dateStr = d.dates?.length ? ` · 施测日:${d.dates.join('/')}` : '';
+    return `${d.packTitle}（已判 ${d.gradedCount}/${d.paperCount} 项${modeStr}${hintStr}${dateStr} · 保存于 ${timeLabel}）`;
   }
 
   // R06 + N05: Explicit itemized upgrade, conflict & two-slot draft preview
@@ -1942,8 +1979,10 @@
             </div>
           ` : ''}
 
-          <div style="margin:8px 0;padding:10px;background:#fff;border-radius:10px;border:1px solid #93c5fd" id="import-draft-preview">
-            <div style="font-weight:800;margin-bottom:6px">📝 未完课草稿槽预览（双身份槽核对）：</div>
+          <div style="margin:8px 0;padding:10px;background:#fff;border-radius:10px;border:1px solid ${preview.hasDraftConflicts ? '#f59e0b' : '#93c5fd'}" id="import-draft-preview">
+            <div style="font-weight:800;margin-bottom:6px">
+              ${preview.hasDraftConflicts ? '⚠️ 检测到未完课草稿槽差异冲突（含题面方式、提示标记或施测日期差异）：' : '📝 未完课草稿槽预览（双身份槽核对）：'}
+            </div>
             <ul class="muted" style="margin:0 0 8px;padding-left:18px;font-size:13px">
               <li><b>🎒 学生正式草稿槽</b>：本机「${esc(formatDraftBrief(stuSlot?.local))}」 ｜ 备份「${esc(formatDraftBrief(stuSlot?.incoming))}」</li>
               <li><b>🛠️ 家长演练草稿槽</b>：本机「${esc(formatDraftBrief(demoSlot?.local))}」 ｜ 备份「${esc(formatDraftBrief(demoSlot?.incoming))}」</li>
@@ -2171,6 +2210,17 @@
       state.selectedPackId = e.target.value;
       render();
       await saveState();
+    });
+
+    document.querySelectorAll('[data-select-pack]').forEach(btn => {
+      btn.onclick = async () => {
+        const pid = btn.dataset.selectPack;
+        if (state.packs.some(p => p.id === pid)) {
+          state.selectedPackId = pid;
+          render();
+          await saveState();
+        }
+      };
     });
 
     document.querySelectorAll('[data-pack-item-act]').forEach(sel => {
@@ -2729,14 +2779,21 @@
           (effectiveSessionActor() === 'student' && state.lastAnswerSeenDate?.[id] === today)
         );
 
-        // Archive original items from the suspended cross-day session so original attempt & reveal state are preserved!
+        // Q01: Preserve each sibling item's TRUE pre-attempt hint state (s.hintedOnPaper[pid]) WITHOUT
+        // polluting already-judged items with grading-phase answerRevealed!
+        const settledJudged = [];
+        const archivedUntested = [];
+
         s.paperIds.forEach((pid, idx) => {
           const pCtx = ensureItemContext(s, pid, { preserveExisting: true, lock: true });
           const pg = s.paperGrades[pid];
           const pDate = pg?.testedDateStr || pCtx.testedDateStr;
           const pAt = pg?.testedAt || pCtx.testedAt;
-          const pOut = (pid !== id && pg?.outcome && pg.outcome !== 'unjudged') ? pg.outcome : 'untested';
-          SnapCore.recordEvent(state, {
+          const isJudgedSibling = pid !== id && pg?.outcome && pg.outcome !== 'unjudged';
+          const pOut = isJudgedSibling ? pg.outcome : 'untested';
+          const preAttemptHinted = Boolean(s.hintedOnPaper?.[pid]);
+
+          const evt = SnapCore.recordEvent(state, {
             sessionId: s.sessionId,
             stageTag: pid === id ? 'archived_before_retest' : 'paper',
             actor: s.lockedActor,
@@ -2751,19 +2808,32 @@
             variantKey: pCtx.variantKey,
             expectedAnswer: pCtx.primary,
             spokenText: pCtx.spokenText,
-            hadSpellingHint: Boolean(s.answerRevealed?.[pid] || s.hintedOnPaper?.[pid]),
-            exposureSource: s.answerRevealed?.[pid] ? 'answer_revealed_before_retest' : (s.exposureSources?.[pid] || null),
+            hadSpellingHint: preAttemptHinted,
+            answerRevealedDuringGrading: Boolean(s.answerRevealed?.[pid]),
+            exposureSource: preAttemptHinted ? (s.exposureSources?.[pid] || null) : null,
             taskType: 'paper_check',
             outcome: pOut,
             errorTags: pg?.tags || [],
-            note: pid === id ? '原题未完结归档（已保留原施测日与亮答案状态），另起新测' : ''
+            note: pid === id
+              ? '原题未完结归档（已保留原施测日与亮答案状态），另起新测'
+              : (isJudgedSibling ? (s.sentenceNote || '') : '同课单题发起新测时未判定，明确归档为未测')
           });
+
+          if (pid !== id && evt) {
+            const zh = itemById(pid)?.zh || pid;
+            if (isJudgedSibling) {
+              settledJudged.push({ id: pid, zh, outcome: evt.outcome, dateStr: pDate, hadSpellingHint: evt.hadSpellingHint });
+            } else {
+              archivedUntested.push({ id: pid, zh, dateStr: pDate });
+            }
+          }
         });
 
         setActorDraft(s.lockedActor || state.actorMode, null);
         await startSession('due_only', [id], {
           exposedIds: wasExposed ? [id] : [],
-          packTitle: '今日无答案新测'
+          packTitle: '今日无答案新测',
+          archivedSiblings: { settledJudged, archivedUntested }
         });
         toast(wasExposed
           ? '已归档原题并开启无答案新测（因先前已亮过答案，本次再写按含提示练习登记，隔日独立盲写升金章）'

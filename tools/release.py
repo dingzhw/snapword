@@ -108,10 +108,9 @@ def main():
     zip_name = f"SnapWord-词哒-v{version}-离线解压即用包.zip"
     zip_path = RELEASE_DIR / zip_name
 
-    # Remove older zip archives in release/ if superseded? Keep clean or keep versioned?
-    # Keep versioned releases or clean same-version zip before writing.
-    if zip_path.exists():
-        zip_path.unlink()
+    # Keep release/ clean with the current latest zip archive (historical versions remain reproducible via git tags)
+    for old_zip in RELEASE_DIR.glob("SnapWord-词哒-v*-离线解压即用包.zip"):
+        old_zip.unlink()
 
     root_prefix = "SnapWord-词哒"
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:

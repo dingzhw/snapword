@@ -3,6 +3,14 @@
 All notable changes to **词哒 · SnapWord** are documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/lang/zh-CN/).
 
+## [0.1.6] - 2026-11-18
+
+### Fixed & Improved
+- **磁吸拆拼与小挖空挑战彻底分屏，杜绝同屏照抄**：
+  - 将 Step 2 拆分为互斥两阶段：磁吸阶段仅展示磁吸槽而不渲染填空框（开启“遮住盲拼”时同步隐藏下方拆词锦囊与串记提示）；拼完点「🙈 收起磁吸答案，进入盲填小挖空挑战」后，原词、磁吸块与拆解提示全部收起隐藏，仅保留中文释义与语音播放，确保真正凭记忆盲填。
+- **全题库 46 道挖空提示去剧透重构**：
+  - 清查并重写全部单词、短语与重点句的 `cloze.hint`，彻底剔除直接拼出答案字母（如 `p-i-c-n-i-c`、`s-w-i-m-m-i-n-g`、`go and have a picnic`）的剧透提示，统一改为词义、词数/字母数与语法规则思考线索，并增加大小写/空格差异的渐进式纠错反馈与自动化防剧透门禁。
+
 ## [0.1.5] - 2026-11-18
 
 ### Added

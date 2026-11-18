@@ -1,4 +1,4 @@
-/* 词哒 · SnapWord Built-in Curriculum & Fun Gadget Decks (v0.1.5)
+/* 词哒 · SnapWord Built-in Curriculum & Fun Gadget Decks (v0.1.6)
  * Textbook alignment: 2026 Autumn Jiangsu Grade 5 Volume 1 (Units 5 & 6 verified against print p.58–81, p.111–113).
  * Unit 6 official wordlist strictly contains 24 items (19 core unstarred + 5 starred non-core).
  * Foundation review items use sourceScope: 'foundation_bridge' so unit counts stay 100% faithful to print textbook.
@@ -21,7 +21,7 @@ const SNAPWORD_CURRICULUM = (() => {
           { text: 'er', tip: '🔎 再看一眼中间那块，周六藏的是 u-r！' }
         ]
       },
-      cloze: { prefix: 'Sat', blank: 'ur', suffix: 'day', hint: '补上中间容易漏写的两个字母' },
+      cloze: { prefix: 'Sat', blank: 'ur', suffix: 'day', hint: '补全中间最容易漏写的 2 个字母' },
       sentencePrompt: { template: 'I usually play football on ______.', zh: '我通常在星期六踢足球。', expected: 'Saturday' },
       context: { en: 'I usually play football on Saturday.', zh: '我通常在星期六踢足球。', origin: '家庭练习句' }
     },
@@ -40,7 +40,7 @@ const SNAPWORD_CURRICULUM = (() => {
           { text: 'sun', tip: '🎩 别忘了给星期日戴上大写礼帽 S！' }
         ]
       },
-      cloze: { prefix: '', blank: 'Sun', suffix: 'day', hint: '注意首字母大写和中间的元音字母 u' },
+      cloze: { prefix: '', blank: 'Sun', suffix: 'day', hint: '补全前半截“太阳”（3 个字母，注意星期词首字母大写）' },
       sentencePrompt: { template: 'We visit my grandparents on ______.', zh: '我们在星期日看望祖父母。（填单数星期名）', expected: 'Sunday' },
       context: { en: 'We visit my grandparents on Sundays.', zh: '我们每逢星期日看望祖父母。', origin: '家庭练习句' }
     },
@@ -52,7 +52,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '首字母大写 T，注意 Tues 结尾有 s，与星期四 Thursday 区分。',
       bridgeNote: '对比：Tuesday（周二，Tues-） vs Thursday（周四，Thurs-）。',
       snap: { pieces: ['Tues', 'day'], decoys: [{ text: 'tues', tip: '🎩 星期词首字母要大写 T！' }, { text: 'Thur', tip: '📅 带 r 的是周四 Thursday，周二是 Tues-day！' }] },
-      cloze: { prefix: '', blank: 'Tues', suffix: 'day', hint: '周二前四位字母（首字母大写，别漏 s）' },
+      cloze: { prefix: '', blank: 'Tues', suffix: 'day', hint: '补全“周二”前 4 个字母（注意首字母大小写，别与周四混淆）' },
       sentencePrompt: { template: 'We have English on ______.', zh: '我们在星期二有英语课。', expected: 'Tuesday' },
       context: { en: 'We have English on Tuesday.', zh: '我们在星期二有英语课。', origin: '家庭练习句' }
     },
@@ -76,7 +76,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '咬舌音 Th 开头（大写 T）＋ ur ＋ s ＋ day。',
       bridgeNote: '和周六一样中间藏着 ur：Thurs-day / Sat-ur-day。',
       snap: { pieces: ['Th', 'urs', 'day'], decoys: [{ text: 'Tues', tip: '📅 Tues 是周二，周四开头咬舌尖 Th-urs-day！' }] },
-      cloze: { prefix: 'Th', blank: 'urs', suffix: 'day', hint: '补全中间三个字母 u-r-s' },
+      cloze: { prefix: 'Th', blank: 'urs', suffix: 'day', hint: '补全“周四”中间的 3 个字母' },
       sentencePrompt: { template: 'She dances on ______ afternoon.', zh: '她在星期四下午跳舞。', expected: 'Thursday' },
       context: { en: 'She dances on Thursday afternoon.', zh: '她在星期四下午跳舞。', origin: '家庭练习句' }
     },
@@ -88,7 +88,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '开头只有一个 l（al-），后面是 ways（路/方式，带 s）。',
       bridgeNote: '频度排第一（100%）：always > usually > often > sometimes > never。',
       snap: { pieces: ['al', 'ways'], decoys: [{ text: 'all', tip: '✂️ all 进入 always 时要瘦身减掉一个 l，变成 al-ways！' }, { text: 'way', tip: '✨ 尾巴上还有一个 s 哦：always！' }] },
-      cloze: { prefix: '', blank: 'al', suffix: 'ways', hint: '开头两个字母（只有一个 l）' },
+      cloze: { prefix: '', blank: 'al', suffix: 'ways', hint: '补全开头 2 个字母（想想这里的辅音字母有几个？）' },
       sentencePrompt: { template: 'He ______ takes notes in class.', zh: '他总是在课堂上记笔记。', expected: 'always' },
       context: { en: 'He always takes notes in class.', zh: '他总是在课堂上记笔记。', origin: '家庭练习句' }
     },
@@ -100,7 +100,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '整词听读，留意结尾是 al + ly（总共两个 l）。',
       bridgeNote: '在句子里放在主语后、实义动词前：I usually read books.',
       snap: { pieces: ['u', 'su', 'ally'], decoys: [{ text: 'aly', tip: '👯 尾巴上有两个并排的 l：-ally！' }] },
-      cloze: { prefix: 'usu', blank: 'ally', suffix: '', hint: '补全结尾四个字母（两个 l）' },
+      cloze: { prefix: 'usu', blank: 'ally', suffix: '', hint: '补全词尾 4 个字母（留心里面有几个相同的辅音字母）' },
       sentencePrompt: { template: 'I ______ visit my grandparents at weekends.', zh: '我通常在周末看望祖父母。', expected: 'usually' },
       context: { en: 'I usually visit my grandparents at weekends.', zh: '我通常在周末看望祖父母。', origin: '家庭练习句' }
     },
@@ -119,7 +119,7 @@ const SNAPWORD_CURRICULUM = (() => {
           { text: 'timey', tip: '⏱️ 时间是 t-i-m-e，后面直接加 s 就好啦！' }
         ]
       },
-      cloze: { prefix: '', blank: 'some', suffix: 'times', hint: '前半截是“一些 ____”（4个字母，别漏 e）' },
+      cloze: { prefix: '', blank: 'some', suffix: 'times', hint: '补全前半截表示“一些”的词根（4 个字母，留心词尾不发音字母）' },
       sentencePrompt: { template: 'I ______ fly a kite in the park.', zh: '我有时在公园里放风筝。', expected: 'sometimes' },
       context: { en: 'Sometimes we fly a kite in the park.', zh: '有时我们在公园里放风筝。', origin: '家庭练习句' }
     },
@@ -138,7 +138,7 @@ const SNAPWORD_CURRICULUM = (() => {
           { text: 'the', tip: '🍎 中间是 have a picnic！' }
         ]
       },
-      cloze: { prefix: 'have a ', blank: 'picnic', suffix: '', hint: '拼出“野餐” p-i-c-n-i-c' },
+      cloze: { prefix: 'have a ', blank: 'picnic', suffix: '', hint: '根据读音拼出“野餐”（6 个字母）' },
       sentencePrompt: { template: "Why don't we ______ here?", zh: '我们为什么不在这儿野餐呢？', expected: 'have a picnic' },
       context: { en: "Why don't we have a picnic here?", zh: '我们为什么不在这儿野餐呢？', origin: '教材五上 U6 p.72' }
     },
@@ -150,7 +150,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '西洋乐器前面一定要带上小跟班 the！三个词之间留空格。',
       bridgeNote: '对比：球类棋类不加 the（play football / play Chinese chess），乐器加 the（play the piano）。',
       snap: { pieces: ['play', '␣', 'the', '␣', 'piano'], decoys: [{ text: 'a', tip: '🎹 弹西洋乐器中间固定用 the，不是 a 哦！' }] },
-      cloze: { prefix: 'play ', blank: 'the piano', suffix: '', hint: '别忘了乐器前的冠词 the' },
+      cloze: { prefix: 'play ', blank: 'the piano', suffix: '', hint: '填入“钢琴”（共 2 个词，想想西洋乐器前要带什么词？）' },
       sentencePrompt: { template: 'Can you ______?', zh: '你会弹钢琴吗？', expected: 'play the piano' },
       context: { en: 'She likes playing the piano.', zh: '她喜欢弹钢琴。', origin: '家庭练习句' }
     },
@@ -183,7 +183,7 @@ const SNAPWORD_CURRICULUM = (() => {
           { text: 'in', tip: '🔔 结尾是 -ning 哦！' }
         ]
       },
-      cloze: { prefix: 'm', blank: 'or', suffix: 'ning', hint: '补全中间的字母组合（别漏 r）' },
+      cloze: { prefix: 'm', blank: 'or', suffix: 'ning', hint: '补全中间发长音的 2 个字母组合' },
       sentencePrompt: { template: 'I read books on Sunday ______.', zh: '我在星期日上午读书。', expected: 'morning' },
       context: { en: 'I read books on Sunday morning.', zh: '我在星期日上午读书。', origin: '家庭练习句' }
     },
@@ -202,7 +202,7 @@ const SNAPWORD_CURRICULUM = (() => {
           { text: 'wrok', tip: '🔧 字母顺序是 w-o-r-k 哟！' }
         ]
       },
-      cloze: { prefix: 'home', blank: 'work', suffix: '', hint: '家 home + 作业 ____（别写成走路 walk）' },
+      cloze: { prefix: 'home', blank: 'work', suffix: '', hint: '补全后半截表示“工作/作业”的 4 个字母（别写成“散步”）' },
       sentencePrompt: { template: 'I always do my ______ first.', zh: '我总是先做我的家庭作业。', expected: 'homework' },
       context: { en: 'I always do my homework first.', zh: '我总是先做我的家庭作业。', origin: '家庭练习句' }
     },
@@ -221,7 +221,7 @@ const SNAPWORD_CURRICULUM = (() => {
           { text: 'bell', tip: '🔔 bell 是铃铛，球是 b-a-l-l！' }
         ]
       },
-      cloze: { prefix: 'foot', blank: 'ball', suffix: '', hint: '脚 foot + 球 ____（注意是 a-l-l）' },
+      cloze: { prefix: 'foot', blank: 'ball', suffix: '', hint: '补全后半截表示“球”的 4 个字母' },
       sentencePrompt: { template: 'He plays ______ after school.', zh: '他放学后踢足球。', expected: 'football' },
       context: { en: 'He plays football after school.', zh: '他放学后踢足球。', origin: '家庭练习句' }
     },
@@ -273,7 +273,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '单元标题短语（教材带 * 词）：三个词留清空格，结尾用 with（和……一起）。',
       bridgeNote: '单元大问题：How can you get along well with others?',
       snap: { pieces: ['get', '␣', 'along', '␣', 'with'], decoys: [{ text: 'was', tip: '🤝 和别人相处要用 with！' }] },
-      cloze: { prefix: 'get ', blank: 'along with', suffix: '', hint: 'a-l-o-n-g 空格 w-i-t-h' },
+      cloze: { prefix: 'get ', blank: 'along with', suffix: '', hint: '补全后两个词，组成“与……和睦相处”（注意词间留空格）' },
       sentencePrompt: { template: 'We should ______ each other.', zh: '我们应该彼此和睦相处。', expected: 'get along with' },
       context: { en: 'How can you get along well with others?', zh: '你怎样才能和他人和睦相处？', origin: '教材五上 U6 p.71' }
     },
@@ -285,7 +285,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '前面是熟悉的 be，后面 tween 中间有两个 e（ee 发长音 /iː/）。',
       bridgeNote: '搭配：between their houses（在他们两家房子中间）。',
       snap: { pieces: ['be', 'tw', 'een'], decoys: [{ text: 'ea', tip: '👀 between 里面藏着双胞胎字母 e-e！' }, { text: 'bi', tip: '🐝 开头是 b-e 哦！' }] },
-      cloze: { prefix: 'be', blank: 'tween', suffix: '', hint: 't-w 加双胞胎 e-e 再加 n' },
+      cloze: { prefix: 'be', blank: 'tween', suffix: '', hint: '补全后 5 个字母（留心中间发长音的双胞胎元音字母）' },
       sentencePrompt: { template: 'There is a space ______ two houses.', zh: '两栋房子中间有一块空地。', expected: 'between' },
       context: { en: 'There is a narrow space between two houses.', zh: '两栋房子中间有一块窄空地。', origin: '改编自教材 p.70/75' }
     },
@@ -297,7 +297,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: 'w ＋ all（全部），四个字母一气呵成。',
       bridgeNote: '同类词类比：ball（球） → wall（墙） → football（足球）。',
       snap: { pieces: ['w', 'all'], decoys: [{ text: 'ool', tip: '🧱 墙和球一样，尾巴都是 a-l-l！' }, { text: 'al', tip: '🧱 尾巴有两个 l：w-a-l-l！' }] },
-      cloze: { prefix: 'w', blank: 'all', suffix: '', hint: '和 ball（球）拥有相同的后三个字母' },
+      cloze: { prefix: 'w', blank: 'all', suffix: '', hint: '补全后 3 个字母（与“球”的后三个字母相同）' },
       sentencePrompt: { template: 'A ______ is not important.', zh: '一堵墙并不重要。', expected: 'wall' },
       context: { en: 'A wall is not important. We should be friendly.', zh: '一堵墙并不重要，我们应该友好相处。', origin: '教材五上 U6 p.76' }
     },
@@ -309,7 +309,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '教材带 * 词（先保听读认义）：前半 neigh，后半英式 -bour（美式 neighbor）。',
       bridgeNote: '六尺巷主旨：become good neighbours（成为好邻居）。',
       snap: { pieces: ['neigh', 'bour'], decoys: [{ text: 'niegh', tip: '🏡 这词比较特殊，是 e-i-g-h 开头哦！' }] },
-      cloze: { prefix: 'neigh', blank: 'bour', suffix: '', hint: '补全英式词尾 b-o-u-r' },
+      cloze: { prefix: 'neigh', blank: 'bour', suffix: '', hint: '补全后 4 个字母（按江苏教材英式拼写）' },
       sentencePrompt: { template: 'Mr Green is our friendly ______.', zh: '格林先生是我们友好的邻居。', expected: 'neighbour' },
       context: { en: 'The two families become good neighbours.', zh: '两家人成为了好邻居。', origin: '改编自教材 p.76' }
     },
@@ -323,7 +323,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '整词读 /ˈhevi/，注意中间是字母组合 ea（发短音 /e/，别漏掉 a）。',
       bridgeNote: '反义联系：heavy（重的） ↔ light（轻的）。',
       snap: { pieces: ['h', 'ea', 'vy'], decoys: [{ text: 'e', tip: '🎒 包太重啦，里面装了 e 和 a 两个元音字母：h-e-a-v-y！' }] },
-      cloze: { prefix: 'h', blank: 'ea', suffix: 'vy', hint: '中间是两个元音字母组合 e-a' },
+      cloze: { prefix: 'h', blank: 'ea', suffix: 'vy', hint: '补全中间发短音 /e/ 的 2 个元音字母组合' },
       sentencePrompt: { template: 'My bag is so ______.', zh: '我的包太重了。', expected: 'heavy' },
       context: { en: 'My bag is so heavy.', zh: '我的包太重了。', origin: '教材五上 U6 p.72' }
     },
@@ -347,7 +347,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '四个字母 s-o-m-e，词尾的 e 不发音但千万不能漏。',
       bridgeNote: '构词串联：some（一些）＋ time（时间）＋ s ＝ sometimes（有时）。',
       snap: { pieces: ['so', 'me'], decoys: [{ text: 'sam', tip: '🍰 一些是 s-o-m-e 哦！' }] },
-      cloze: { prefix: 's', blank: 'ome', suffix: '', hint: '后三个字母是 o-m-e' },
+      cloze: { prefix: 's', blank: 'ome', suffix: '', hint: '补全后 3 个字母（留心词尾不发音字母别漏写）' },
       sentencePrompt: { template: 'You can have ______ of my food.', zh: '你可以吃一些我的食物。', expected: 'some' },
       context: { en: 'You can have some of my food.', zh: '你可以吃一些我的食物。', origin: '教材五上 U6 p.73' }
     },
@@ -361,7 +361,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: "词表原形为 on one's way back；在具体句子中把 one's 换成 their / my / his 等人称。",
       bridgeNote: '课本原句：Bobby, Sam and Billy are on their way back. (p.73)',
       snap: { pieces: ['on', '␣', "one's", '␣', 'way', '␣', 'back'], decoys: [{ text: 'in', tip: '🛣️ 在路上介词用 on 哦！' }] },
-      cloze: { prefix: 'on their ', blank: 'way back', suffix: '', hint: '回去的路：w-a-y 空格 b-a-c-k' },
+      cloze: { prefix: 'on their ', blank: 'way back', suffix: '', hint: '填入“回去的路”（共 2 个词，中间留空格）' },
       sentencePrompt: { template: 'Bobby, Sam and Billy are ______.', zh: 'Bobby、Sam 和 Billy 在他们回去的路上。', expected: 'on their way back' },
       sentenceVariants: [
         { key: 'their', label: '第三人称复数 (their)', template: 'Bobby, Sam and Billy are ______.', zh: 'Bobby、Sam 和 Billy 在他们回去的路上。', expected: 'on their way back', chunks: 'on ␣ their ␣ way ␣ back' },
@@ -379,7 +379,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '两个词中间留空格：next（紧接着）＋ to。',
       bridgeNote: '位置短语对比：next to（紧挨着） vs between（在两者中间）。',
       snap: { pieces: ['next', '␣', 'to'], decoys: [{ text: 'too', tip: '📍 紧挨着是 next to（一个 o），too（两个 o）是“太/也”！' }] },
-      cloze: { prefix: '', blank: 'next', suffix: ' to', hint: 'n-e-x-t' },
+      cloze: { prefix: '', blank: 'next', suffix: ' to', hint: '填入前面表示“紧邻/隔壁”的 4 字母单词' },
       sentencePrompt: { template: 'The Wu family live ______ the Zhang family.', zh: '吴家住在张家隔壁。', expected: 'next to' },
       context: { en: 'The Wu family live next to the Zhang family.', zh: '吴家住在张家隔壁。', origin: '教材五上 U6 p.75' }
     },
@@ -391,7 +391,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: 'a-c-e 结构，a 读 /eɪ/，c 在 e 前发 /s/，词尾 e 不发音。',
       bridgeNote: '同类词：face（脸） → place（地方） → space（空地）。',
       snap: { pieces: ['sp', 'ace'], decoys: [{ text: 'ase', tip: '🌌 空地 s-p-a-c-e 里藏着字母 c，和 face（脸）一样！' }] },
-      cloze: { prefix: 'sp', blank: 'ace', suffix: '', hint: '和 face 后三个字母一样' },
+      cloze: { prefix: 'sp', blank: 'ace', suffix: '', hint: '补全后 3 个字母（与“脸”的后三个字母结构相同）' },
       sentencePrompt: { template: 'You can use the ______.', zh: '你们可以使用这块空地。', expected: 'space' },
       context: { en: 'You can use the space.', zh: '你们可以使用这块空地。', origin: '教材五上 U6 p.76' }
     },
@@ -403,7 +403,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: 'the 后面加上 i-r 就是“他们的” their。',
       bridgeNote: '区分：their houses（他们的房子） vs there（那里）。',
       snap: { pieces: ['the', 'ir'], decoys: [{ text: 're', tip: '🏠 there 是“那里”，表示“他们的房子”要用 t-h-e-i-r！' }] },
-      cloze: { prefix: 'the', blank: 'ir', suffix: '', hint: 'the 后面补上两个字母表示“他们的”' },
+      cloze: { prefix: 'the', blank: 'ir', suffix: '', hint: '补全最后 2 个字母，组成“他们的”（别写成“那里”）' },
       sentencePrompt: { template: 'The space is between ______ houses.', zh: '空地在他们两家的房子之间。', expected: 'their' },
       context: { en: 'There is a space between their houses.', zh: '他们两家房子之间有一块空地。', origin: '改编自教材 p.75' }
     },
@@ -427,7 +427,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: 'close（接近，读 /kləʊs/）＋ 空格 ＋ to。',
       bridgeNote: '常与 too 连用：too close to our house（离我们家太近）。',
       snap: { pieces: ['close', '␣', 'to'], decoys: [{ text: 'too', tip: '📏 靠近某处后面跟介词 to（一个 o）！' }] },
-      cloze: { prefix: '', blank: 'close', suffix: ' to', hint: 'c-l-o-s-e' },
+      cloze: { prefix: '', blank: 'close', suffix: ' to', hint: '填入前面表示“接近/靠近”的 5 字母单词' },
       sentencePrompt: { template: 'My school is ______ my home.', zh: '我的学校离我家很近。', expected: 'close to' },
       context: { en: 'Do not stand too close to the river.', zh: '不要站得离河边太近。', origin: '家庭练习句' }
     },
@@ -439,7 +439,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: 'u-s-e，字母 u 读 /juː/，词尾不发音的 e 不能漏。',
       bridgeNote: '情态动词后跟原形：can use / shouldn’t use。',
       snap: { pieces: ['u', 'se'], decoys: [{ text: 'us', tip: '🔧 us 是“我们”，使用需要在尾巴加上不发音的 e：u-s-e！' }] },
-      cloze: { prefix: '', blank: 'use', suffix: '', hint: '三个字母 u-s-e' },
+      cloze: { prefix: '', blank: 'use', suffix: '', hint: '根据读音拼出“使用”（共 3 个字母，注意词尾不发音字母）' },
       sentencePrompt: { template: 'Can I ______ your pen?', zh: '我可以用一下你的钢笔吗？', expected: 'use' },
       context: { en: 'Can I use your ruler?', zh: '我可以用一下你的尺子吗？', origin: '家庭练习句' }
     },
@@ -463,7 +463,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '教材带 * 词：ad ＋ vice（c 发 /s/），不可数名词，不加 s。',
       bridgeNote: '搭配：give good advice（给出好建议）。',
       snap: { pieces: ['ad', 'vice'], decoys: [{ text: 'vise', tip: '💡 名词“建议”里面是字母 c：ad-v-i-c-e！' }] },
-      cloze: { prefix: 'ad', blank: 'vice', suffix: '', hint: 'v-i-c-e' },
+      cloze: { prefix: 'ad', blank: 'vice', suffix: '', hint: '补全后 4 个字母（注意里面发 /s/ 音的辅音字母）' },
       sentencePrompt: { template: 'He can give good ______.', zh: '他能给出好建议。', expected: 'advice' },
       context: { en: 'He can give good advice.', zh: '他能给出好建议。', origin: '教材五上 U6 p.75' }
     },
@@ -475,7 +475,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '教材带 * 词：三段好记 im + por + tant（结尾是 -ant）。',
       bridgeNote: '六尺巷名句：A wall is not important.（一堵墙并不重要。）',
       snap: { pieces: ['im', 'por', 'tant'], decoys: [{ text: 'tent', tip: '⭐ 结尾藏着小蚂蚁 ant：im-por-tant！' }] },
-      cloze: { prefix: 'im', blank: 'por', suffix: 'tant', hint: '中间三个字母 p-o-r' },
+      cloze: { prefix: 'im', blank: 'por', suffix: 'tant', hint: '补全中间第 2 个音节的 3 个字母' },
       sentencePrompt: { template: 'Being friendly is very ______.', zh: '友好待人非常重要。', expected: 'important' },
       context: { en: 'A wall is not important.', zh: '一堵墙并不重要。', origin: '教材五上 U6 p.76' }
     },
@@ -487,7 +487,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '先把词根 friend（朋友，注意中间字母组合 i-e）记牢，尾巴加 -ly 变成“友好的”。',
       bridgeNote: '一箭双雕：记熟 friend，复数加 s 是 friends，形容词加 ly 是 friendly！',
       snap: { pieces: ['fr', 'ie', 'nd', 'ly'], decoys: [{ text: 'i', tip: '🧑‍🤝‍🧑 朋友 friend 中间是 i 和 e 手拉手：f-r-i-e-n-d！' }, { text: 'ei', tip: '🧑‍🤝‍🧑 顺序是 i 在前、e 在后：f-r-i-e-n-d！' }] },
-      cloze: { prefix: 'fr', blank: 'ie', suffix: 'ndly', hint: '补全 friend 中间的两个元音字母组合' },
+      cloze: { prefix: 'fr', blank: 'ie', suffix: 'ndly', hint: '补全词根“朋友”中间相邻的 2 个元音字母' },
       sentencePrompt: { template: 'We should be ______ to others.', zh: '我们应该对他人友好。', expected: 'friendly' },
       context: { en: 'We should be friendly.', zh: '我们应该友好待人。', origin: '教材五上 U6 p.76' }
     },
@@ -501,7 +501,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '咬舌音 th ＋ en（区别于 than）。',
       bridgeNote: '日常告别常用：See you then!（到时候见！）',
       snap: { pieces: ['th', 'en'], decoys: [{ text: 'an', tip: '👋 到时候见是 t-h-e-n (then) 哦！' }] },
-      cloze: { prefix: 'th', blank: 'en', suffix: '', hint: '结尾两个字母 e-n' },
+      cloze: { prefix: 'th', blank: 'en', suffix: '', hint: '补全结尾 2 个字母，表示“到那时”' },
       sentencePrompt: { template: 'Good. See you ______!', zh: '好的，到时候见！', expected: 'then' },
       context: { en: 'See you then!', zh: '到时候见！', origin: '教材五上 U6 p.78' }
     },
@@ -513,7 +513,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: 't-i-m-e，词尾不发音 e 让中间 i 读 /aɪ/。',
       bridgeNote: '串联：have time（有空） / at that time（在那时） / sometimes（有时）。',
       snap: { pieces: ['ti', 'me'], decoys: [{ text: 'tim', tip: '⏰ 时间 t-i-m-e 尾巴上有不发音的 e！' }] },
-      cloze: { prefix: 't', blank: 'ime', suffix: '', hint: 'i-m-e' },
+      cloze: { prefix: 't', blank: 'ime', suffix: '', hint: '补全后 3 个字母（注意词尾不发音字母）' },
       sentencePrompt: { template: "Sorry, I don't have ______ today.", zh: '抱歉，我今天没有时间。', expected: 'time' },
       context: { en: "Sorry, I don't have time today.", zh: '抱歉，我今天没空。', origin: '教材五上 U6 p.79' }
     },
@@ -525,7 +525,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '整词先听熟 /ˈfeɪvərɪt/；江苏教材主用英式 favourite（重点留意 our；课本同时附注美式 favorite）。',
       bridgeNote: '搭配：your favourite pen（你特别喜爱的钢笔，p.79）。',
       snap: { pieces: ['fav', 'our', 'ite'], decoys: [{ text: 'er', tip: '🌟 英式拼写中间藏着 o-u-r：fav-our-ite！' }] },
-      cloze: { prefix: 'fav', blank: 'our', suffix: 'ite', hint: '按江苏课本英式拼写，中间三个字母是 o-u-r' },
+      cloze: { prefix: 'fav', blank: 'our', suffix: 'ite', hint: '补全中间 3 个字母（按江苏教材英式拼写）' },
       sentencePrompt: { template: 'He uses my ______ pen.', zh: '他用了我特别喜爱的钢笔。', expected: 'favourite' },
       context: { en: 'Your classmate uses your favourite pen.', zh: '你的同班同学用了你特别喜爱的钢笔。', origin: '教材五上 U6 p.79' }
     },
@@ -537,7 +537,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '两段拼写：prob ＋ lem。',
       bridgeNote: '日常口语：No problem!（没问题！）',
       snap: { pieces: ['prob', 'lem'], decoys: [{ text: 'lam', tip: '🧩 后半截是 l-e-m 哦：prob-lem！' }] },
-      cloze: { prefix: 'prob', blank: 'lem', suffix: '', hint: '后三个字母 l-e-m' },
+      cloze: { prefix: 'prob', blank: 'lem', suffix: '', hint: '补全后半部分音节的 3 个字母' },
       sentencePrompt: { template: 'What ______ do you have with others?', zh: '你和他人相处有什么问题？', expected: 'problem' },
       context: { en: 'What problem do you have with others?', zh: '你和别人相处有什么困扰？', origin: '教材五上 U6 p.79' }
     },
@@ -550,7 +550,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '三个独立的词留出空格；对别人说用 do your homework，讲“我自己做作业”用 do my homework（按句子主语选人称）。',
       bridgeNote: '锁死后半截：home + work（不是 walk）！',
       snap: { pieces: ['do', '␣', 'your', '␣', 'homework'], decoys: [{ text: 'homewalk', tip: '🚶 又抓到一只伪装虫！做作业是 home-work，不是 walk！' }] },
-      cloze: { prefix: 'do your home', blank: 'work', suffix: '', hint: '工作/作业 w-o-r-k' },
+      cloze: { prefix: 'do your home', blank: 'work', suffix: '', hint: '补全后半截表示“作业”的 4 个字母' },
       sentencePrompt: { template: 'I usually ______ before dinner.', zh: '我通常在晚饭前做我的家庭作业。', expected: 'do my homework' },
       sentenceVariants: [
         { key: 'my', label: '第一人称语境 (do my homework)', template: 'I usually ______ before dinner.', zh: '我通常在晚饭前做我的家庭作业。', expected: 'do my homework', chunks: 'do ␣ my ␣ home·work' },
@@ -566,7 +566,7 @@ const SNAPWORD_CURRICULUM = (() => {
       helpNote: '教材带 * 词：class（班级）＋ mate（伙伴），连写不空格！',
       bridgeNote: '复数直接加 s：classmates（同班同学们）。',
       snap: { pieces: ['class', 'mate'], decoys: [{ text: 'meat', tip: '🥩 meat 是肉，伙伴是 m-a-t-e（和 late 一样）！' }] },
-      cloze: { prefix: 'class', blank: 'mate', suffix: '', hint: '班级 class + 伙伴 m-a-t-e' },
+      cloze: { prefix: 'class', blank: 'mate', suffix: '', hint: '补全后半截表示“伙伴”的 4 个字母' },
       sentencePrompt: { template: 'My ______ shares books with me.', zh: '我的同班同学和我分享书本。', expected: 'classmate' },
       context: { en: 'Your classmate uses your favourite pen.', zh: '你的同班同学用了你特别喜爱的钢笔。', origin: '教材五上 U6 p.79' }
     },
@@ -588,7 +588,7 @@ const SNAPWORD_CURRICULUM = (() => {
           { text: 'alot', tip: '✂️ “很多”是两个独立的词 a lot，中间记得留空格！' }
         ]
       },
-      cloze: { prefix: 'He always ', blank: 'watches TV', suffix: ' and eats a lot at weekends.', hint: '补全“看电视”（注意三单 -es 和大写 TV）' },
+      cloze: { prefix: 'He always ', blank: 'watches TV', suffix: ' and eats a lot at weekends.', hint: '填入“看电视”（共 2 个词，留心单数主语后的动词词尾与缩写大小写）' },
       sentencePrompt: { template: 'He always ______ and eats a lot at weekends.', zh: '他总是在周末看电视，还吃很多。（填“看电视”）', expected: 'watches TV' },
       context: { en: 'He always watches TV and eats a lot at weekends.', zh: '他总是在周末看电视，还吃很多。', origin: '教材五上 U5 Cartoon time p.60 重点句01' }
     },
@@ -607,7 +607,7 @@ const SNAPWORD_CURRICULUM = (() => {
           { text: 'he', tip: '🎩 句子开头第一个字母要戴大写礼帽 H（He）！' }
         ]
       },
-      cloze: { prefix: 'He never ', blank: 'goes', suffix: ' out.', hint: 'go 的第三人称单数形式（4个字母）' },
+      cloze: { prefix: 'He never ', blank: 'goes', suffix: ' out.', hint: '填入“去”的正确形式（4 个字母，留心单数主语后的词尾变化）' },
       sentencePrompt: { template: 'He never ______.', zh: '他从不出去。（填“出去”注意三单）', expected: 'goes out' },
       context: { en: 'He never goes out.', zh: '他从不出去。', origin: '教材五上 U5 Cartoon time p.60 重点句02' }
     },
@@ -627,7 +627,7 @@ const SNAPWORD_CURRICULUM = (() => {
           { text: 'on spring.', tip: '🌱 在某个季节前面介词固定用 in：in spring.！' }
         ]
       },
-      cloze: { prefix: 'They ', blank: 'often play', suffix: ' basketball in spring.', hint: '补全“经常打（篮球）”（注意 often 里的 t 与动词原形）' },
+      cloze: { prefix: 'They ', blank: 'often play', suffix: ' basketball in spring.', hint: '填入“经常打（篮球）”（共 2 个词，想想复数主语后动词变不变？）' },
       sentencePrompt: { template: 'They ______ in spring.', zh: '他们在春天经常打篮球。（填“经常打篮球”）', expected: 'often play basketball' },
       context: { en: 'They often play basketball in spring.', zh: '他们在春天经常打篮球。', origin: '教材五上 U5 Cartoon time p.60 重点句03' }
     },
@@ -646,7 +646,7 @@ const SNAPWORD_CURRICULUM = (() => {
           { text: 'Lets', tip: "🎩 让我们 Let's 右上角有一顶小撇号 's 哦！" }
         ]
       },
-      cloze: { prefix: "Let's go ", blank: 'swimming', suffix: '.', hint: '拼出“游泳”（注意双写字母 m：s-w-i-m-m-i-n-g）' },
+      cloze: { prefix: "Let's go ", blank: 'swimming', suffix: '.', hint: '填入“游泳”（想想加尾缀前词尾辅音字母要不要双写？）' },
       sentencePrompt: { template: "Let's ______.", zh: '让我们去游泳吧。（填“去游泳”）', expected: 'go swimming' },
       context: { en: "Let's go swimming.", zh: '让我们去游泳吧。', origin: '教材五上 U5 Cartoon time p.61 重点句04' }
     },
@@ -665,8 +665,8 @@ const SNAPWORD_CURRICULUM = (() => {
           { text: 'go to', tip: "🌳 课本原句用 go and 连接两个原形动词：Let's go and have a picnic.！" }
         ]
       },
-      cloze: { prefix: "Let's ", blank: 'go and have a picnic', suffix: '.', hint: '补全“去野餐”（5个词留清空格：go and have a picnic）' },
-      sentencePrompt: { template: "Let's ______.", zh: '让我们去野餐吧。（填 go and...）', expected: 'go and have a picnic' },
+      cloze: { prefix: "Let's ", blank: 'go and have a picnic', suffix: '.', hint: '填入课本原句“去野餐”部分（共 5 个词，注意词与词之间留空格）' },
+      sentencePrompt: { template: "Let's ______.", zh: '让我们去野餐吧。（按课本原句补全后半句）', expected: 'go and have a picnic' },
       context: { en: "Let's go and have a picnic.", zh: '让我们去野餐吧。', origin: '教材五上 U5 Cartoon time p.61 重点句05' }
     },
     {
@@ -684,7 +684,7 @@ const SNAPWORD_CURRICULUM = (() => {
           { text: 'try', tip: '🚪 主语是单数 He，try 要变身成第三人称单数 tries 哦！' }
         ]
       },
-      cloze: { prefix: 'He ', blank: 'tries', suffix: ' to get out.', hint: 'try 的第三人称单数（把 y 变 i 再加 es）' },
+      cloze: { prefix: 'He ', blank: 'tries', suffix: ' to get out.', hint: '填入“尝试”（留心单数主语后，辅音加 y 结尾动词的变形规则）' },
       sentencePrompt: { template: 'He ______.', zh: '他尝试出去。（填“尝试出去”）', expected: 'tries to get out' },
       context: { en: 'He tries to get out.', zh: '他尝试出去。', origin: '教材五上 U5 Cartoon time p.61 重点句06' }
     }

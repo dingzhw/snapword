@@ -553,6 +553,18 @@ function runUnitTests() {
     const customSent = SnapCore.suggestItemFromPair('She sometimes flies a kite in the park.', '她有时在公园放风筝。', 0);
     assert.equal(customSent.type, 'sentence');
     assert.ok(customSent.snap.pieces.length >= 3 && customSent.snap.pieces.length <= 5, 'Pasted sentences must group into 3–5 sense chunks');
+
+    // Anti-Spoiler Cloze Gate: NO cloze.hint may spell out letters (a-b) or leak English words of cloze.blank!
+    for (const it of stSent.items) {
+      if (!it.cloze) continue;
+      const hint = String(it.cloze.hint || '');
+      const blank = String(it.cloze.blank || '').trim();
+      assert.equal(/[A-Za-z]-[A-Za-z]/.test(hint), false, `Cloze hint must not spell out letters in ${it.id}: ${hint}`);
+      assert.equal(/[A-Za-z]{2,}/.test(hint), false, `Cloze hint must not leak English words/chunks in ${it.id}: ${hint}`);
+      if (blank.length >= 2) {
+        assert.equal(hint.toLowerCase().includes(blank.toLowerCase()), false, `Cloze hint must not contain blank answer in ${it.id}`);
+      }
+    }
   }
 
   console.log('   ✔ SnapCore unit tests passed (F01–F06, R02–R08, N03/N05, Q02 & U5 Sentences).');
@@ -1328,6 +1340,24 @@ async function runBrowserE2E() {
       }
       await page.getByText('咔嗒合拢成功！').waitFor();
 
+      // Cloze input MUST NOT be rendered while magnetic tiles & full sentence are visible!
+      assert.equal(await page.locator('#cloze-form').count(), 0, 'Cloze input must never share screen with visible magnetic answer');
+
+      // Enter Blind Cloze -> magnetic blocks, model chunks & help notes MUST disappear completely!
+      await page.locator('[data-act="enter-cloze"]').click();
+      await page.locator('#blind-cloze-card').waitFor();
+      assert.equal(await page.locator('.snap-tray').count(), 0, 'Magnetic tray must be hidden during blind cloze');
+      assert.equal(await page.locator('.chunk-display').count(), 0, 'Model chunk display must be hidden during blind cloze');
+      const blindClozeText = await page.locator('#blind-cloze-card').innerText();
+      assert.equal(/watches TV/i.test(blindClozeText), false, 'Blind cloze view must not leak target blank answer anywhere on screen');
+
+      await page.locator('#cloze-input').fill('watches tv');
+      await page.locator('#cloze-form button[type="submit"]').click();
+      await page.locator('#cloze-feedback').waitFor(); // Prompts capitalization without spoiling letters
+      await page.locator('#cloze-input').fill('watches TV');
+      await page.locator('#cloze-form button[type="submit"]').click();
+      await page.getByText('凭记忆盲填精准过关！').waitFor();
+
       // Step 3 Bug Hunter catches 3rd-person singular bugs
       await page.locator('.step-pill[data-jump-step="bug"]').click();
       await page.locator('.bug-token', { hasText: /^watch$/ }).click();
@@ -1352,7 +1382,7 @@ async function runBrowserE2E() {
   runPrivacyGate();
   runUnitTests();
   await runBrowserE2E();
-  console.log('4/4 All SnapWord v0.1.5 verifications succeeded!');
+  console.log('4/4 All SnapWord v0.1.6 verifications succeeded!');
 })().catch(err => {
   console.error(err);
   process.exit(1);

@@ -5,7 +5,7 @@
 
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Runtime](https://img.shields.io/badge/Runtime-Offline%20Single%20HTML-blue.svg)
-![Version](https://img.shields.io/badge/Version-v0.1.5-teal.svg)
+![Version](https://img.shields.io/badge/Version-v0.1.6-teal.svg)
 
 ---
 
@@ -24,7 +24,7 @@
 
 ---
 
-## 界面预览 · Screenshots (`v0.1.5`)
+## 界面预览 · Screenshots (`v0.1.6`)
 
 | 今日闯关大厅与金银铜徽章栏 | 老爸整蛊造句机与同屏口语黑板 |
 | :---: | :---: |

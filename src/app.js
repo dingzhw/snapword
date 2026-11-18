@@ -1,5 +1,5 @@
-/* 词哒 · SnapWord Main Interactive Workbench Controller (v0.1.5)
- * Closes F01–F07, R01–R08, N01–N05, and Round-4 findings Q01–Q02.
+/* 词哒 · SnapWord Main Interactive Workbench Controller (v0.1.6)
+ * Closes F01–F07, R01–R08, N01–N05, Q01–Q02, and Blind-Cloze Zero-Leak Separation.
  */
 'use strict';
 
@@ -530,7 +530,9 @@
       bounceTip: '',
       wobbleKey: null,
       completedSnap: false,
-      showCloze: false,
+      inClozeMode: false,
+      clozeDraft: '',
+      clozeTries: 0,
       clozeDone: false,
       clozeFeedback: ''
     };
@@ -1127,7 +1129,55 @@
     const audioInfo = SnapAudio.resolveSourceInfo(state, item);
     const isOralOnly = s.oralOnlyIds?.includes(item.id);
     const isSentence = item.type === 'sentence';
+    const hasCloze = Boolean(item.cloze && !isOralOnly);
 
+    // Stage 2B: Dedicated Blind Cloze View — ALL magnetic blocks, model answers & spelling notes are hidden!
+    if (st.inClozeMode && hasCloze) {
+      return `
+        <section class="card" id="blind-cloze-card">
+          <div class="row between" style="margin-bottom:10px">
+            <div>
+              <span class="pill pill-core">Step 2 · 🎯 遮盖盲填挖空挑战（第 ${s.snapIndex + 1} / ${s.focusIds.length} 项 · 磁吸答案已全部收起）</span>
+              ${badgeLabel(state.mastery[item.id])}
+            </div>
+            ${!st.clozeDone ? `
+              <button type="button" class="btn btn-sm" data-act="exit-cloze-peek">👀 想不起，退回磁吸看一眼</button>
+            ` : ''}
+          </div>
+
+          <div class="word-hero">
+            <div class="muted">凭刚才的记忆与发音补全空缺（原词与磁吸块已全部隐藏，杜绝照抄）</div>
+            <div class="word-zh-big">${esc(item.zh)}</div>
+            <div style="margin-top:8px">
+              <button type="button" class="btn btn-primary" data-speak-item="${esc(item.id)}">🔊 ${isSentence ? '再听整句朗读' : '再听完整发音'}</button>
+              <span class="audio-tag">${esc(audioInfo.label)}</span>
+            </div>
+          </div>
+
+          <div style="background:var(--surface-soft);padding:18px;border-radius:14px;margin-top:12px;text-align:center">
+            <div class="muted" style="font-weight:700;margin-bottom:6px">💡 思考线索：${esc(item.cloze.hint)}</div>
+            <form id="cloze-form" class="cloze-box english">
+              <span>${esc(item.cloze.prefix)}</span>
+              <input type="text" id="cloze-input" class="cloze-input english" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="凭记忆盲填" value="${esc(st.clozeDone ? item.cloze.blank : (st.clozeDraft || ''))}" ${st.clozeDone ? 'readonly' : ''}>
+              <span>${esc(item.cloze.suffix)}</span>
+              ${!st.clozeDone ? `<button type="submit" class="btn btn-primary btn-sm">核对</button>` : `<span style="color:#059669;font-weight:800">✅ 凭记忆盲填精准过关！</span>`}
+            </form>
+            ${st.clozeFeedback ? `<div class="muted" style="color:#b45309;font-weight:700;margin-top:8px" id="cloze-feedback">${esc(st.clozeFeedback)}</div>` : ''}
+          </div>
+
+          <div class="row between" style="margin-top:16px">
+            <div class="row">
+              ${s.snapIndex > 0 ? `<button type="button" class="btn btn-sm" data-act="prev-word">← 上一项</button>` : ''}
+            </div>
+            <button type="button" class="btn ${st.clozeDone ? 'btn-mint' : 'btn-primary'}" data-act="next-word">
+              ${s.snapIndex + 1 < s.focusIds.length ? '下一项 →' : '本组完成，下一步 →'}
+            </button>
+          </div>
+        </section>
+      `;
+    }
+
+    // Stage 2A: Magnetic Block Assembly View (Cloze input is NEVER rendered while model/tiles are visible!)
     return `
       <section class="card">
         <div class="row between" style="margin-bottom:10px">
@@ -1145,7 +1195,7 @@
           <div class="muted">${isOralOnly ? '听准发音、记住中文意思与句中用法即可' : (isSentence ? '先听整句朗读、看清三单与标点得分点，再按语块顺序咔嗒拼成整句' : '先听整词发音、看清难写处，再动手吸合磁吸片')}</div>
           <div class="word-zh-big">${esc(item.zh)}</div>
           ${st.hideModel ? `
-            <div class="chunk-display" style="color:#64748b;border-style:dashed">🙈 ${isSentence ? '原句已遮住，按语块顺序凭记忆拼出来吧！' : '原词已遮住，凭记忆拼出来吧！'}</div>
+            <div class="chunk-display" style="color:#64748b;border-style:dashed">🙈 ${isSentence ? '原句与拆解锦囊已全部遮住，按语块顺序凭记忆盲拼吧！' : '原词与拆词锦囊已全部遮住，凭记忆盲拼吧！'}</div>
           ` : `
             <div class="chunk-display english" style="${isSentence ? 'font-size:21px' : ''}">${esc(item.displayChunks || item.en)}</div>
           `}
@@ -1156,8 +1206,10 @@
           </div>
         </div>
 
-        <div class="help-callout"><strong>💡 ${isSentence ? '拼句与默写锦囊' : '拆词锦囊'}：</strong>${esc(item.helpNote)}</div>
-        ${item.bridgeNote ? `<div class="bridge-callout"><strong>🔗 顺手串记（只看 1 处）：</strong>${esc(item.bridgeNote)}</div>` : ''}
+        ${!st.hideModel ? `
+          <div class="help-callout"><strong>💡 ${isSentence ? '拼句与默写锦囊' : '拆词锦囊'}：</strong>${esc(item.helpNote)}</div>
+          ${item.bridgeNote ? `<div class="bridge-callout"><strong>🔗 顺手串记（只看 1 处）：</strong>${esc(item.bridgeNote)}</div>` : ''}
+        ` : ''}
 
         <h3 style="margin:12px 0 6px">🧲 咔嗒磁吸槽（按顺序点击下方${isSentence ? '语块' : '磁吸片'}归位）：</h3>
         <div class="snap-tray" aria-label="磁吸拼装槽">
@@ -1182,26 +1234,20 @@
           </div>
         ` : `
           <div class="bridge-callout" style="text-align:center;font-size:17px;font-weight:800">
-            🎉 咔嗒合拢成功！完整形式：<span class="english" style="font-size:23px;color:#047857">${esc(item.en)}</span>
+            <div>🎉 咔嗒合拢成功！先默记 2 秒完整写法：<span class="english" style="font-size:23px;color:#047857">${esc(item.en)}</span></div>
+            ${hasCloze && !st.clozeDone ? `
+              <div style="margin-top:12px">
+                <button type="button" class="btn btn-amber" data-act="enter-cloze">
+                  🙈 收起磁吸答案，进入盲填小挖空挑战 →
+                </button>
+              </div>
+            ` : (st.clozeDone ? `<div style="margin-top:8px;color:#059669">✅ 盲填小挖空也已通过！</div>` : '')}
           </div>
         `}
 
-        ${item.cloze && !isOralOnly && (st.completedSnap || st.showCloze) ? `
-          <div style="background:var(--surface-soft);padding:14px;border-radius:14px;margin-top:10px;text-align:center">
-            <div class="muted" style="font-weight:700">🎯 可选小挖空加固：${esc(item.cloze.hint)}</div>
-            <form id="cloze-form" class="cloze-box english">
-              <span>${esc(item.cloze.prefix)}</span>
-              <input type="text" id="cloze-input" class="cloze-input english" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="补这一截" value="${st.clozeDone ? esc(item.cloze.blank) : ''}" ${st.clozeDone ? 'readonly' : ''}>
-              <span>${esc(item.cloze.suffix)}</span>
-              ${!st.clozeDone ? `<button type="submit" class="btn btn-primary btn-sm">核对</button>` : `<span style="color:#059669">✅ 补洞精准！</span>`}
-            </form>
-            ${st.clozeFeedback ? `<div class="muted" style="color:#b45309;font-weight:700">${esc(st.clozeFeedback)}</div>` : ''}
-          </div>
-        ` : ''}
-
         <div class="row between" style="margin-top:14px">
           <div class="row">
-            ${item.cloze && !isOralOnly && !st.showCloze && !st.completedSnap ? `<button type="button" class="btn btn-sm" data-act="open-cloze">🎯 只开小挖空试试</button>` : ''}
+            ${hasCloze && !st.completedSnap ? `<button type="button" class="btn btn-sm" data-act="open-cloze">🎯 收起答案直接盲填小挖空</button>` : ''}
             ${s.snapIndex > 0 ? `<button type="button" class="btn btn-sm" data-act="prev-word">← 上一项</button>` : ''}
           </div>
           <button type="button" class="btn btn-primary" data-act="next-word">
@@ -2517,11 +2563,29 @@
       render();
     });
 
-    document.querySelector('[data-act="open-cloze"]')?.addEventListener('click', () => {
+    const enterBlindCloze = () => {
       if (!activeSession?.snapState) return;
-      activeSession.snapState.showCloze = true;
+      activeSession.snapState.inClozeMode = true;
+      activeSession.snapState.clozeFeedback = '';
       render();
       $('#cloze-input')?.focus();
+    };
+
+    document.querySelector('[data-act="open-cloze"]')?.addEventListener('click', enterBlindCloze);
+    document.querySelector('[data-act="enter-cloze"]')?.addEventListener('click', enterBlindCloze);
+
+    document.querySelector('[data-act="exit-cloze-peek"]')?.addEventListener('click', () => {
+      if (!activeSession?.snapState) return;
+      activeSession.snapState.inClozeMode = false;
+      activeSession.snapState.clozeDraft = '';
+      activeSession.snapState.clozeFeedback = '';
+      render();
+    });
+
+    $('#cloze-input')?.addEventListener('input', e => {
+      if (activeSession?.snapState) {
+        activeSession.snapState.clozeDraft = e.target.value;
+      }
     });
 
     $('#cloze-form')?.addEventListener('submit', async e => {
@@ -2529,7 +2593,9 @@
       const st = activeSession?.snapState;
       if (!st) return;
       const item = itemById(st.itemId);
-      const val = SnapCore.normText($('#cloze-input')?.value);
+      const rawVal = $('#cloze-input')?.value ?? '';
+      st.clozeDraft = rawVal;
+      const val = SnapCore.normText(rawVal);
       const ans = SnapCore.normText(item.cloze.blank);
       if (val === ans || (!/[A-Z]/.test(ans) && val.toLowerCase() === ans.toLowerCase())) {
         st.clozeDone = true;
@@ -2544,8 +2610,17 @@
         render();
         await saveState();
       } else {
-        st.clozeFeedback = `再核对一下这一截（共 ${ans.length} 个字符）`;
+        st.clozeTries = (st.clozeTries || 0) + 1;
+        const wordCount = ans.split(' ').filter(Boolean).length;
+        if (val && val.toLowerCase() === ans.toLowerCase()) {
+          st.clozeFeedback = '🎩 字母拼写全对啦！再检查一下大小写是否正确？';
+        } else if (ans.includes(' ') && val.toLowerCase().replace(/\s+/g, '') === ans.toLowerCase().replace(/\s+/g, '')) {
+          st.clozeFeedback = '✂️ 单词拼对啦！词与词之间记得敲空格分开哦！';
+        } else {
+          st.clozeFeedback = `🤔 还差一点点（这一空共 ${wordCount > 1 ? `${wordCount} 个单词` : `${ans.length} 个字母`}），可点上方 🔊 听发音再想想！`;
+        }
         render();
+        $('#cloze-input')?.focus();
       }
     });
 

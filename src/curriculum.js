@@ -1,4 +1,4 @@
-/* 词哒 · SnapWord Built-in Curriculum & Fun Gadget Decks (v0.1.6)
+/* 词哒 · SnapWord Built-in Curriculum & Fun Gadget Decks (v0.2.0)
  * Textbook alignment: 2026 Autumn Jiangsu Grade 5 Volume 1 (Units 5 & 6 verified against print p.58–81, p.111–113).
  * Unit 6 official wordlist strictly contains 24 items (19 core unstarred + 5 starred non-core).
  * Foundation review items use sourceScope: 'foundation_bridge' so unit counts stay 100% faithful to print textbook.
@@ -695,6 +695,9 @@ const SNAPWORD_CURRICULUM = (() => {
       id: 'pack-baseline',
       title: '00 · 首次 10 分钟纸笔基线短测',
       subtitle: '摸清哪些词已稳（6 词 + 1 句无提示纸写，支持分批施测）',
+      lessonNo: 0,
+      kidTitle: '第一次：摸底小测',
+      kidNote: '6 个词 + 1 句话，看看你现在会写哪些',
       modeHint: 'baseline',
       itemIds: ['u5_saturday', 'u5_sunday', 'fnd_morning', 'fnd_homework', 'fnd_football', 'u5_sometimes'],
       extraSentence: { zh: '我和我的朋友们一起踢足球。', en: 'I play football with my friends.', focus: 'with 的理解选用与词间空格' },
@@ -704,6 +707,9 @@ const SNAPWORD_CURRICULUM = (() => {
       id: 'pack-autumn-1',
       title: '01 · 秋假第1次：星期大哥戴礼帽',
       subtitle: '精练 Saturday / Sunday / morning（约 15 分钟）',
+      lessonNo: 1,
+      kidTitle: '星期六和星期天',
+      kidNote: '练 3 个时间词，练完能自己默写出来',
       modeHint: 'standard',
       itemIds: ['u5_saturday', 'u5_sunday', 'fnd_morning'],
       bugId: 'bug_1'
@@ -712,6 +718,9 @@ const SNAPWORD_CURRICULUM = (() => {
       id: 'pack-autumn-2',
       title: '02 · 秋假第2次：作业与足球构词拆解',
       subtitle: '搞清 home+work 与 foot+ball，区分 work / walk',
+      lessonNo: 2,
+      kidTitle: '作业和足球',
+      kidNote: '把两个长单词拆开记，分清 work 和 walk',
       modeHint: 'standard',
       itemIds: ['fnd_homework', 'fnd_football', 'u6_do_homework'],
       bugId: 'bug_2'
@@ -720,6 +729,9 @@ const SNAPWORD_CURRICULUM = (() => {
       id: 'pack-autumn-3',
       title: '03 · 秋假第3次：合成词与短语留空',
       subtitle: '拆解 some+time+s，练准 with、野餐与不熬夜',
+      lessonNo: 3,
+      kidTitle: '有时候、一起去野餐',
+      kidNote: '练 4 个容易拼错的小词和短语',
       modeHint: 'standard',
       itemIds: ['u5_sometimes', 'fnd_with', 'u5_have_a_picnic', 'fnd_stay_up_late'],
       bugId: 'bug_3'
@@ -728,6 +740,9 @@ const SNAPWORD_CURRICULUM = (() => {
       id: 'pack-autumn-4',
       title: '04 · 秋假第4次：旧词巩固 + U6 导入预读',
       subtitle: '到期旧词优先复测；预读 wall / between / drink 及情境短句',
+      lessonNo: 4,
+      kidTitle: '新词：墙、中间、喝',
+      kidNote: '先认 4 个新课词，上课会轻松一点',
       modeHint: 'standard',
       itemIds: ['u6_wall', 'u6_between', 'u6_drink', 'u6_get_along_with'],
       preread: {
@@ -744,6 +759,9 @@ const SNAPWORD_CURRICULUM = (() => {
       id: 'pack-autumn-5',
       title: '05 · 秋假第5次：六尺巷故事预读与友好相处',
       subtitle: '旧词优先复测；预看 p.75–76 词句并试答建议句',
+      lessonNo: 5,
+      kidTitle: '六尺巷：做个好邻居',
+      kidNote: '读完小故事，再练 4 个词',
       modeHint: 'standard',
       itemIds: ['u6_friendly', 'u6_letter', 'u6_next_to', 'u6_neighbour'],
       preread: {
@@ -760,6 +778,9 @@ const SNAPWORD_CURRICULUM = (() => {
       id: 'pack-u6-p75',
       title: '06 · 五上 U6：六尺巷核心词（p.75）',
       subtitle: 'space / their / too / close to / use / *advice',
+      lessonNo: 6,
+      kidTitle: '六尺巷的生词',
+      kidNote: '课本第 75 页的 6 个词',
       modeHint: 'standard',
       itemIds: ['u6_space', 'u6_their', 'u6_too', 'u6_close_to', 'u6_use', 'u6_advice'],
       bugId: 'bug_6'
@@ -768,6 +789,9 @@ const SNAPWORD_CURRICULUM = (() => {
       id: 'pack-u6-p78',
       title: '07 · 五上 U6：语法页词表（p.78–79）',
       subtitle: 'then / time / favourite / problem / *classmate',
+      lessonNo: 7,
+      kidTitle: '我最喜欢的科目',
+      kidNote: '课本第 78 页的 5 个词',
       modeHint: 'standard',
       itemIds: ['u6_then', 'u6_time', 'u6_favourite', 'u6_problem', 'u6_classmate'],
       bugId: 'bug_7'
@@ -776,6 +800,9 @@ const SNAPWORD_CURRICULUM = (() => {
       id: 'pack-u5-sent-all',
       title: '08 · 📌 必默重点句：五上 U5 重点句子全通关（01–06 全6句）',
       subtitle: '串成比利宅家吃胖卡门四格漫画记！一次练透三单 watches/goes/tries 与双写 swimming',
+      lessonNo: 8,
+      kidTitle: '比利的一天（6 句话）',
+      kidNote: '6 句重点句，一次练完',
       modeHint: 'standard',
       paperCap: 6,
       preserveFullPack: true,
@@ -797,6 +824,9 @@ const SNAPWORD_CURRICULUM = (() => {
       id: 'pack-u5-sent-a',
       title: '09 · 📌 必默重点句（上半场 01–03）：宅家日常与春日篮球',
       subtitle: '轻量分步练前 3 句：攻克 watches TV / eats a lot / goes out / play basketball',
+      lessonNo: 8,
+      kidTitle: '比利宅家 + 春天打篮球',
+      kidNote: '先练前 3 句，轻一点',
       modeHint: 'standard',
       paperCap: 3,
       preserveFullPack: true,
@@ -808,6 +838,9 @@ const SNAPWORD_CURRICULUM = (() => {
       id: 'pack-u5-sent-b',
       title: '10 · 📌 必默重点句（下半场 04–06）：游泳野餐与卡门而出',
       subtitle: "轻量分步练后 3 句：攻克 Let's 撇号 / swimming 双写 m / go and have a picnic / tries",
+      lessonNo: 8,
+      kidTitle: '去游泳 + 去野餐',
+      kidNote: '再练后 3 句',
       modeHint: 'standard',
       paperCap: 3,
       preserveFullPack: true,

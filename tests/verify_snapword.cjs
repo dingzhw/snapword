@@ -1,4 +1,4 @@
-// Comprehensive Unit + Adversarial Offline Chromium E2E + Privacy Gate Suite for 词哒 · SnapWord (v0.1.4)
+// Comprehensive Unit + Adversarial Offline Chromium E2E + Privacy Gate Suite for 词哒 · SnapWord (v0.2.0)
 // Covers Party A Round 1 (F01–F08), Round 2 (R01–R08), Round 3 (N01–N05), Round 4 (Q01–Q02), and U5 Key Sentences (01–06).
 const assert = require('node:assert/strict');
 const path = require('node:path');
@@ -584,6 +584,18 @@ async function runBrowserE2E() {
   const extraArgs = process.env.SNAPWORD_CHROME_ARGS ? process.env.SNAPWORD_CHROME_ARGS.split(/\s+/).filter(Boolean) : [];
 
   const browser = await chromium.launch({ executablePath: CHROME_EXE, headless: true, args: extraArgs });
+
+  // v0.2.0: the lobby is now a single kid-facing card; pack allocation controls live in a
+  // collapsed「家长微调」panel. Open it before touching the advanced selectors.
+  async function openParentTune(page) {
+    const details = page.locator('details[data-parent-tune]');
+    if (!(await details.count())) return;
+    if (!(await details.evaluate(el => el.open))) {
+      await details.locator('summary').click();
+      await page.waitForTimeout(80);
+    }
+  }
+
   try {
     // --- Scenario A: F01 Zero-Judgment Block & Mixed 1/4 Tally ---
     {
@@ -708,6 +720,7 @@ async function runBrowserE2E() {
       await page.locator('#qp-lines').fill('Saturday | 星期六\nSunday | 星期日\nclassmate | 同班同学\nproblem | 问题');
       await page.locator('#quick-pack-form button[type="submit"]').click();
 
+      await openParentTune(page);
       await page.getByText('本轮新排纸写（3 项）').waitFor();
       await page.getByText('本轮仅听读认义（1 项）').waitFor();
 
@@ -829,6 +842,7 @@ async function runBrowserE2E() {
       await page.locator('[data-act="close-summary"]').click();
 
       // R02: Select pack-autumn-2 -> set all 3 items to next_candidate -> start button disabled!
+      await openParentTune(page);
       await page.locator('#pack-select').selectOption('pack-autumn-2');
       for (const id of ['fnd_homework', 'fnd_football', 'u6_do_homework']) {
         await page.locator(`[data-pack-item-act="${id}"]`).selectOption('next_candidate');
@@ -988,6 +1002,7 @@ async function runBrowserE2E() {
       // 3. R07: Advance clock to 2026-11-17 -> run pack-autumn-2 with Step 0 due homework = audio_only & Step 4 new items = sentence_context!
       await page.evaluate(() => { window.__MOCK_NOW = new Date('2026-11-17T20:00:00+08:00').getTime(); });
       await page.locator('[data-nav="learn"]').click();
+      await openParentTune(page);
       await page.locator('#pack-select').selectOption('pack-autumn-2');
       await page.locator('[data-start-mode="standard"]').click();
 
@@ -1321,6 +1336,7 @@ async function runBrowserE2E() {
       await page.locator('[data-act="close-summary"]').click();
 
       // 2. U5 Key Sentences (01–06) One-Click Lobby Switch & Full 6-Sentence Practice Verification!
+      await openParentTune(page);
       await page.locator('[data-select-pack="pack-u5-sent-all"]').click();
       await page.getByText('本轮新排纸写（6 项）').waitFor();
 
@@ -1382,7 +1398,7 @@ async function runBrowserE2E() {
   runPrivacyGate();
   runUnitTests();
   await runBrowserE2E();
-  console.log('4/4 All SnapWord v0.1.6 verifications succeeded!');
+  console.log('4/4 All SnapWord v0.2.0 verifications succeeded!');
 })().catch(err => {
   console.error(err);
   process.exit(1);

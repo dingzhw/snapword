@@ -1,4 +1,4 @@
-/* 词哒 · SnapWord Main Interactive Workbench Controller (v0.1.6)
+/* 词哒 · SnapWord Main Interactive Workbench Controller (v0.2.0)
  * Closes F01–F07, R01–R08, N01–N05, Q01–Q02, and Blind-Cloze Zero-Leak Separation.
  */
 'use strict';
@@ -22,6 +22,8 @@
   let highlightUnjudged = false;
   let submitLock = false;
   let saveChain = Promise.resolve({ ok: true });
+  let parentTuneOpen = false;   // 家长微调折叠区展开状态（跨 render 保持）
+  let packPickerOpen = false;   // 「换一组」卡片选择器打开状态
 
   const slotUI = { deckIndex: 0, subj: 1, adv: 3, act: 0, customEn: '', customZh: '', customHl: '' };
 
@@ -576,7 +578,8 @@
     };
     const modals = [
       roleSwitchModalOpen ? renderRoleSwitchModal() : '',
-      dueNavGate ? renderDueNavGateModal() : ''
+      dueNavGate ? renderDueNavGateModal() : '',
+      packPickerOpen && currentTab === 'learn' ? renderPackPicker() : ''
     ].join('');
     $('#app-main').innerHTML = (views[currentTab] || renderLearnTab)() + modals;
     bindEvents();
@@ -660,27 +663,38 @@
     const alloc = SnapCore.planPackAllocation(state, pack.id, pack.itemIds, { totalPaperCap: previewCap, dueIds });
     const hasDraft = Boolean(state.activeDraft && state.activeDraft.lockedActor === state.actorMode);
     const canStartPack = pack.modeHint === 'baseline' || alloc.hasAnyActiveTask || Boolean(pack.preread);
+    const dueList = dueInfo.todayPick.slice(0, 2);
+    const total = pack.itemIds.length;
+    const learned = packMasteryCount(pack);
+    const pct = total ? Math.round((learned / total) * 100) : 0;
+    const isBaseline = pack.modeHint === 'baseline';
+    const stageMeta = PACK_STAGES.find(s => s.id === stageOfPack(pack)) || PACK_STAGES[1];
+    const lessonLabel = isBaseline ? '先花 10 分钟摸个底' : packLessonLabel(pack);
+    const minsText = isBaseline ? '约 10 分钟'
+      : total <= 3 ? '约 10–15 分钟'
+      : total <= 5 ? '约 15 分钟'
+      : '约 15–18 分钟';
 
     return `
-      <div class="badge-strip">
+      <div class="badge-strip compact">
         <div class="stat-tile">
           <span class="medal-icon medal-gold">🥇</span>
           <div>
             <div class="stat-num">${summary.gold}</div>
-            <div class="stat-label">金章（跨日焊牢${summary.goldSlip ? ` · ${summary.goldSlip}失手待测` : ''}）</div>
+            <div class="stat-label">金牌 · 隔日也写对${summary.goldSlip ? `（${summary.goldSlip} 个要补测）` : ''}</div>
           </div>
         </div>
         <div class="stat-tile">
           <span class="medal-icon medal-silver">🥈</span>
-          <div><div class="stat-num">${summary.silver}</div><div class="stat-label">银章（首次纸写全对）</div></div>
+          <div><div class="stat-num">${summary.silver}</div><div class="stat-label">银牌 · 第一次写对</div></div>
         </div>
         <div class="stat-tile">
           <span class="medal-icon medal-bronze">🥉</span>
-          <div><div class="stat-num">${summary.bronze}</div><div class="stat-label">铜章（完成拆拼/订正）</div></div>
+          <div><div class="stat-num">${summary.bronze}</div><div class="stat-label">铜牌 · 练过一轮</div></div>
         </div>
         <div class="stat-tile">
           <span class="medal-icon medal-due">📅</span>
-          <div><div class="stat-num">${dueInfo.totalDue}</div><div class="stat-label">到期与待复测词</div></div>
+          <div><div class="stat-num">${dueInfo.totalDue}</div><div class="stat-label">今天要复习</div></div>
         </div>
       </div>
 
@@ -708,46 +722,132 @@
         </div>
       ` : ''}
 
-      <section class="card">
-        <span class="pill pill-core">嗨，${esc(state.profile.nickname)}！当前身份：${state.actorMode === 'parent_demo' ? '🛠️ 家长演练试用' : '🎒 学生正式学习'}</span>
-        <h1 style="margin:8px 0 4px;font-size:27px">今天花 15 分钟，稳稳落纸拿徽章 ✨</h1>
-        <p class="muted" style="margin:0">若有到期旧词先独立纸写抽查 → 摇句开口读 → 按需拆词/抓臭虫 → 纸本默写与两遍红笔自查（纯认读课可直接认读收工）。</p>
+      <section class="kid-hero ${isBaseline ? 'is-baseline' : ''}">
+        <div class="kid-hero-top">
+          <span class="kid-stage">${stageMeta.label}</span>
+          <span class="kid-meta">⏱ ${minsText} · ${total} 个${isBaseline ? '词和句' : '词'}</span>
+        </div>
+        <div class="kid-lesson">${lessonLabel}</div>
+        <h1 class="kid-title">${esc(pack.kidTitle || pack.title)}</h1>
+        <p class="kid-note">${esc(pack.kidNote || '')}</p>
+        <div class="kid-words"><span>今天要练</span><b>${packWordChips(pack)}</b></div>
+        <div class="kid-progress">
+          <div class="kid-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${learned}"><i style="width:${pct}%"></i></div>
+          <span class="kid-progress-text">${learned ? `这组已经会 ${learned} / ${total}` : `这组 ${total} 个词都是新的`}</span>
+        </div>
+        ${dueList.length ? `<div class="kid-due-tip">📅 开始后会先复习 ${dueList.length} 个旧词</div>` : ''}
+        <div class="kid-actions">
+          <button type="button" class="btn btn-primary kid-start" data-start-mode="${isBaseline ? 'baseline' : 'standard'}" ${canStartPack ? '' : 'disabled'}>
+            ${isBaseline ? '📏 开始摸底小测' : '▶ 开始今天这一课'}
+          </button>
+          <button type="button" class="btn" data-act="open-pack-picker">🔄 换一组</button>
+          ${!isBaseline ? `<button type="button" class="btn" data-start-mode="quick8" ${canStartPack ? '' : 'disabled'}>⚡ 只有 8 分钟</button>` : ''}
+          ${dueList.length ? `<button type="button" class="btn btn-sm" data-start-mode="due_only">只复习旧词（${dueList.length} 个）</button>` : ''}
+        </div>
+        <div class="kid-foot">
+          ${!canStartPack ? '<span class="kid-warn">这一组被设成「下次再练」了，请家长展开下面微调，至少留 1 个词。</span>' : `<span>${isBaseline ? '第一次用？先做这个小测，后面用时更准。' : '先复习旧词 → 读句子 → 拆词 → 找错 → 纸上默写。'}</span>`}
+          <button type="button" class="kid-baseline-link" data-quick-baseline="1">第一次来？先做摸底小测</button>
+        </div>
+      </section>
 
-        <div style="background:var(--surface-soft);padding:16px;border-radius:14px;margin:16px 0">
-          <label for="pack-select" style="font-weight:800;display:block;margin-bottom:8px">📚 选择课程包：</label>
-          <select id="pack-select" style="width:100%;max-width:580px;font-weight:700">
+      <details class="parent-tune" data-parent-tune ${parentTuneOpen ? 'open' : ''}>
+        <summary>🧰 家长微调：换课程包、调本轮词量（孩子不用点）</summary>
+        <div class="parent-tune-body">
+          <label for="pack-select" class="parent-label">📚 全部课程包（含教材页码与排课说明）</label>
+          <select id="pack-select" style="width:100%;max-width:620px;font-weight:700">
             ${state.packs.map(p => `<option value="${esc(p.id)}" ${p.id === pack.id ? 'selected' : ''}>${esc(p.title)}（共 ${p.itemIds.length} 项）</option>`).join('')}
           </select>
-          <div class="row" style="gap:6px;margin-top:8px">
+          <div class="row" style="gap:6px;margin-top:10px">
             <span class="muted" style="font-size:12.5px;font-weight:700">📌 重点句快捷入口：</span>
             <button type="button" class="btn btn-sm ${pack.id === 'pack-u5-sent-all' ? 'btn-primary' : ''}" data-select-pack="pack-u5-sent-all">📝 U5重点句全通关 (01–06)</button>
             <button type="button" class="btn btn-sm ${pack.id === 'pack-u5-sent-a' ? 'btn-primary' : ''}" data-select-pack="pack-u5-sent-a">上半场 (01–03)</button>
             <button type="button" class="btn btn-sm ${pack.id === 'pack-u5-sent-b' ? 'btn-primary' : ''}" data-select-pack="pack-u5-sent-b">下半场 (04–06)</button>
           </div>
           <p class="muted" style="margin:8px 0 0">${esc(pack.subtitle || '')}</p>
-
           ${pack.modeHint !== 'baseline' ? renderAllocationPreview(pack, alloc, dueInfo.todayPick.slice(0, 2)) : ''}
         </div>
+      </details>
+    `;
+  }
 
-        ${!canStartPack ? `
-          <div class="help-callout" style="margin-bottom:14px">
-            ⚠️ 当前课程包所有词条均被设为「📥 留作下轮候选」，没有本轮纸写或听读任务。请先在上方预览将至少 1 项调为「✍️ 本轮纸写」或「🗣️ 仅听读认义」再开课。
+  // ==================== Kid-friendly Pack Picker ====================
+  const PACK_STAGES = [
+    { id: 'start', label: '👣 第一次来', hint: '不确定从哪开始？先摸个底' },
+    { id: 'autumn', label: '🔥 秋假闯关', hint: '一天一课，从时间词开始' },
+    { id: 'u6', label: '📖 课本 Unit 6', hint: '跟着课本页数顺序练' },
+    { id: 'sentences', label: '✍️ 必背句子', hint: '先练半场，再练全场' }
+  ];
+
+  function stageOfPack(pack) {
+    if (pack.id === 'pack-baseline') return 'start';
+    if (pack.id.startsWith('pack-autumn')) return 'autumn';
+    if (pack.id.startsWith('pack-u6')) return 'u6';
+    return 'sentences';
+  }
+
+  function packMasteryCount(pack) {
+    return (pack.itemIds || []).filter(id => {
+      const b = state.mastery?.[id]?.badge;
+      return b === 'silver' || b === 'gold';
+    }).length;
+  }
+
+  // 首页只显示中文释义：英文拼写必须留给孩子在纸上第一次写出，避免同屏泄题
+  function packWordChips(pack, limit = 3) {
+    const ids = pack.itemIds || [];
+    const items = ids.map(id => itemById(id)).filter(Boolean);
+    const sentenceCount = items.filter(it => it.type === 'sentence' || it.sourceScope === 'textbook_sentence').length;
+    if (items.length && sentenceCount === items.length) return `${items.length} 句整句听写`;
+    const names = items.slice(0, limit).map(it => esc(String(it.zh).replace(/；/g, ' / ')));
+    const rest = ids.length - names.length;
+    return names.join(' · ') + (rest > 0 ? `，还有 ${rest} 个` : '');
+  }
+
+  function packLessonLabel(pack) {
+    if (pack.modeHint === 'baseline') return '👣 摸底';
+    const half = pack.id.endsWith('-sent-a') ? ' · 上半场' : pack.id.endsWith('-sent-b') ? ' · 下半场' : '';
+    return `第 ${pack.lessonNo ?? ''} 课${half}`;
+  }
+
+  function renderPackPicker() {
+    const cur = selectedPack();
+    return `
+      <div class="modal-backdrop no-print" role="dialog" aria-modal="true" aria-label="选择今天要练的一组">
+        <div class="modal-card pack-picker-card">
+          <div class="row between" style="align-items:flex-start">
+            <div>
+              <h3 style="margin:0">今天想练哪一组？</h3>
+              <p class="muted" style="margin:4px 0 0">建议按顺序练。写「已会」表示这组已经能默写。</p>
+            </div>
+            <button type="button" class="btn btn-sm" data-act="close-pack-picker">✕ 关闭</button>
           </div>
-        ` : ''}
-
-        <div class="row">
-          ${pack.modeHint === 'baseline' ? `
-            <button type="button" class="btn btn-primary" data-start-mode="baseline">📏 开始 10 分钟纸笔基线短测 →</button>
-          ` : `
-            <button type="button" class="btn btn-primary" data-start-mode="standard" ${canStartPack ? '' : 'disabled'}>🚀 开始今日闯关（标准 15–18 分钟）→</button>
-            <button type="button" class="btn btn-amber" data-start-mode="quick8" ${canStartPack ? '' : 'disabled'}>⚡ 作业多·8 分钟保底版</button>
-          `}
-          ${dueInfo.todayPick.length ? `
-            <button type="button" class="btn btn-mint" data-start-mode="due_only">📅 仅抽查到期词（${dueInfo.todayPick.length}项独立纸写）</button>
-          ` : ''}
-          <button type="button" class="btn" data-quick-baseline="1">📏 首次纸笔基线短测</button>
+          <div class="pack-picker-body">
+            ${PACK_STAGES.map(st => {
+              const list = state.packs.filter(p => stageOfPack(p) === st.id);
+              if (!list.length) return '';
+              return `
+                <div class="pack-stage">
+                  <div class="pack-stage-head"><b>${st.label}</b><span>${st.hint}</span></div>
+                  <div class="pack-cards">
+                    ${list.map(p => {
+                      const learned = packMasteryCount(p);
+                      const done = learned >= p.itemIds.length;
+                      return `
+                        <button type="button" class="pack-card ${p.id === cur.id ? 'active' : ''}" data-pick-pack="${esc(p.id)}">
+                          <span class="pack-card-top">
+                            <b>${packLessonLabel(p)}</b>
+                            <span>${done ? '✅ 已练完' : learned ? `已会 ${learned}/${p.itemIds.length}` : `${p.itemIds.length} 个词`}</span>
+                          </span>
+                          <span class="pack-card-title">${esc(p.kidTitle || p.title)}</span>
+                          <span class="pack-card-words">${packWordChips(p)}</span>
+                        </button>`;
+                    }).join('')}
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>
         </div>
-      </section>
+      </div>
     `;
   }
 
@@ -2158,6 +2258,7 @@
           return;
         }
         SnapAudio.stop();
+        packPickerOpen = false;
         currentTab = targetTab;
         render();
       };
@@ -2256,6 +2357,32 @@
       state.selectedPackId = e.target.value;
       render();
       await saveState();
+    });
+
+    // 「换一组」卡片选择器：孩子看中文主题卡选课，不再面对一长串专业下拉框
+    document.querySelectorAll('[data-act="open-pack-picker"]').forEach(btn => {
+      btn.onclick = () => {
+        packPickerOpen = true;
+        render();
+      };
+    });
+
+    document.querySelector('[data-act="close-pack-picker"]')?.addEventListener('click', () => {
+      packPickerOpen = false;
+      render();
+    });
+
+    document.querySelectorAll('[data-pick-pack]').forEach(btn => {
+      btn.onclick = async () => {
+        state.selectedPackId = btn.dataset.pickPack;
+        packPickerOpen = false;
+        render();
+        await saveState();
+      };
+    });
+
+    document.querySelector('[data-parent-tune]')?.addEventListener('toggle', e => {
+      parentTuneOpen = e.target.open;
     });
 
     document.querySelectorAll('[data-select-pack]').forEach(btn => {

@@ -5,7 +5,7 @@
 
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Runtime](https://img.shields.io/badge/Runtime-Offline%20Single%20HTML-blue.svg)
-![Version](https://img.shields.io/badge/Version-v0.1.6-teal.svg)
+![Version](https://img.shields.io/badge/Version-v0.2.0-teal.svg)
 
 ---
 
@@ -24,9 +24,9 @@
 
 ---
 
-## 界面预览 · Screenshots (`v0.1.6`)
+## 界面预览 · Screenshots (`v0.2.0`)
 
-| 今日闯关大厅与金银铜徽章栏 | 老爸整蛊造句机与同屏口语黑板 |
+| 今日闯关：一张卡说清「今天练哪一课」 | 老爸整蛊造句机与同屏口语黑板 |
 | :---: | :---: |
 | ![今日闯关大厅](docs/media/home-lobby.png) | ![摇奖造句机与口语黑板](docs/media/slot-blackboard.png) |
 
@@ -42,6 +42,7 @@
 
 ## 核心工程特性 · Key Highlights
 
+- **孩子友好首页（v0.2.0）**：一屏一张卡——第几课、中文主题、今天练哪几个词、约多久、这组已会几个，加一个「▶ 开始今天这一课」；换组改为分阶段卡片选择器，教材页码与排课术语全部收进默认折叠的「🧰 家长微调」，五年级孩子无需备课也能自己找到今天该练什么。
 - **零服务器、双击即用**：打包产物 `dist/SnapWord-词哒.html` 内嵌样式、逻辑与公开授权真人发音，无需安装环境、无需联网注册，双击即可在 Chrome / Edge 全屏运行；同时生成 `dist/index.html` 可直接托管至 GitHub Pages。
 - **远程视频伴学友好（无背景音效干扰 & 防抢鼠标）**：剔除嘈杂背景战斗音效以降低远程免提通话串音风险（内置目标设备 1 分钟试听核验卡，便于实机确认外放与通话音量配合）；界面清晰提示每个环节由家长还是孩子主控鼠标。
 - **严谨可信的纸笔账本与防污染隔离**：纸写核对默认处于「未判定」并严格按已测已核验口径统计；课前到期词优先独立盲写防泄题；顶栏内置 **「🎒 学生正式学习 / 🛠️ 家长演练试用」** 持久化身份锁定，杜绝测试点击污染孩子的徽章进度与 `D0+1 / D0+3 / D0+7` 复测日历。

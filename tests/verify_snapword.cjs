@@ -267,14 +267,31 @@ async function runBrowserE2E() {
       await page.locator('#cloze-input').fill('along with');
       await page.locator('#cloze-form button[type="submit"]').click();
 
-      // Check Bug Hunter & Slot Blackboard screenshots
+      // Check New Multi-Round Anti-Mash Arcade (Scramble Rush + Radar True/False & Defuse)
       await page.locator('[data-jump-step="bug"]').click();
-      await page.locator('.bug-token', { hasText: 'nieghbour' }).click();
+      await page.locator('#arcade-card').waitFor();
+      assert.ok((await page.locator('#arcade-card').innerText()).includes('第 1 / 5 关'));
       await page.screenshot({ path: path.join(MEDIA_DIR, 'bug-hunter.png') });
 
+      // Switch to Radar True/False & Defuse and verify multi-round anti-mash mechanics
+      await page.locator('[data-arcade-mode="radar"]').click();
+      await page.locator('.radar-sentence-box').waitFor();
+      assert.ok((await page.locator('#arcade-card').innerText()).includes('第 1 / 5 关'));
+
+      // Check Current-Pack Context Story Blackboard & Unit 6 Slot Machine (ZERO Unit 5 do homework leak!)
       await page.locator('[data-jump-step="board"]').click();
-      await page.locator('#board-live-sentence').waitFor();
+      await page.locator('#context-blackboard').waitFor();
+      const storyText = await page.locator('#context-blackboard').innerText();
+      assert.equal(storyText.includes('do homework'), false, 'Unit 6 blackboard MUST NOT show unrelated Unit 5 do homework sentence');
+      assert.ok(storyText.includes('neighbour') || storyText.includes('get along with'), 'Story blackboard must feature current Unit 6 words');
       await page.screenshot({ path: path.join(MEDIA_DIR, 'slot-blackboard.png') });
+
+      // Verify Unit 6 Slot Machine tab also defaults strictly to slot_u6_1_10!
+      await page.locator('[data-board-mode="slot"]').click();
+      await page.locator('#board-live-sentence').waitFor();
+      const slotText = await page.locator('#board-live-sentence').innerText();
+      assert.equal(slotText.includes('do homework'), false, 'Unit 6 slot machine MUST NOT show Unit 5 do homework');
+      assert.ok(/get along with|neighbour|between|wall|heavy|drink|some|space|next to/i.test(slotText), `Expected Unit 6 slot sentence, got: ${slotText}`);
       await ctx.close();
     }
 
@@ -412,6 +429,7 @@ async function runBrowserE2E() {
 
       await page.route('https://api.openai.com/v1/chat/completions', async route => {
         const reqBody = JSON.parse(route.request().postData() || '{}');
+        const sysText = reqBody.messages?.[0]?.content || '';
         const userText = reqBody.messages?.[1]?.content || '';
         if (userText.includes('鼓励')) {
           await route.fulfill({
@@ -419,6 +437,65 @@ async function runBrowserE2E() {
             contentType: 'application/json',
             body: JSON.stringify({
               choices: [{ message: { content: '{"ok":true,"greeting":"五年级加油，单词一敲就会！"}' } }]
+            })
+          });
+          return;
+        }
+        if (sysText.includes('小短文')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              choices: [{
+                message: {
+                  content: JSON.stringify({
+                    title: '波比帮邻居搬重包',
+                    sentences: [
+                      { en: 'Bobby lives next to a nice neighbour.', zh: '波比住在一位友善的邻居隔壁。', targets: ['next to', 'neighbour'] },
+                      { en: 'They get along with each other very well.', zh: '他们彼此相处得非常和睦。', targets: ['get along with'] }
+                    ]
+                  })
+                }
+              }]
+            })
+          });
+          return;
+        }
+        if (sysText.includes('真假拼写鉴别官')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              choices: [{
+                message: {
+                  content: JSON.stringify({
+                    rounds: [
+                      { id: 'u6_heavy', isTrap: true, shownWord: 'hevy', correctWord: 'heavy', template: 'My yellow bag is so ______.', zh: '我的黄包太重了。', reason: 'heavy 中间藏着字母组合 ea！' },
+                      { id: 'u6_wall', isTrap: false, shownWord: 'wall', correctWord: 'wall', template: 'There is a clock on the ______.', zh: '墙上有一个钟。', reason: 'wall 拼写完全正确！' }
+                    ]
+                  })
+                }
+              }]
+            })
+          });
+          return;
+        }
+        if (sysText.includes('换一种全新的')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              choices: [{ message: { content: '{"tip":"AI新口诀：get拿到 + along顺着路 + with一起，顺路结伴就和睦！"}' } }]
+            })
+          });
+          return;
+        }
+        if (sysText.includes('睡前30秒')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              choices: [{ message: { content: '{"praise":"五词连闯很稳！","focusTip":"留意 heavy 的 ea 组合","tomorrowDrill":"睡前口头抽查 neighbour 和 heavy"}' } }]
             })
           });
           return;
@@ -488,13 +565,32 @@ async function runBrowserE2E() {
       await page.locator('#btn-ai-prefetch-now').click();
       assert.ok((await page.locator('#ai-status-banner').innerText()).includes('生成 2 道'));
 
-      // Verify AI generated sentence appears inside Arena's AI Sentence mode!
+      // Verify AI powers ALL 6 surfaces:
+      // 1) Arena defaults to ai_mixed showing AI generated sentence!
       await page.locator('[data-nav="learn"]').click();
+      await page.locator('[data-select-pack="pack-u6-wl-1-5"]').click();
       await page.locator('[data-set-diff="challenge"]').click();
       await page.locator('[data-start-mode="standard"]').click();
-      await page.locator('#arena-prompt-mode').selectOption('ai_sentence');
+      assert.equal(await page.locator('#arena-prompt-mode').inputValue(), 'ai_mixed');
       const tplText = await page.locator('.arena-sentence-template').innerText();
       assert.equal(tplText, 'Su Hai and Yang Ling ______ each other.');
+
+      // 2) Story Blackboard AI Story Weaver!
+      await page.locator('[data-jump-step="board"]').click();
+      await page.locator('[data-act="gen-ai-story"]').click();
+      await page.locator('text=波比帮邻居搬重包').waitFor();
+
+      // 3) Arcade AI Dynamic Multi-Round Radar Traps + Mandatory Defuse Typing!
+      await page.locator('[data-jump-step="bug"]').click();
+      await page.locator('[data-arcade-mode="radar"]').click();
+      await page.locator('[data-act="ai-gen-radar"]').click();
+      await page.locator('text=hevy').waitFor();
+      await page.locator('[data-radar-judge="trap"]').click();
+      await page.locator('#radar-defuse-input').fill('heavy');
+      await page.locator('#radar-defuse-form button[type="submit"]').click();
+      await page.locator('text=拆弹大成功').waitFor();
+      await page.locator('#btn-radar-next').click();
+      await page.locator('text=第 2 / 2 关').waitFor();
 
       // Verify API key is strictly isolated from main IndexedDB / exported backup state!
       const idbDump = await page.evaluate(async () => {
@@ -521,7 +617,14 @@ async function runBrowserE2E() {
   runPrivacyGate();
   runUnitTests();
   await runBrowserE2E();
-  console.log('4/4 All SnapWord v0.3.0 verifications succeeded!');
+  // Verify packaged launcher CMD inside latest release zip is 100% pure 7-bit ASCII (immune to Windows GBK/UTF-8 path bugs)
+  const relDir = path.join(ROOT, 'release');
+  const zips = fs.readdirSync(relDir).filter(f => f.endsWith('.zip'));
+  assert.ok(zips.length >= 1, 'Release zip must exist');
+  const latestZip = path.join(relDir, zips[zips.length - 1]);
+  const cmdContent = execFileSync('python', ['-c', `import zipfile, sys; z=zipfile.ZipFile(sys.argv[1]); print(z.read("SnapWord-词哒/启动词哒工作台.cmd").decode("ascii"))`, latestZip], { encoding: 'utf8' });
+  assert.ok(cmdContent.includes('for %%F in (*.html)'), 'Launcher CMD must use pure-ASCII wildcard lookup');
+  console.log('4/4 All SnapWord v0.3.1 verifications succeeded (including pure-ASCII Windows .cmd launcher check)!');
 })().catch(err => {
   console.error('\n❌ VERIFICATION FAILED:', err);
   process.exit(1);

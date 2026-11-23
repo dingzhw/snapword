@@ -35,12 +35,15 @@
     fetchingModels: false,
     testingConn: false,
     prefetching: false,
+    altMnemonicLoading: false,
+    storyLoading: false,
+    arcadeLoading: false,
     enrichOnQuickPack: true,
     statusMsg: '',
     statusIsErr: false
   };
 
-  const slotUI = { deckIndex: 0, subj: 1, adv: 3, act: 0, customEn: '', customZh: '', customHl: '' };
+  const slotUI = { deckIndex: 0, subj: 0, adv: 0, act: 0, customEn: '', customZh: '', customHl: '', boardMode: 'story', storyCloze: false, storyRevealed: {} };
 
   const $ = sel => document.querySelector(sel);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
@@ -272,8 +275,18 @@
     const it = itemById(itemId);
     if (!it) return null;
 
-    const mode = opts.promptMode ?? existing?.promptMode ?? s.promptMode ?? 'audio_plus_zh';
+    const requestedMode = opts.promptMode ?? existing?.promptMode ?? s.promptMode ?? 'audio_plus_zh';
     const effDiff = resolveItemDifficulty(s, itemId, 'arena');
+    // Surface 4: AI Smart Mixed Mode rotates fresh AI sentences & listening dictation per item!
+    let mode = requestedMode;
+    if (requestedMode === 'ai_mixed') {
+      const qIdx = Math.max(0, (s.arenaQueue || []).indexOf(itemId));
+      if (effDiff === 'challenge') {
+        mode = qIdx % 3 === 0 ? 'ai_sentence' : (qIdx % 3 === 1 ? 'audio_plus_zh' : 'zh_prompt');
+      } else {
+        mode = qIdx % 2 === 0 ? 'ai_sentence' : 'audio_plus_zh';
+      }
+    }
     const now = Date.now();
     const testedAt = existing?.testedAt ?? now;
     const testedDateStr = existing?.testedDateStr ?? SnapCore.todayISO(testedAt);
@@ -584,7 +597,13 @@
         slotUI.deckIndex = deckIdx;
         slotUI.subj = 0; slotUI.adv = 0; slotUI.act = 0; slotUI.customEn = '';
       }
+    } else if (pack.id.includes('u6')) {
+      slotUI.deckIndex = 0; // slot_u6_1_10
+      slotUI.subj = 0; slotUI.adv = 0; slotUI.act = 0; slotUI.customEn = '';
     }
+    slotUI.boardMode = 'story';
+    slotUI.storyCloze = false;
+    slotUI.storyRevealed = {};
 
     if (!alloc.hasAnyActiveTask && !pack.preread) {
       toast('当前词单全部被设为「下次再练」，请先在家长微调中至少开启 1 个词条！');
@@ -594,7 +613,6 @@
     const focusIds = [...alloc.paperNowIds, ...alloc.oralOnlyIds];
     const paperIds = [...alloc.combinedPaperIds];
     const arenaQueue = [...alloc.paperNowIds];
-    const bugCard = SNAPWORD_CURRICULUM.BUG_CARDS.find(b => b.id === pack.bugId) || SNAPWORD_CURRICULUM.BUG_CARDS[0];
 
     activeSession = {
       sessionId,
@@ -620,16 +638,14 @@
       snapIndex: 0,
       snapState: null,
       matchState: null,
-      bugCardId: bugCard.id,
-      bugFixed: {},
-      bugPickingIdx: null,
+      arcadeState: null,
       paperIds,
       arenaQueue,
       arenaIndex: 0,
       arenaResults: {},
       streak: 0,
       maxStreak: 0,
-      promptMode: chosenDiff === 'challenge' && SnapAI.isReady() ? 'audio_plus_zh' : 'audio_plus_zh',
+      promptMode: SnapAI.isReady() ? 'ai_mixed' : 'audio_plus_zh',
       itemContexts: {},
       hintedOnPaper: {},
       lockedHint: {},
@@ -638,6 +654,7 @@
       oralPhase: 'active',
       oralChecked: {},
       paperGrades: {},
+      aiDebrief: null,
       summary: null
     };
 
@@ -801,6 +818,28 @@
       render();
       await saveState();
       render();
+
+      // Surface 6: Non-blocking AI Coach Post-Session Debrief
+      if (SnapAI.isReady() && allTargetIds.length) {
+        const passedWords = allTargetIds.filter(id => s.arenaResults?.[id]?.outcome === 'paper_independent').map(id => itemById(id)?.en).filter(Boolean);
+        const missedDetails = needReviewIds.map(id => ({
+          en: itemById(id)?.en,
+          zh: itemById(id)?.zh,
+          tags: s.arenaResults?.[id]?.errorTags || []
+        }));
+        SnapAI.generateSessionCoachReport({
+          packTitle: s.packTitle,
+          difficulty: s.difficulty,
+          ratio: s.summary.tally.ratioText,
+          maxStreak: s.maxStreak || 0,
+          passedWords,
+          missedDetails
+        }).then(report => {
+          if (!activeSession || activeSession.sessionId !== s.sessionId || !report) return;
+          activeSession.aiDebrief = report;
+          if (activeSession.paperPhase === 'summary') render();
+        }).catch(() => {});
+      }
     } finally {
       submitLock = false;
     }
@@ -1228,8 +1267,8 @@
           ` : `
             <button type="button" class="step-pill ${s.step === 'oral_wrapup' ? 'active' : ''}" data-jump-step="oral_wrapup">🗣️ 认读收工</button>
           `}
-          <button type="button" class="step-pill ${s.step === 'bug' ? 'active' : ''}" data-jump-step="bug">🕵️ 找错小游戏</button>
-          <button type="button" class="step-pill ${s.step === 'board' ? 'active' : ''}" data-jump-step="board">🎰 摇句黑板</button>
+          <button type="button" class="step-pill ${s.step === 'bug' ? 'active' : ''}" data-jump-step="bug">🎮 趣玩闯关</button>
+          <button type="button" class="step-pill ${s.step === 'board' ? 'active' : ''}" data-jump-step="board">📖 故事与摇句黑板</button>
         </div>
 
         <div class="row">
@@ -1424,7 +1463,12 @@
 
         ${!st.hideModel ? `
           <div class="help-callout">
-            <strong>💡 巧记锦囊：</strong>${esc(coachTip)}
+            <div class="row between" style="gap:8px">
+              <div><strong>💡 巧记锦囊：</strong>${esc(coachTip)}</div>
+              <button type="button" class="btn btn-sm" style="min-height:30px;padding:3px 10px;font-size:12.5px" data-act="alt-ai-mnemonic" ${aiUI.altMnemonicLoading ? 'disabled' : ''}>
+                ${aiUI.altMnemonicLoading ? '⏳ AI 构思中...' : '✨ 换个 AI 趣味记法'}
+              </button>
+            </div>
           </div>
           ${item.bridgeNote ? `<div class="bridge-callout"><strong>🔗 关联串记：</strong>${esc(item.bridgeNote)}</div>` : ''}
         ` : ''}
@@ -1611,10 +1655,11 @@
             <label class="muted" style="font-size:13px;font-weight:700">
               出题方式：
               <select id="arena-prompt-mode" style="padding:4px 8px;font-size:13px;font-weight:700" ${card.subPhase !== 'typing' ? 'disabled' : ''}>
-                <option value="audio_plus_zh" ${ctx.promptMode === 'audio_plus_zh' ? 'selected' : ''}>🔊 听音 + 中文</option>
-                <option value="ai_sentence" ${ctx.promptMode === 'ai_sentence' ? 'selected' : ''}>🤖 AI 五上新句挖空</option>
-                <option value="audio_only" ${ctx.promptMode === 'audio_only' ? 'selected' : ''}>🎧 纯听音盲打</option>
-                <option value="zh_prompt" ${ctx.promptMode === 'zh_prompt' ? 'selected' : ''}>🇨🇳 纯中文默写</option>
+                <option value="ai_mixed" ${s.promptMode === 'ai_mixed' ? 'selected' : ''}>🤖 AI 智能混合出题（推荐）</option>
+                <option value="audio_plus_zh" ${s.promptMode === 'audio_plus_zh' ? 'selected' : ''}>🔊 听音 + 中文</option>
+                <option value="ai_sentence" ${s.promptMode === 'ai_sentence' ? 'selected' : ''}>📝 纯 AI 五上新句挖空</option>
+                <option value="audio_only" ${s.promptMode === 'audio_only' ? 'selected' : ''}>🎧 纯听音盲打</option>
+                <option value="zh_prompt" ${s.promptMode === 'zh_prompt' ? 'selected' : ''}>🇨🇳 纯中文默写</option>
               </select>
             </label>
             ${!isDueStage && doneCount > 0 ? `
@@ -1720,48 +1765,250 @@
     `;
   }
 
-  // ==================== Optional Bonus: Bug Detective & Slot Blackboard ====================
+  // ==================== Multi-Round Anti-Mash Arcade (Replaces Single-Card Bug Hunter) ====================
+  function getSessionPackItems(s) {
+    const ids = [...new Set([...(s?.focusIds || []), ...(s?.arenaQueue || []), ...(s?.dueIds || [])])];
+    if (ids.length) return ids.map(itemById).filter(Boolean);
+    return (selectedPack()?.itemIds || []).map(itemById).filter(Boolean);
+  }
+
+  function buildScrambleRound(item) {
+    const en = SnapCore.normText(item.en);
+    const isMultiWord = en.includes(' ');
+    let targets = [];
+    let traps = [];
+
+    if (isMultiWord) {
+      targets = en.split(' ').filter(Boolean);
+      const trapPool = ['was', 'too', 'in', 'a', 'at', 'ones', 'the', 'do', 'for', 'on', 'with', 'to']
+        .filter(w => !targets.some(t => t.toLowerCase() === w.toLowerCase()));
+      const customDecoys = (item.snap?.decoys || []).map(d => d.text).filter(t => !targets.includes(t));
+      traps = [...new Set([...customDecoys, ...shuffleArray(trapPool)])].slice(0, 2);
+    } else {
+      targets = en.split('');
+      const freqChars = ['a', 'e', 'i', 'o', 'u', 'r', 's', 'n', 'l', 't', 'c', 'h']
+        .filter(ch => !en.toLowerCase().includes(ch));
+      traps = shuffleArray(freqChars).slice(0, 2);
+    }
+
+    const pool = shuffleArray([
+      ...targets.map((text, idx) => ({ key: 't_' + idx, text, isTrap: false })),
+      ...traps.map((text, idx) => ({ key: 'x_' + idx, text, isTrap: true }))
+    ]);
+    return {
+      itemId: item.id,
+      en,
+      zh: item.zh,
+      isMultiWord,
+      targets,
+      pool,
+      filled: [],
+      usedKeys: [],
+      wobbleKey: null,
+      hearts: 3,
+      tip: '',
+      revealedReset: false
+    };
+  }
+
+  function initArcadeState(s, gameType = 'scramble', customRadarRounds = null) {
+    const items = getSessionPackItems(s);
+    const order = shuffleArray(items);
+    const scrambleRounds = order.map(buildScrambleRound);
+    const radarRounds = customRadarRounds || SnapAI.buildLocalRadarArcadeSet(items, s.difficulty || 'normal');
+    s.arcadeState = {
+      gameType, // 'scramble' | 'radar'
+      score: 0,
+      combo: 0,
+      maxCombo: 0,
+      // Scramble Rush state
+      scrambleIdx: 0,
+      scrambleRounds,
+      scrambleDone: scrambleRounds.length === 0,
+      // Radar True/False & Defuse state
+      radarIdx: 0,
+      radarRounds,
+      radarHearts: 3,
+      radarPhase: 'decide', // 'decide' | 'defuse' | 'feedback' | 'done' | 'gameover'
+      radarDraft: '',
+      radarLastOk: true,
+      radarMsg: ''
+    };
+  }
+
   function renderBugStep(s) {
-    const card = SNAPWORD_CURRICULUM.BUG_CARDS.find(b => b.id === s.bugCardId) || SNAPWORD_CURRICULUM.BUG_CARDS[0];
-    const totalBugs = card.tokens.filter(t => t.isBug).length;
-    const squashedCount = Object.keys(s.bugFixed).length;
-    const allDone = squashedCount >= totalBugs;
-    const pickingToken = s.bugPickingIdx != null ? card.tokens[s.bugPickingIdx] : null;
+    if (!s.arcadeState) initArcadeState(s, 'scramble');
+    const arc = s.arcadeState;
     const finalStep = s.arenaQueue?.length ? 'paper' : 'oral_wrapup';
 
     return `
-      <section class="card">
-        <div class="row between">
+      <section class="card" id="arcade-card">
+        <div class="row between" style="margin-bottom:12px">
           <div>
-            <span class="pill" style="background:#fef3c7;color:#92400e">趣味侦探 · 🕵️ 抓拼写臭虫（已抓 ${squashedCount} / ${totalBugs}）</span>
-            <h2 style="margin:8px 0 4px">${esc(card.title)}</h2>
-            <p class="muted" style="margin:0">目标句意：<strong>${esc(card.zh)}</strong></p>
+            <span class="pill pill-core">🎮 趣玩闯关台 · 100% 紧扣本组词单 · 3 颗心防乱点</span>
+            <h2 style="margin:6px 0 2px">${arc.gameType === 'scramble' ? '🚀 字母/词块冲刺拼装（多关连闯）' : '⚖️ 真假拼写鉴别官（多轮判真假 + 手打拆弹）'}</h2>
           </div>
-          <button type="button" class="btn btn-sm btn-primary" data-jump-step="${finalStep}">返回默写闯关 →</button>
+          <button type="button" class="btn btn-sm btn-primary" data-jump-step="${finalStep}">去网页默写考满分 →</button>
         </div>
 
-        <div class="bug-sentence english">
-          ${card.tokens.map((tok, idx) => {
-            const fixed = s.bugFixed[idx];
-            const isPicking = s.bugPickingIdx === idx;
-            return `<button type="button" class="bug-token english ${fixed ? 'squashed' : ''} ${isPicking ? 'picking' : ''}" data-bug-idx="${idx}">${fixed ? `✅ ${esc(tok.fix)}` : esc(tok.text)}</button>`;
-          }).join('')}
+        <div class="arcade-tabs">
+          <button type="button" class="btn btn-sm ${arc.gameType === 'scramble' ? 'btn-primary' : ''}" data-arcade-mode="scramble">
+            🚀 字母/词块冲刺拼装 (${arc.scrambleRounds.length} 关)
+          </button>
+          <button type="button" class="btn btn-sm ${arc.gameType === 'radar' ? 'btn-primary' : ''}" data-arcade-mode="radar">
+            ⚖️ 真假拼写鉴别官 (${arc.radarRounds.length} 关)
+          </button>
+          ${arc.gameType === 'radar' ? `
+            <button type="button" class="btn btn-sm btn-amber" data-act="ai-gen-radar" ${aiUI.arcadeLoading ? 'disabled' : ''}>
+              ${aiUI.arcadeLoading ? '⏳ AI 正在设计新关卡...' : '🤖 让 AI 现出一组全新五上陷阱关卡'}
+            </button>
+          ` : `
+            <button type="button" class="btn btn-sm" data-act="restart-arcade">🔄 打乱顺序重来一局</button>
+          `}
         </div>
 
-        ${pickingToken ? `
-          <div class="bounce-bubble">
-            <div>🐛 抓到可疑拼写「<b class="english">${esc(pickingToken.text)}</b>」！点击正确写法拍扁它：</div>
-            <div class="row" style="justify-content:center;margin-top:10px">
-              ${pickingToken.choices.map(ch => `<button type="button" class="btn btn-primary english" data-bug-fix="${esc(ch)}">${esc(ch)}</button>`).join('')}
-            </div>
-          </div>
-        ` : ''}
-
-        ${allDone ? `<div class="bridge-callout" style="text-align:center;font-weight:900">🕵️ 火眼金睛！句子里的拼写臭虫全部清零！</div>` : ''}
+        ${arc.gameType === 'scramble' ? renderScrambleArcade(s, arc, finalStep) : renderRadarArcade(s, arc, finalStep)}
       </section>
     `;
   }
 
+  function renderScrambleArcade(s, arc, finalStep) {
+    if (arc.scrambleDone || !arc.scrambleRounds.length) {
+      return `
+        <div class="bridge-callout" style="text-align:center;padding:24px" id="arcade-clear-card">
+          <div style="font-size:42px">🏆</div>
+          <h2 style="margin:8px 0">全部 ${arc.scrambleRounds.length} 关拼装冲刺通关！</h2>
+          <p style="font-size:17px;font-weight:800">总分：<span style="color:var(--primary-dark)">${arc.score}</span> 分 · 最高连击：🔥 <b>${arc.maxCombo}</b></p>
+          <div class="row" style="justify-content:center;margin-top:16px">
+            <button type="button" class="btn btn-amber" data-act="restart-arcade">🔄 换随机顺序再刷高分</button>
+            <button type="button" class="btn btn-primary" data-arcade-mode="radar">⚖️ 挑战「真假拼写鉴别官」→</button>
+            <button type="button" class="btn btn-mint" data-jump-step="${finalStep}">⌨️ 去网页默写考满分 →</button>
+          </div>
+        </div>
+      `;
+    }
+
+    const r = arc.scrambleRounds[arc.scrambleIdx];
+    const heartsStr = '❤️'.repeat(Math.max(0, r.hearts)) + '🖤'.repeat(Math.max(0, 3 - r.hearts));
+
+    return `
+      <div class="arcade-hud">
+        <span>🚩 第 ${arc.scrambleIdx + 1} / ${arc.scrambleRounds.length} 关</span>
+        <span class="hearts-bar" title="点错会扣心，3颗心用完需重拼本词，杜绝乱点！">${heartsStr}</span>
+        <span>⭐ ${arc.score} 分 ${arc.combo >= 2 ? `· 🔥 ×${arc.combo}` : ''}</span>
+      </div>
+
+      <div class="word-hero">
+        <div class="muted">${r.isMultiWord ? '按正确词序组装短语（混入了 2 个伪装陷阱词，支持直接点选）' : '按正确顺序组装单词（混入了 2 个伪装字母，支持直接敲键盘或鼠标点选！）'}</div>
+        <div class="word-zh-big">${esc(r.zh)}</div>
+        <button type="button" class="btn btn-primary btn-sm" style="margin-top:6px" data-speak-item="${esc(r.itemId)}">🔊 听真人发音</button>
+      </div>
+
+      ${r.revealedReset ? `
+        <div class="diff-box">
+          <div style="font-weight:900;color:#b91c1c">💥 3 颗防护心用完啦！记住正确拼写再重新组装一遍：</div>
+          <div class="english" style="font-size:30px;font-weight:900;color:#065f46;margin:8px 0">${esc(r.en)}</div>
+          <button type="button" class="btn btn-amber btn-sm" data-act="retry-scramble-round">🙈 记住啦，重新拼这一关 →</button>
+        </div>
+      ` : `
+        <div class="snap-tray english">
+          ${r.targets.map((_, idx) => {
+            const val = r.filled[idx];
+            return val !== undefined
+              ? `<span class="scramble-slot filled">${esc(val)}</span>`
+              : `<span class="scramble-slot">${idx + 1}</span>`;
+          }).join('')}
+        </div>
+
+        ${r.tip ? `<div class="bounce-bubble">${esc(r.tip)}</div>` : ''}
+
+        <div class="snap-pool">
+          ${r.pool.map(tile => {
+            const used = r.usedKeys.includes(tile.key);
+            const wob = r.wobbleKey === tile.key;
+            return `
+              <button type="button" class="magnet-tile english ${used ? 'used' : ''} ${wob ? 'wobble' : ''}"
+                data-scramble-key="${esc(tile.key)}" ${used ? 'disabled' : ''}>
+                ${esc(tile.text)}
+              </button>
+            `;
+          }).join('')}
+        </div>
+      `}
+    `;
+  }
+
+  function renderRadarArcade(s, arc, finalStep) {
+    if (arc.radarPhase === 'done' || arc.radarPhase === 'gameover' || !arc.radarRounds.length) {
+      const won = arc.radarPhase === 'done';
+      return `
+        <div class="${won ? 'bridge-callout' : 'help-callout'}" style="text-align:center;padding:24px" id="radar-finish-card">
+          <div style="font-size:42px">${won ? '🕵️🏅' : '💥'}</div>
+          <h2 style="margin:8px 0">${won ? `鉴别官全 ${arc.radarRounds.length} 关完美通关！` : '3 颗心耗尽！总结陷阱再来一局！'}</h2>
+          <p style="font-size:17px;font-weight:800">本局得分：<span style="color:var(--primary-dark)">${arc.score}</span> 分 · 最高连击：🔥 <b>${arc.maxCombo}</b></p>
+          <div class="row" style="justify-content:center;margin-top:16px">
+            <button type="button" class="btn btn-amber" data-act="ai-gen-radar" ${aiUI.arcadeLoading ? 'disabled' : ''}>🤖 让 AI 再出一组全新关卡</button>
+            <button type="button" class="btn btn-primary" data-act="restart-radar-local">🔄 再玩一轮新随机关卡</button>
+            <button type="button" class="btn btn-mint" data-jump-step="${finalStep}">⌨️ 去网页默写考满分 →</button>
+          </div>
+        </div>
+      `;
+    }
+
+    const r = arc.radarRounds[arc.radarIdx];
+    const heartsStr = '❤️'.repeat(Math.max(0, arc.radarHearts)) + '🖤'.repeat(Math.max(0, 3 - arc.radarHearts));
+
+    return `
+      <div class="arcade-hud">
+        <span>⚖️ 第 ${arc.radarIdx + 1} / ${arc.radarRounds.length} 关 ${r.fromAI ? '· 🤖 AI 关卡' : ''}</span>
+        <span class="hearts-bar" title="判断错误会扣除 1 颗心">${heartsStr}</span>
+        <span>⭐ ${arc.score} 分 ${arc.combo >= 2 ? `· 🔥 ×${arc.combo}` : ''}</span>
+      </div>
+
+      <div class="radar-sentence-box">
+        <div class="muted" style="color:#94a3b8;margin-bottom:8px">仔细检查黄色高亮词的拼写、空格与撇号——它写对了吗？</div>
+        <div class="radar-sentence english">
+          ${esc(r.before)}<span class="radar-spotlight">${esc(r.shownWord)}</span>${esc(r.after)}
+        </div>
+        <div style="color:#cbd5e1;font-size:17px;font-weight:700">${esc(r.zh)}</div>
+        <div style="margin-top:10px">
+          <button type="button" class="btn btn-sm" data-speak-item="${esc(r.itemId)}">🔊 听目标词正确读音</button>
+        </div>
+      </div>
+
+      ${arc.radarPhase === 'decide' ? `
+        <div class="row" style="justify-content:center;gap:14px;margin-top:14px">
+          <button type="button" class="btn btn-mint" style="min-width:210px;font-size:18px" data-radar-judge="ok">✅ 拼写完全正确</button>
+          <button type="button" class="btn btn-amber" style="min-width:210px;font-size:18px" data-radar-judge="trap">🐛 抓到拼写陷阱！</button>
+        </div>
+      ` : ''}
+
+      ${arc.radarPhase === 'defuse' ? `
+        <form id="radar-defuse-form" class="arena-input-wrap" style="margin-top:14px">
+          <div style="font-weight:900;color:#047857;font-size:16px">🎯 火眼金睛！确实藏着陷阱！请亲手敲出正确的英文拼写拆弹：</div>
+          <input type="text" id="radar-defuse-input" class="arena-main-input english" autocomplete="off" autocapitalize="off" spellcheck="false"
+            placeholder="敲出正确拼写，按 Enter 拆弹" value="${esc(arc.radarDraft)}">
+          ${arc.radarMsg ? `<div style="color:#dc2626;font-weight:800">${esc(arc.radarMsg)}</div>` : ''}
+          <div class="row" style="justify-content:center">
+            ${r.correctWord.includes("'") ? `<button type="button" class="btn btn-sm" data-radar-insert="'">插入撇号 '</button>` : ''}
+            <button type="submit" class="btn btn-primary">💥 确认拆弹 (Enter)</button>
+          </div>
+        </form>
+      ` : ''}
+
+      ${arc.radarPhase === 'feedback' ? `
+        <div class="${arc.radarLastOk ? 'bridge-callout' : 'help-callout'}" style="text-align:center;margin-top:14px">
+          <div style="font-size:17px;font-weight:900">${esc(arc.radarMsg)}</div>
+          <div class="muted" style="margin-top:4px">💡 解析：${esc(r.reason)}（正确写法：<b class="english">${esc(r.correctWord)}</b>）</div>
+          <button type="button" class="btn btn-primary btn-sm" style="margin-top:12px" id="btn-radar-next" data-act="radar-next">
+            ${arc.radarIdx + 1 < arc.radarRounds.length ? '下一关 (Enter) →' : '🎉 查看通关成绩 →'}
+          </button>
+        </div>
+      ` : ''}
+    `;
+  }
+
+  // ==================== Current-Pack Context Story Blackboard & Unit-Matched Slot Machine ====================
   function buildSlotSentence() {
     const deck = SNAPWORD_CURRICULUM.SLOT_DECKS[slotUI.deckIndex] || SNAPWORD_CURRICULUM.SLOT_DECKS[0];
     const subj = deck.subjects[slotUI.subj % deck.subjects.length];
@@ -1780,52 +2027,111 @@
     return cleanEn.replace(new RegExp(`(${escapedHl})`, 'i'), '<span class="board-hl">$1</span>');
   }
 
+  function formatStoryLineHtml(sent, idx) {
+    let html = esc(sent.en);
+    const targets = (sent.targets || []).slice().sort((a, b) => b.length - a.length);
+    targets.forEach((t, ti) => {
+      if (!t) return;
+      const key = `${idx}_${ti}`;
+      const escT = esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const reg = new RegExp(`(${escT})`, 'i');
+      if (slotUI.storyCloze && !slotUI.storyRevealed[key]) {
+        html = html.replace(reg, `<button type="button" class="story-blank-pill" data-reveal-story="${key}" data-speak-raw="${esc(t)}">______ (点看)</button>`);
+      } else {
+        html = html.replace(reg, '<span class="board-hl">$1</span>');
+      }
+    });
+    return html;
+  }
+
   function renderBoardStep(s) {
+    const backStep = s.arenaQueue?.length ? 'paper' : 'oral_wrapup';
+    const packItems = getSessionPackItems(s);
+    const story = SnapAI.getMiniStory(s.packId, packItems);
     const slot = buildSlotSentence();
     const activeEn = slotUI.customEn || slot.en;
     const activeZh = slotUI.customZh || slot.zh;
     const activeHl = slotUI.customEn ? slotUI.customHl : slot.highlight;
-    const backStep = s.arenaQueue?.length ? 'paper' : 'oral_wrapup';
 
     return `
-      <section class="blackboard">
-        <div class="row between">
-          <span class="pill" style="background:#334155;color:#fbbf24">🎰 趣味造句摇奖机（留意主谓三单变化）</span>
-          <select id="slot-deck-select" class="reel-select" style="width:auto">
-            ${SNAPWORD_CURRICULUM.SLOT_DECKS.map((d, idx) => `<option value="${idx}" ${idx === slotUI.deckIndex ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}
-          </select>
+      <section class="blackboard" id="context-blackboard">
+        <div class="row between" style="margin-bottom:14px">
+          <div class="row" style="gap:8px">
+            <button type="button" class="btn btn-sm ${slotUI.boardMode === 'story' ? 'btn-amber' : ''}" data-board-mode="story">
+              📖 本组串词小故事（${packItems.length} 词）
+            </button>
+            <button type="button" class="btn btn-sm ${slotUI.boardMode === 'slot' ? 'btn-amber' : ''}" data-board-mode="slot">
+              🎰 句型摇奖黑板
+            </button>
+          </div>
+          <button type="button" class="btn btn-sm btn-mint" data-jump-step="${backStep}">返回默写闯关 →</button>
         </div>
 
-        <div class="board-sentence english" id="board-live-sentence">${formatHighlightedSentence(activeEn, activeHl)}</div>
-        <p class="board-zh">${esc(activeZh)}</p>
+        ${slotUI.boardMode === 'story' ? `
+          <div class="row between" style="margin-bottom:10px">
+            <div>
+              <span class="pill" style="background:#334155;color:#fbbf24">${story.fromAI ? '🤖 AI 现编五上串词微故事' : '📘 本组专属语境串联'}</span>
+              <h2 style="margin:8px 0 0;color:#fff;font-size:21px">${esc(story.title)}</h2>
+            </div>
+            <div class="row">
+              <button type="button" class="btn btn-sm" data-act="toggle-story-cloze">
+                ${slotUI.storyCloze ? '👀 显示全部高亮词' : '🙈 隐藏目标词做完形挑战'}
+              </button>
+              <button type="button" class="btn btn-sm btn-amber" data-act="gen-ai-story" ${aiUI.storyLoading ? 'disabled' : ''}>
+                ${aiUI.storyLoading ? '⏳ AI 正在创编故事...' : '🤖 让 AI 用本组词现编一篇新故事'}
+              </button>
+            </div>
+          </div>
 
-        <div class="row" style="margin-bottom:18px">
-          <button type="button" class="btn btn-amber" data-act="spin-slot">🎰 咔嗒摇一句新组合！</button>
-          <button type="button" class="btn" data-speak-raw="${esc(activeEn)}">🔊 听整句朗读</button>
-          <button type="button" class="btn btn-mint" data-jump-step="${backStep}">返回默写闯关 →</button>
-        </div>
-
-        <div class="slot-reels">
-          <div class="reel-box">
-            <div class="reel-label">① 谁 / 句头</div>
-            <select class="reel-select" data-reel="subj">
-              ${slot.deck.subjects.map((x, i) => `<option value="${i}" ${i === slotUI.subj % slot.deck.subjects.length ? 'selected' : ''}>${esc(x.en)}（${esc(x.zh)}）</option>`).join('')}
+          <div style="margin-top:12px">
+            ${story.sentences.map((sent, idx) => `
+              <div class="story-line-card">
+                <div>
+                  <div class="story-en english">${formatStoryLineHtml(sent, idx)}</div>
+                  <div style="color:#cbd5e1;font-size:15px;margin-top:3px">${esc(sent.zh)}</div>
+                </div>
+                <button type="button" class="btn btn-sm" style="flex-shrink:0" data-speak-raw="${esc(sent.en)}">🔊 听读</button>
+              </div>
+            `).join('')}
+          </div>
+        ` : `
+          <div class="row between">
+            <span class="pill" style="background:#334155;color:#fbbf24">🎰 本单元句型造句摇奖机（已自动匹配当前单元）</span>
+            <select id="slot-deck-select" class="reel-select" style="width:auto">
+              ${SNAPWORD_CURRICULUM.SLOT_DECKS.map((d, idx) => `<option value="${idx}" ${idx === slotUI.deckIndex ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}
             </select>
           </div>
-          ${slot.deck.adverbs[0].en ? `
-          <div class="reel-box">
-            <div class="reel-label">② 频度</div>
-            <select class="reel-select" data-reel="adv">
-              ${slot.deck.adverbs.map((x, i) => `<option value="${i}" ${i === slotUI.adv % slot.deck.adverbs.length ? 'selected' : ''}>${esc(x.en)}（${esc(x.zh)}）</option>`).join('')}
-            </select>
-          </div>` : ''}
-          <div class="reel-box">
-            <div class="reel-label">③ 动作</div>
-            <select class="reel-select" data-reel="act">
-              ${slot.deck.actions.map((x, i) => `<option value="${i}" ${i === slotUI.act % slot.deck.actions.length ? 'selected' : ''}>${esc(x.base)}</option>`).join('')}
-            </select>
+
+          <div class="board-sentence english" id="board-live-sentence">${formatHighlightedSentence(activeEn, activeHl)}</div>
+          <p class="board-zh">${esc(activeZh)}</p>
+
+          <div class="row" style="margin-bottom:18px">
+            <button type="button" class="btn btn-amber" data-act="spin-slot">🎰 咔嗒摇一句新组合！</button>
+            <button type="button" class="btn" data-speak-raw="${esc(activeEn)}">🔊 听整句朗读</button>
           </div>
-        </div>
+
+          <div class="slot-reels">
+            <div class="reel-box">
+              <div class="reel-label">① 谁 / 句头</div>
+              <select class="reel-select" data-reel="subj">
+                ${slot.deck.subjects.map((x, i) => `<option value="${i}" ${i === slotUI.subj % slot.deck.subjects.length ? 'selected' : ''}>${esc(x.en)}（${esc(x.zh)}）</option>`).join('')}
+              </select>
+            </div>
+            ${slot.deck.adverbs[0].en ? `
+            <div class="reel-box">
+              <div class="reel-label">② 频度</div>
+              <select class="reel-select" data-reel="adv">
+                ${slot.deck.adverbs.map((x, i) => `<option value="${i}" ${i === slotUI.adv % slot.deck.adverbs.length ? 'selected' : ''}>${esc(x.en)}（${esc(x.zh)}）</option>`).join('')}
+              </select>
+            </div>` : ''}
+            <div class="reel-box">
+              <div class="reel-label">③ 动作（覆盖当前单元重点词）</div>
+              <select class="reel-select" data-reel="act">
+                ${slot.deck.actions.map((x, i) => `<option value="${i}" ${i === slotUI.act % slot.deck.actions.length ? 'selected' : ''}>${esc(x.base)}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        `}
       </section>
 
       ${s.preread ? `
@@ -1957,6 +2263,15 @@
             🎉 太牛啦！本轮全部一次盲打满分通关！明天课堂默写稳稳拿下！
           </div>
         ` : '')}
+
+        ${s.aiDebrief ? `
+          <div class="ai-debrief-card" id="ai-debrief-card">
+            <div style="font-weight:900;color:#1e3a8a;margin-bottom:6px">🤖 AI 五上教练本轮复盘点评（${esc(SnapAI.getActiveProfile().model)}）</div>
+            <div style="margin:4px 0">👏 <b>本轮亮点：</b>${esc(s.aiDebrief.praise)}</div>
+            ${s.aiDebrief.focusTip ? `<div style="margin:4px 0">🎯 <b>明日默写避坑：</b>${esc(s.aiDebrief.focusTip)}</div>` : ''}
+            ${s.aiDebrief.tomorrowDrill ? `<div style="margin:4px 0">🌙 <b>睡前 30 秒口头抽查：</b>${esc(s.aiDebrief.tomorrowDrill)}</div>` : ''}
+          </div>
+        ` : ''}
 
         <div class="row" style="justify-content:center;margin-top:22px">
           ${s.difficulty === 'easy' ? `
@@ -2207,9 +2522,17 @@
       <section class="card ai-config-card" id="ai-settings-card">
         <div class="row between">
           <div>
-            <span class="pill pill-core">v0.3.0 核心引擎 · 本地密钥物理隔离保存</span>
+            <span class="pill pill-core">v0.3.1 六大 AI 场景 · 本地密钥物理隔离保存</span>
             <h2 style="margin:6px 0 2px">🤖 多模型 AI 智能伴学接口设置</h2>
             <p class="muted" style="margin:0">主力默认已配置为 <b>OpenAI (${esc(SnapAI.PROVIDERS.openai.defaultModel)})</b>；同时支持 Gemini、DeepSeek、本地 LM Studio 等。填入密钥后可一键读取模型列表自由点选，也可保持默认或手动输入。</p>
+            <div class="row" style="gap:6px;margin-top:8px">
+              <span class="pill">① 拆词一键换 AI 趣味记法</span>
+              <span class="pill">② 趣玩台 AI 多轮陷阱关卡</span>
+              <span class="pill">③ 本组词 AI 串词五上故事</span>
+              <span class="pill">④ 默写台 AI 智能混合新题</span>
+              <span class="pill">⑤ 错拼 1 对 1 靶向纠错</span>
+              <span class="pill">⑥ 课后 AI 教练复盘点评</span>
+            </div>
           </div>
           <label style="display:inline-flex;align-items:center;gap:8px;font-weight:900;cursor:pointer;background:#fff;padding:8px 14px;border-radius:12px;border:2px solid var(--border)">
             <input type="checkbox" id="ai-enabled-toggle" ${prof.enabled ? 'checked' : ''} style="width:20px;height:20px">
@@ -3137,39 +3460,268 @@
       finalizeArenaSession(activeSession);
     });
 
-    // Bug Detective & Blackboard
-    document.querySelectorAll('[data-bug-idx]').forEach(btn => {
+    // Surface 1: On-Demand Alternative AI Mnemonic inside Snap step
+    document.querySelector('[data-act="alt-ai-mnemonic"]')?.addEventListener('click', async () => {
+      if (!activeSession?.snapState || aiUI.altMnemonicLoading) return;
+      const item = itemById(activeSession.snapState.itemId);
+      if (!item) return;
+      if (!SnapAI.isReady()) {
+        toast('💡 请先点顶部「🤖 家长与AI设置」填入 API 密钥并启用 AI！');
+        return;
+      }
+      aiUI.altMnemonicLoading = true;
+      render();
+      try {
+        await SnapAI.generateAltMnemonic(item, SnapAI.getMemoryCoachTip(item));
+        toast('✨ AI 已为你换了一种更好记的新口诀！');
+      } catch (err) {
+        toast('⚠️ ' + err.message);
+      } finally {
+        aiUI.altMnemonicLoading = false;
+        render();
+      }
+    });
+
+    // ==================== Multi-Round Anti-Mash Arcade Handlers ====================
+    function handleScramblePick(tileKey) {
+      const arc = activeSession?.arcadeState;
+      if (!arc || arc.gameType !== 'scramble' || arc.scrambleDone) return;
+      const r = arc.scrambleRounds[arc.scrambleIdx];
+      if (!r || r.revealedReset) return;
+      const tile = r.pool.find(t => t.key === tileKey);
+      if (!tile || r.usedKeys.includes(tile.key)) return;
+
+      const expected = r.targets[r.filled.length];
+      if (!tile.isTrap && tile.text === expected) {
+        r.filled.push(tile.text);
+        r.usedKeys.push(tile.key);
+        r.wobbleKey = null;
+        r.tip = '';
+        if (r.filled.length === r.targets.length) {
+          arc.combo = (arc.combo || 0) + 1;
+          arc.maxCombo = Math.max(arc.maxCombo || 0, arc.combo);
+          arc.score += 100 + Math.min(50, arc.combo * 10);
+          SnapAudio.play(state, itemById(r.itemId), null);
+          if (arc.scrambleIdx + 1 < arc.scrambleRounds.length) {
+            arc.scrambleIdx++;
+            toast(`🚀 过关！+${100 + Math.min(50, arc.combo * 10)} 分，进入第 ${arc.scrambleIdx + 1} 关！`);
+          } else {
+            arc.scrambleDone = true;
+          }
+        }
+        render();
+        saveState();
+      } else {
+        r.wobbleKey = tile.key;
+        r.hearts = Math.max(0, r.hearts - 1);
+        arc.combo = 0;
+        r.tip = tile.isTrap
+          ? `⚠️「${tile.text}」是伪装陷阱块！扣除 1 颗心，请仔细听发音再选！`
+          : `🤔 顺序不对哦，第 ${r.filled.length + 1} 格不是「${tile.text}」（扣除 1 颗心）！`;
+        if (r.hearts <= 0) {
+          r.revealedReset = true;
+          SnapAudio.play(state, itemById(r.itemId), null);
+        }
+        render();
+      }
+    }
+
+    document.querySelectorAll('[data-arcade-mode]').forEach(btn => {
       btn.onclick = () => {
         if (!activeSession) return;
-        const idx = Number(btn.dataset.bugIdx);
-        const card = SNAPWORD_CURRICULUM.BUG_CARDS.find(b => b.id === activeSession.bugCardId) || SNAPWORD_CURRICULUM.BUG_CARDS[0];
-        const tok = card.tokens[idx];
-        if (!tok || activeSession.bugFixed[idx]) return;
-        if (!tok.isBug) {
-          toast(`「${tok.text}」拼写完全正确哦！`);
-          return;
-        }
-        activeSession.bugPickingIdx = idx;
+        const targetMode = btn.dataset.arcadeMode;
+        if (!activeSession.arcadeState) initArcadeState(activeSession, targetMode);
+        else activeSession.arcadeState.gameType = targetMode;
         render();
       };
     });
 
-    document.querySelectorAll('[data-bug-fix]').forEach(btn => {
-      btn.onclick = async () => {
-        if (!activeSession || activeSession.bugPickingIdx == null) return;
-        const idx = activeSession.bugPickingIdx;
-        const card = SNAPWORD_CURRICULUM.BUG_CARDS.find(b => b.id === activeSession.bugCardId) || SNAPWORD_CURRICULUM.BUG_CARDS[0];
-        const tok = card.tokens[idx];
-        if (btn.dataset.bugFix === tok.fix) {
-          activeSession.bugFixed[idx] = true;
-          activeSession.bugPickingIdx = null;
-          toast('🐛💥 啪！臭虫拍扁啦：' + tok.tip);
+    document.querySelector('[data-act="restart-arcade"]')?.addEventListener('click', () => {
+      if (!activeSession) return;
+      initArcadeState(activeSession, 'scramble');
+      render();
+    });
+
+    document.querySelector('[data-act="restart-radar-local"]')?.addEventListener('click', () => {
+      if (!activeSession) return;
+      initArcadeState(activeSession, 'radar');
+      render();
+    });
+
+    document.querySelectorAll('[data-scramble-key]').forEach(btn => {
+      btn.onclick = () => handleScramblePick(btn.dataset.scrambleKey);
+    });
+
+    document.querySelector('[data-act="retry-scramble-round"]')?.addEventListener('click', () => {
+      const arc = activeSession?.arcadeState;
+      if (!arc) return;
+      const old = arc.scrambleRounds[arc.scrambleIdx];
+      const it = itemById(old?.itemId);
+      if (it) arc.scrambleRounds[arc.scrambleIdx] = buildScrambleRound(it);
+      render();
+    });
+
+    // Surface 2: AI Dynamic Multi-Round Radar Traps
+    document.querySelector('[data-act="ai-gen-radar"]')?.addEventListener('click', async () => {
+      if (!activeSession || aiUI.arcadeLoading) return;
+      if (!SnapAI.isReady()) {
+        toast('💡 请先点顶部「🤖 家长与AI设置」填入 API 密钥并启用 AI，即可无限生成全新五上关卡！');
+        return;
+      }
+      aiUI.arcadeLoading = true;
+      render();
+      try {
+        const items = getSessionPackItems(activeSession);
+        const rounds = await SnapAI.generateRadarArcadeSet(items, activeSession.difficulty || 'normal');
+        initArcadeState(activeSession, 'radar', rounds);
+        toast(`🤖 AI 已全新设计 ${rounds.length} 关五上真假陷阱关卡！`);
+      } catch (err) {
+        toast('⚠️ ' + err.message);
+      } finally {
+        aiUI.arcadeLoading = false;
+        render();
+      }
+    });
+
+    document.querySelectorAll('[data-radar-judge]').forEach(btn => {
+      btn.onclick = () => {
+        const arc = activeSession?.arcadeState;
+        if (!arc || arc.radarPhase !== 'decide') return;
+        const r = arc.radarRounds[arc.radarIdx];
+        const pickedTrap = btn.dataset.radarJudge === 'trap';
+        if (pickedTrap && r.isTrap) {
+          arc.radarPhase = 'defuse';
+          arc.radarDraft = '';
+          arc.radarMsg = '';
           render();
-          await saveState();
+          $('#radar-defuse-input')?.focus();
+        } else if (!pickedTrap && !r.isTrap) {
+          arc.combo = (arc.combo || 0) + 1;
+          arc.maxCombo = Math.max(arc.maxCombo || 0, arc.combo);
+          arc.score += 100;
+          arc.radarLastOk = true;
+          arc.radarMsg = '✅ 判断精准！这个词确实拼写无误！+100 分';
+          arc.radarPhase = 'feedback';
+          SnapAudio.play(state, itemById(r.itemId), null);
+          render();
+          $('#btn-radar-next')?.focus();
         } else {
-          toast('🧐 这个还是错拼哦，选另一个正确的！');
+          arc.combo = 0;
+          arc.radarHearts = Math.max(0, arc.radarHearts - 1);
+          arc.radarLastOk = false;
+          arc.radarMsg = r.isTrap
+            ? `💔 哎呀中计了！「${r.shownWord}」其实藏着拼写陷阱，扣 1 颗心！`
+            : `💔 误伤好人啦！「${r.shownWord}」本来就是完全正确的拼写，扣 1 颗心！`;
+          arc.radarPhase = arc.radarHearts <= 0 ? 'gameover' : 'feedback';
+          render();
+          $('#btn-radar-next')?.focus();
         }
       };
+    });
+
+    $('#radar-defuse-input')?.addEventListener('input', e => {
+      if (activeSession?.arcadeState) activeSession.arcadeState.radarDraft = e.target.value;
+    });
+
+    document.querySelectorAll('[data-radar-insert]').forEach(btn => {
+      btn.onclick = () => {
+        const inp = $('#radar-defuse-input');
+        if (!inp) return;
+        const ch = btn.dataset.radarInsert;
+        inp.value += ch;
+        inp.dispatchEvent(new Event('input'));
+        inp.focus();
+      };
+    });
+
+    $('#radar-defuse-form')?.addEventListener('submit', e => {
+      e.preventDefault();
+      const arc = activeSession?.arcadeState;
+      if (!arc || arc.radarPhase !== 'defuse') return;
+      const r = arc.radarRounds[arc.radarIdx];
+      const typed = SnapCore.normText($('#radar-defuse-input')?.value ?? '');
+      const strictCase = /[A-Z]/.test(r.correctWord);
+      const ok = typed && (typed === r.correctWord || (!strictCase && typed.toLowerCase() === r.correctWord.toLowerCase()));
+      if (ok) {
+        arc.combo = (arc.combo || 0) + 1;
+        arc.maxCombo = Math.max(arc.maxCombo || 0, arc.combo);
+        arc.score += 150;
+        arc.radarLastOk = true;
+        arc.radarMsg = '💥 拆弹大成功！拼写修正完全正确！+150 分';
+        arc.radarPhase = 'feedback';
+        SnapAudio.play(state, itemById(r.itemId), null);
+        render();
+        $('#btn-radar-next')?.focus();
+      } else {
+        arc.radarHearts = Math.max(0, arc.radarHearts - 1);
+        arc.combo = 0;
+        if (arc.radarHearts <= 0) {
+          arc.radarPhase = 'gameover';
+          render();
+        } else {
+          arc.radarMsg = `🤔 拼写还有一点偏差（已扣 1 颗心），听发音再仔细拼一次！`;
+          render();
+          $('#radar-defuse-input')?.focus();
+        }
+      }
+    });
+
+    document.querySelector('[data-act="radar-next"]')?.addEventListener('click', () => {
+      const arc = activeSession?.arcadeState;
+      if (!arc) return;
+      if (arc.radarIdx + 1 < arc.radarRounds.length) {
+        arc.radarIdx++;
+        arc.radarPhase = 'decide';
+        arc.radarDraft = '';
+        arc.radarMsg = '';
+      } else {
+        arc.radarPhase = 'done';
+      }
+      render();
+    });
+
+    // ==================== Surface 3: Current-Pack Story Blackboard & Unit-Matched Slot Machine ====================
+    document.querySelectorAll('[data-board-mode]').forEach(btn => {
+      btn.onclick = () => {
+        slotUI.boardMode = btn.dataset.boardMode;
+        render();
+      };
+    });
+
+    document.querySelector('[data-act="toggle-story-cloze"]')?.addEventListener('click', () => {
+      slotUI.storyCloze = !slotUI.storyCloze;
+      slotUI.storyRevealed = {};
+      render();
+    });
+
+    document.querySelectorAll('[data-reveal-story]').forEach(btn => {
+      btn.onclick = () => {
+        slotUI.storyRevealed[btn.dataset.revealStory] = true;
+        if (btn.dataset.speakRaw) SnapAudio.play(state, btn.dataset.speakRaw, null);
+        render();
+      };
+    });
+
+    document.querySelector('[data-act="gen-ai-story"]')?.addEventListener('click', async () => {
+      if (!activeSession || aiUI.storyLoading) return;
+      if (!SnapAI.isReady()) {
+        toast('💡 请先点顶部「🤖 家长与AI设置」填入 API 密钥并启用 AI！');
+        return;
+      }
+      aiUI.storyLoading = true;
+      render();
+      try {
+        const items = getSessionPackItems(activeSession);
+        await SnapAI.generateMiniStory(activeSession.packId, items);
+        slotUI.storyCloze = false;
+        slotUI.storyRevealed = {};
+        toast('🤖 AI 已把本组词串联成一篇全新的五上搞笑小故事！');
+      } catch (err) {
+        toast('⚠️ ' + err.message);
+      } finally {
+        aiUI.storyLoading = false;
+        render();
+      }
     });
 
     $('#slot-deck-select')?.addEventListener('change', e => {
@@ -3559,11 +4111,27 @@
     });
   }
 
-  // ==================== Global Enter Shortcut on Passed/Diff Cards ====================
+  // ==================== Global Keyboard Shortcuts (Arena Enter + Scramble Letter Snap) ====================
   document.addEventListener('keydown', e => {
-    if (e.key !== 'Enter' || currentTab !== 'learn' || !activeSession) return;
+    if (currentTab !== 'learn' || !activeSession) return;
     const tag = document.activeElement?.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') return;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+    // Direct keyboard letter typing during Scramble Rush single-word rounds!
+    if (activeSession.step === 'bug' && activeSession.arcadeState?.gameType === 'scramble' && !activeSession.arcadeState.scrambleDone) {
+      const r = activeSession.arcadeState.scrambleRounds[activeSession.arcadeState.scrambleIdx];
+      if (r && !r.isMultiWord && !r.revealedReset && /^[a-zA-Z]$/.test(e.key) && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        const matchTile = r.pool.find(t => !r.usedKeys.includes(t.key) && !t.isTrap && t.text.toLowerCase() === e.key.toLowerCase())
+          || r.pool.find(t => !r.usedKeys.includes(t.key) && t.text.toLowerCase() === e.key.toLowerCase());
+        if (matchTile) {
+          e.preventDefault();
+          document.querySelector(`[data-scramble-key="${matchTile.key}"]`)?.click();
+        }
+        return;
+      }
+    }
+
+    if (e.key !== 'Enter' || tag === 'BUTTON') return;
     if (activeSession.step === 'paper' || activeSession.step === 'due_precheck') {
       const qk = activeSession.step === 'due_precheck' ? 'due' : 'arena';
       const card = qk === 'due' ? activeSession.dueCard : activeSession.arenaCard;
@@ -3574,6 +4142,9 @@
         e.preventDefault();
         $('#btn-start-blind-retype')?.click();
       }
+    } else if (activeSession.step === 'bug' && activeSession.arcadeState?.gameType === 'radar' && activeSession.arcadeState.radarPhase === 'feedback') {
+      e.preventDefault();
+      $('#btn-radar-next')?.click();
     }
   });
 

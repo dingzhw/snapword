@@ -808,6 +808,204 @@ const SnapAI = (() => {
     return Array.isArray(data?.items) ? data.items : [];
   }
 
+  // ==================== Surface 1: On-Demand Alternative AI Mnemonic ====================
+  async function generateAltMnemonic(item, prevTip = '') {
+    if (!isReady() || !item) throw new Error('请先在「🤖 家长与AI设置」配置并启用 AI 接口');
+    const res = await requestJSON({
+      systemPrompt: '你是很会哄江苏小学五年级孩子记单词的金牌英语老师。请换一种全新的、更好玩的记忆法（如画面联想、拆音节故事或同类词口诀），不要和旧口诀重复，不超过55字。严格返回 JSON：{"tip":"..."}',
+      userPrompt: JSON.stringify({ word: item.en, meaning: item.zh, previousTip: prevTip }),
+      temperature: 0.85
+    });
+    const tip = String(res?.tip || '').trim().slice(0, 110);
+    if (!tip) throw new Error('AI 未返回有效记法');
+    const bank = loadBank();
+    bank.items[item.id] = bank.items[item.id] || { memoryTip: '', variants: [] };
+    bank.items[item.id].memoryTip = tip;
+    saveBank();
+    return tip;
+  }
+
+  // ==================== Surface 3: Current-Pack Context Story & AI Story Weaver ====================
+  function buildLocalMiniStory(packId, items) {
+    const list = (items || []).slice(0, 10);
+    // Dedicated coherent story when practicing Unit 6 Wordlist 1-10 (all 10 words!)
+    const idSet = new Set(list.map(it => it.id));
+    if (idSet.has('u6_get_along_with') && idSet.has('u6_between') && idSet.has('u6_heavy')) {
+      const lines = [
+        { en: 'Bobby and Sam live next to their friendly neighbour.', zh: '波比和山姆住在他们友好的邻居隔壁。', targets: ['next to', 'neighbour'] },
+        { en: 'They always get along with each other.', zh: '他们总是彼此和睦相处。', targets: ['get along with'] },
+        { en: 'There is a big space between two old walls.', zh: '两堵旧围墙中间有一大片空地。', targets: ['space', 'between', 'wall'] },
+        { en: 'On their way back, Billy carries a very heavy bag.', zh: '在回去的路上，比利提着一个非常重的包。', targets: ['on their way back', 'heavy'] },
+        { en: 'Let us stop and drink some water together!', zh: '让我们停下来一起喝点水吧！', targets: ['drink', 'some'] }
+      ];
+      return {
+        title: '📖 本组词串记微故事：好邻居与野餐归途（精准覆盖本组生词）',
+        sentences: lines.filter(l => l.targets.some(t => list.some(it => it.en.toLowerCase().includes(t.toLowerCase()) || t.toLowerCase().includes(it.en.toLowerCase().replace("one's", 'their'))))),
+        fromAI: false
+      };
+    }
+
+    const sentences = list.map(it => {
+      const ctxEn = it.context?.en || (it.sentencePrompt?.template ? it.sentencePrompt.template.replace('______', it.sentencePrompt.expected || it.en) : it.en);
+      const ctxZh = it.context?.zh || it.sentencePrompt?.zh || it.zh;
+      return { en: ctxEn, zh: ctxZh, targets: [it.sentencePrompt?.expected || it.en] };
+    });
+    return {
+      title: `📖 本组 ${list.length} 个词专属语境句卡（100% 紧扣当前词单）`,
+      sentences,
+      fromAI: false
+    };
+  }
+
+  function getMiniStory(packId, items) {
+    const bank = loadBank();
+    if (bank.stories?.[packId]?.sentences?.length) {
+      return bank.stories[packId];
+    }
+    return buildLocalMiniStory(packId, items);
+  }
+
+  async function generateMiniStory(packId, items) {
+    if (!isReady() || !Array.isArray(items) || !items.length) {
+      throw new Error('请先在「🤖 家长与AI设置」配置并启用 AI 接口');
+    }
+    const list = items.slice(0, 10);
+    const systemPrompt = [
+      '你是江苏译林版小学英语五年级上册创意老师。请把下面这组必默词全部串联进一篇 4~6 句搞笑温馨的五年级小短文（主角可用 Bobby、Sam、Billy、Su Hai、Mike）。',
+      '硬性要求：1. 句式与词汇严格保持江苏三至五年级上学期水平，绝不超纲；2. 每句 6~13 个词；3. 尽量用上全部目标词，并在 targets 数组里列出该句实际用到的目标词原文。',
+      '严格返回 JSON：{"title":"中文趣味标题","sentences":[{"en":"英文句子","zh":"中文翻译","targets":["本句用到的目标词1"]}]}'
+    ].join('\n');
+    const data = await requestJSON({
+      systemPrompt,
+      userPrompt: JSON.stringify({ words: list.map(it => ({ en: it.en, zh: it.zh })) }),
+      temperature: 0.78
+    });
+    const rawSents = Array.isArray(data?.sentences) ? data.sentences : [];
+    const cleanSents = rawSents
+      .map(s => ({
+        en: String(s?.en || '').trim(),
+        zh: String(s?.zh || '').trim(),
+        targets: Array.isArray(s?.targets) ? s.targets.map(t => String(t).trim()).filter(Boolean) : []
+      }))
+      .filter(s => s.en && s.zh)
+      .slice(0, 8);
+    if (!cleanSents.length) throw new Error('AI 未返回有效短文');
+    const story = {
+      title: `🤖 AI 现编五上串词小故事：${String(data?.title || '今日词单奇遇记').slice(0, 36)}`,
+      sentences: cleanSents,
+      fromAI: true,
+      createdAt: Date.now()
+    };
+    const bank = loadBank();
+    bank.stories = bank.stories || {};
+    bank.stories[packId] = story;
+    saveBank();
+    return story;
+  }
+
+  // ==================== Surface 2: Multi-Round Anti-Mash True/False & Fix Arcade ====================
+  function buildLocalRadarArcadeSet(items, difficulty = 'normal') {
+    const list = (items || []).slice(0, 10);
+    const rounds = [];
+    const shuffled = [...list].sort(() => Math.random() - 0.5);
+    const targetCount = Math.min(8, Math.max(list.length, 5));
+
+    for (let i = 0; i < targetCount; i++) {
+      const it = shuffled[i % shuffled.length];
+      if (!it) continue;
+      const v = pickQuizVariant(it, difficulty, true);
+      const correctWord = String(v.expected || it.en).trim();
+      const parts = String(v.template || '______').split('______');
+      const before = parts[0] || '';
+      const after = parts.slice(1).join('______') || '';
+      const decoys = (v.distractors || synthesizeDistractors(it, correctWord)).filter(d => d.toLowerCase() !== correctWord.toLowerCase());
+      // ~60% trap rounds so child gets real defuse typing practice, ~40% true rounds so they can't blindly always pick "trap"!
+      const isTrap = decoys.length > 0 && (i % 5 !== 1 && i % 5 !== 4);
+      const shownWord = isTrap ? decoys[i % decoys.length] : correctWord;
+      rounds.push({
+        itemId: it.id,
+        isTrap,
+        shownWord,
+        correctWord,
+        before,
+        after,
+        zh: v.zh || it.zh,
+        reason: isTrap
+          ? (it.helpNote || `注意正确拼写应为 ${correctWord}`)
+          : `完全正确！「${correctWord}」在这个句子里拼写与用法都没毛病。`,
+        fromAI: Boolean(v.fromAI)
+      });
+    }
+    return rounds;
+  }
+
+  async function generateRadarArcadeSet(items, difficulty = 'normal') {
+    if (!isReady() || !Array.isArray(items) || !items.length) {
+      throw new Error('请先在「🤖 家长与AI设置」配置并启用 AI 接口');
+    }
+    const list = items.slice(0, 8);
+    const diffLabel = difficulty === 'challenge'
+      ? '挑战难度（极易混淆的细微拼写陷阱：哑音e、双写字母、撇号、介词to/too、英式our）'
+      : '五上适中难度（贴近小学生真实错拼的明显拼写陷阱）';
+    const systemPrompt = [
+      '你是江苏译林版小学五年级英语游戏关卡设计师。请为「真假拼写鉴别官」小游戏设计一组多轮连续关卡（每词1关）。',
+      '规则：一半关卡 isTrap=true（把目标词改成五年级最容易犯的错拼，如 hevy / nieghbour / bitween / next too / get along was / on ones way back），另一半 isTrap=false（完全正确拼写）。句子必须是极简五上水平（5~11词），目标词位置用 ______ 标记。',
+      '严格返回 JSON：{"rounds":[{"id":"词条id","isTrap":true,"shownWord":"显示在空里的词(真或假)","correctWord":"正确目标词","template":"含 ______ 的五上简单句","zh":"中文句意","reason":"1句简短中文解析"}]}'
+    ].join('\n');
+
+    const data = await requestJSON({
+      systemPrompt,
+      userPrompt: JSON.stringify({ difficulty: diffLabel, items: list.map(it => ({ id: it.id, en: it.en, zh: it.zh })) }),
+      temperature: 0.72
+    });
+    const rawRounds = Array.isArray(data?.rounds) ? data.rounds : [];
+    const valid = [];
+    for (const r of rawRounds) {
+      const it = list.find(x => x.id === r?.id);
+      if (!it) continue;
+      const tpl = String(r?.template || '').trim();
+      if (!tpl.includes('______')) continue;
+      const correctWord = String(r?.correctWord || it.en).trim();
+      const shownWord = String(r?.shownWord || '').trim();
+      if (!shownWord || !correctWord) continue;
+      const isTrap = shownWord.toLowerCase() !== correctWord.toLowerCase() || (/[A-Z]/.test(correctWord) && shownWord !== correctWord);
+      const parts = tpl.split('______');
+      valid.push({
+        itemId: it.id,
+        isTrap,
+        shownWord,
+        correctWord,
+        before: parts[0] || '',
+        after: parts.slice(1).join('______') || '',
+        zh: String(r?.zh || it.zh).trim(),
+        reason: String(r?.reason || it.helpNote || '').trim().slice(0, 90),
+        fromAI: true
+      });
+    }
+    if (valid.length < 2) throw new Error('AI 返回的有效关卡数量不足，已保持内置关卡');
+    return valid;
+  }
+
+  // ==================== Surface 6: Post-Session AI Coach Debrief ====================
+  async function generateSessionCoachReport(payload) {
+    if (!isReady()) return null;
+    try {
+      const res = await requestJSON({
+        systemPrompt: '你是温暖专业的江苏小学五年级英语伴学教练。根据学生刚刚完成的无纸化默写成绩，给出3条极简实用的中文反馈（每条不超过40字）：1.praise(表扬具体亮点)；2.focusTip(指出明天课堂默写最需提防的1-2个拼写陷阱)；3.tomorrowDrill(给家长睡前30秒口头抽查建议)。严格返回 JSON：{"praise":"...","focusTip":"...","tomorrowDrill":"..."}',
+        userPrompt: JSON.stringify(payload),
+        temperature: 0.5
+      });
+      if (!res?.praise) return null;
+      return {
+        praise: String(res.praise).trim().slice(0, 90),
+        focusTip: String(res.focusTip || '').trim().slice(0, 100),
+        tomorrowDrill: String(res.tomorrowDrill || '').trim().slice(0, 100)
+      };
+    } catch {
+      return null;
+    }
+  }
+
   return {
     PROVIDERS,
     SECRET_STORAGE_KEY,
@@ -826,7 +1024,14 @@ const SnapAI = (() => {
     getMemoryCoachTip,
     prefetchPackQuestions,
     diagnoseMistake,
-    enrichCustomItems
+    enrichCustomItems,
+    generateAltMnemonic,
+    buildLocalMiniStory,
+    getMiniStory,
+    generateMiniStory,
+    buildLocalRadarArcadeSet,
+    generateRadarArcadeSet,
+    generateSessionCoachReport
   };
 })();
 

@@ -23,9 +23,14 @@ def detect_version() -> str:
 
 
 LAUNCHER_CMD = """@echo off
-chcp 65001 >nul
-title 词哒 · SnapWord 伴学工作台
-start "" "%~dp0SnapWord-词哒.html"
+setlocal
+cd /d "%~dp0"
+for %%F in (*.html) do (
+    start "" "%%~fF"
+    exit /b 0
+)
+echo SnapWord HTML file not found in %~dp0
+pause
 """
 
 

@@ -771,6 +771,7 @@ const SNAPWORD_CURRICULUM = (() => {
       paperCap: 10,
       preserveFullPack: true,
       forceDictationAll: true,
+      slotDeckId: 'slot_u6_1_10',
       bugId: 'bug_u6_1_10',
       itemIds: U6_WL_1_10_IDS
     },
@@ -785,6 +786,7 @@ const SNAPWORD_CURRICULUM = (() => {
       paperCap: 5,
       preserveFullPack: true,
       forceDictationAll: true,
+      slotDeckId: 'slot_u6_1_10',
       bugId: 'bug_u6_1_10',
       itemIds: U6_WL_1_10_IDS.slice(0, 5)
     },
@@ -799,6 +801,7 @@ const SNAPWORD_CURRICULUM = (() => {
       paperCap: 5,
       preserveFullPack: true,
       forceDictationAll: true,
+      slotDeckId: 'slot_u6_1_10',
       bugId: 'bug_u6_1_10',
       itemIds: U6_WL_1_10_IDS.slice(5)
     },
@@ -812,6 +815,7 @@ const SNAPWORD_CURRICULUM = (() => {
       paperCap: 14,
       preserveFullPack: true,
       forceDictationAll: true,
+      slotDeckId: 'slot_u6_advice',
       bugId: 'bug_6',
       itemIds: U6_WL_11_24_IDS
     }
@@ -873,6 +877,7 @@ const SNAPWORD_CURRICULUM = (() => {
       kidTitle: '新词：墙、中间、喝',
       kidNote: '先认 4 个新课词，上课会轻松一点',
       modeHint: 'standard',
+      slotDeckId: 'slot_u6_1_10',
       itemIds: ['u6_wall', 'u6_between', 'u6_drink', 'u6_get_along_with'],
       preread: {
         source: '教材五上 U6 Cartoon time (p.72)',
@@ -892,6 +897,7 @@ const SNAPWORD_CURRICULUM = (() => {
       kidTitle: '六尺巷：做个好邻居',
       kidNote: '读完小故事，再练 4 个词',
       modeHint: 'standard',
+      slotDeckId: 'slot_u6_advice',
       itemIds: ['u6_friendly', 'u6_letter', 'u6_next_to', 'u6_neighbour'],
       preread: {
         source: '教材五上 U6 Story time《六尺巷》(p.76)',
@@ -911,6 +917,7 @@ const SNAPWORD_CURRICULUM = (() => {
       kidTitle: '六尺巷的生词',
       kidNote: '课本第 75 页的 6 个词',
       modeHint: 'standard',
+      slotDeckId: 'slot_u6_advice',
       itemIds: ['u6_space', 'u6_their', 'u6_too', 'u6_close_to', 'u6_use', 'u6_advice'],
       bugId: 'bug_6'
     },
@@ -922,6 +929,7 @@ const SNAPWORD_CURRICULUM = (() => {
       kidTitle: '我最喜欢的科目',
       kidNote: '课本第 78 页的 5 个词',
       modeHint: 'standard',
+      slotDeckId: 'slot_u6_advice',
       itemIds: ['u6_then', 'u6_time', 'u6_favourite', 'u6_problem', 'u6_classmate'],
       bugId: 'bug_7'
     },
@@ -980,6 +988,28 @@ const SNAPWORD_CURRICULUM = (() => {
   ];
 
   const SLOT_DECKS = [
+    {
+      id: 'slot_u6_1_10',
+      name: '🏡 Unit 6 词表 1–10 专属造句机（好邻居与野餐归途）',
+      subjects: [
+        { en: 'We', zh: '我们', thirdSingular: false },
+        { en: 'Bobby and Sam', zh: '波比和山姆', thirdSingular: false },
+        { en: 'My friendly neighbour', zh: '我友好的邻居', thirdSingular: true },
+        { en: 'Su Hai', zh: '苏海', thirdSingular: true }
+      ],
+      adverbs: [
+        { en: '', zh: '' }
+      ],
+      actions: [
+        { base: 'get along with every neighbour.', sForm: 'gets along with every neighbour.', zh: '和每一位邻居都和睦相处。', highlight: 'get along with' },
+        { base: 'see a big space between two walls.', sForm: 'sees a big space between two walls.', zh: '看到两堵围墙中间有一大片空地。', highlight: 'between' },
+        { base: 'live next to our friendly neighbour.', sForm: 'lives next to our friendly neighbour.', zh: '住在我们友好的邻居隔壁。', highlight: 'next to' },
+        { base: 'carry a heavy bag on their way back.', sForm: 'carries a heavy bag on his way back.', zh: '在回去的路上提着一个很重的包。', highlight: 'heavy' },
+        { base: 'drink some warm water in this space.', sForm: 'drinks some warm water in this space.', zh: '在这块空地上喝一些温水。', highlight: 'drink' },
+        { base: 'move the old wall back a little.', sForm: 'moves the old wall back a little.', zh: '把旧围墙往后挪一点。', highlight: 'wall' },
+        { base: 'share some food on our way back.', sForm: 'shares some food on her way back.', zh: '在回去的路上分享一些食物。', highlight: 'some' }
+      ]
+    },
     {
       id: 'slot_u5_weekend',
       name: '🎲 周末日常摇奖机（U5 频度副词 + 动词三单变化）',

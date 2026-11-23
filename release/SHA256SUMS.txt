@@ -15,3 +15,5 @@ b9ae958434f9a8ca30461c8aa5ca9bcb677f55b3b73f1b3c319bebfaa723f5e3  dist/SnapWord-
 bd6c1f2942adc2e05c31f8c43d4aa58872004f44e45c7407e8200bbf23f4a69e  dist/SnapWord-词哒.html (v0.3.0)
 16e3cc01e797aa473c87e3a0f05b8669f5da927bda90f2eaf6152da138a22974  SnapWord-词哒-v0.3.0-离线解压即用包.zip
 6ab60d612d77dcf1f86dc64b7e4b18b91ebacc6e769c102ac1600860111d3b33  dist/SnapWord-词哒.html (v0.3.0)
+a945e06902e55621332af61b26b4b6b2d148427caade46dff276259165c066b8  SnapWord-词哒-v0.3.1-离线解压即用包.zip
+0ce6a2c01cb3b33201a0fdad83c9cf07ca6bdb4c0726a84caf69135bbe5a0d1f  dist/SnapWord-词哒.html (v0.3.1)

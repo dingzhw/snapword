@@ -5,7 +5,7 @@
 
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Runtime](https://img.shields.io/badge/Runtime-Offline%20%2B%20Multi--LLM-blue.svg)
-![Version](https://img.shields.io/badge/Version-v0.3.0-teal.svg)
+![Version](https://img.shields.io/badge/Version-v0.3.1-teal.svg)
 
 ---
 

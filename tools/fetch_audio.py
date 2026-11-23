@@ -21,6 +21,7 @@ TARGET_WORDS = [
     "between", "wall", "neighbour", "neighbor", "heavy", "drink", "some", "space",
     "their", "too", "use", "letter", "advice", "important", "friendly",
     "then", "time", "favourite", "favorite", "problem", "classmate", "close", "next",
+    "get", "along", "way", "back", "to", "on",
 ]
 
 UA = "SnapWord/0.1.5 (https://github.com/dingzhw/snapword; educational open-source project)"

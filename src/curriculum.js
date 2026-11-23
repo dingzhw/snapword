@@ -264,25 +264,25 @@ const SNAPWORD_CURRICULUM = (() => {
     },
 
     // ==================== Unit 6 Official 24 Items (Print p.70–79, Wordlist p.111–112: 19 Core + 5 Starred) ====================
-    // --- Get ready (p.70–71) ---
+    // --- Wordlist #01–#10 (Print p.111: ALL 10 required for dictation, starred & unstarred alike) ---
     {
-      id: 'u6_get_along_with', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 70,
-      textbookCore: false, classRequirement: 'read_meaning_use',
+      id: 'u6_get_along_with', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 70, wordlistOrder: 1,
+      textbookCore: false, classRequirement: 'dictation_verified',
       type: 'phrase', en: 'get along with', acceptedVariants: [], zh: '与……和睦相处',
       helpKind: 'word_boundary', displayChunks: 'get ␣ a·long ␣ with',
-      helpNote: '单元标题短语（教材带 * 词）：三个词留清空格，结尾用 with（和……一起）。',
+      helpNote: '词表第 01 项（带 * 必默短语）：三个词留清空格，along 连写，结尾用 with（和……一起）。',
       bridgeNote: '单元大问题：How can you get along well with others?',
-      snap: { pieces: ['get', '␣', 'along', '␣', 'with'], decoys: [{ text: 'was', tip: '🤝 和别人相处要用 with！' }] },
+      snap: { pieces: ['get', '␣', 'along', '␣', 'with'], decoys: [{ text: 'was', tip: '🤝 和别人相处要用 with！' }, { text: 'a long', tip: '🧩 这里表示“相处”的 along 是一个连在一起的词哦！' }] },
       cloze: { prefix: 'get ', blank: 'along with', suffix: '', hint: '补全后两个词，组成“与……和睦相处”（注意词间留空格）' },
       sentencePrompt: { template: 'We should ______ each other.', zh: '我们应该彼此和睦相处。', expected: 'get along with' },
       context: { en: 'How can you get along well with others?', zh: '你怎样才能和他人和睦相处？', origin: '教材五上 U6 p.71' }
     },
     {
-      id: 'u6_between', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 70,
-      textbookCore: true, classRequirement: 'unverified_family',
+      id: 'u6_between', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 70, wordlistOrder: 2,
+      textbookCore: true, classRequirement: 'dictation_verified',
       type: 'word', en: 'between', acceptedVariants: [], zh: '在……中间，介于……之间',
       helpKind: 'spelling_focus', displayChunks: 'be ｜ tween',
-      helpNote: '前面是熟悉的 be，后面 tween 中间有两个 e（ee 发长音 /iː/）。',
+      helpNote: '词表第 02 项：前面是熟悉的 be，后面 tween 中间有两个 e（ee 发长音 /iː/）。',
       bridgeNote: '搭配：between their houses（在他们两家房子中间）。',
       snap: { pieces: ['be', 'tw', 'een'], decoys: [{ text: 'ea', tip: '👀 between 里面藏着双胞胎字母 e-e！' }, { text: 'bi', tip: '🐝 开头是 b-e 哦！' }] },
       cloze: { prefix: 'be', blank: 'tween', suffix: '', hint: '补全后 5 个字母（留心中间发长音的双胞胎元音字母）' },
@@ -290,11 +290,11 @@ const SNAPWORD_CURRICULUM = (() => {
       context: { en: 'There is a narrow space between two houses.', zh: '两栋房子中间有一块窄空地。', origin: '改编自教材 p.70/75' }
     },
     {
-      id: 'u6_wall', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 70,
-      textbookCore: true, classRequirement: 'unverified_family',
+      id: 'u6_wall', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 70, wordlistOrder: 3,
+      textbookCore: true, classRequirement: 'dictation_verified',
       type: 'word', en: 'wall', acceptedVariants: [], zh: '围墙；墙，壁',
       helpKind: 'morphology', displayChunks: 'w + all',
-      helpNote: 'w ＋ all（全部），四个字母一气呵成。',
+      helpNote: '词表第 03 项：w ＋ all（全部），四个字母一气呵成。',
       bridgeNote: '同类词类比：ball（球） → wall（墙） → football（足球）。',
       snap: { pieces: ['w', 'all'], decoys: [{ text: 'ool', tip: '🧱 墙和球一样，尾巴都是 a-l-l！' }, { text: 'al', tip: '🧱 尾巴有两个 l：w-a-l-l！' }] },
       cloze: { prefix: 'w', blank: 'all', suffix: '', hint: '补全后 3 个字母（与“球”的后三个字母相同）' },
@@ -302,13 +302,13 @@ const SNAPWORD_CURRICULUM = (() => {
       context: { en: 'A wall is not important. We should be friendly.', zh: '一堵墙并不重要，我们应该友好相处。', origin: '教材五上 U6 p.76' }
     },
     {
-      id: 'u6_neighbour', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 70,
-      textbookCore: false, classRequirement: 'read_meaning_use',
+      id: 'u6_neighbour', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 70, wordlistOrder: 4,
+      textbookCore: false, classRequirement: 'dictation_verified',
       type: 'word', en: 'neighbour', usVariant: 'neighbor', acceptedVariants: [], zh: '邻居，邻人',
       helpKind: 'spelling_focus', displayChunks: 'neigh ｜ bour',
-      helpNote: '教材带 * 词（先保听读认义）：前半 neigh，后半英式 -bour（美式 neighbor）。',
+      helpNote: '词表第 04 项（带 * 必默词）：前半 neigh（e-i-g-h），后半英式 -bour（总共 9 个字母）。',
       bridgeNote: '六尺巷主旨：become good neighbours（成为好邻居）。',
-      snap: { pieces: ['neigh', 'bour'], decoys: [{ text: 'niegh', tip: '🏡 这词比较特殊，是 e-i-g-h 开头哦！' }] },
+      snap: { pieces: ['neigh', 'bour'], decoys: [{ text: 'niegh', tip: '🏡 这词比较特殊，是 e-i-g-h 开头哦！' }, { text: 'ber', tip: '🇬🇧 江苏课本按英式拼写，后半截是 b-o-u-r 哦！' }] },
       cloze: { prefix: 'neigh', blank: 'bour', suffix: '', hint: '补全后 4 个字母（按江苏教材英式拼写）' },
       sentencePrompt: { template: 'Mr Green is our friendly ______.', zh: '格林先生是我们友好的邻居。', expected: 'neighbour' },
       context: { en: 'The two families become good neighbours.', zh: '两家人成为了好邻居。', origin: '改编自教材 p.76' }
@@ -316,11 +316,11 @@ const SNAPWORD_CURRICULUM = (() => {
 
     // --- Cartoon time & Sounds in focus (p.72–74) ---
     {
-      id: 'u6_heavy', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 72,
-      textbookCore: true, classRequirement: 'unverified_family',
+      id: 'u6_heavy', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 72, wordlistOrder: 5,
+      textbookCore: true, classRequirement: 'dictation_verified',
       type: 'word', en: 'heavy', acceptedVariants: [], zh: '重的，沉的',
       helpKind: 'spelling_focus', displayChunks: 'hea ｜ vy',
-      helpNote: '整词读 /ˈhevi/，注意中间是字母组合 ea（发短音 /e/，别漏掉 a）。',
+      helpNote: '词表第 05 项：整词读 /ˈhevi/，注意中间是字母组合 ea（发短音 /e/，别漏掉 a）。',
       bridgeNote: '反义联系：heavy（重的） ↔ light（轻的）。',
       snap: { pieces: ['h', 'ea', 'vy'], decoys: [{ text: 'e', tip: '🎒 包太重啦，里面装了 e 和 a 两个元音字母：h-e-a-v-y！' }] },
       cloze: { prefix: 'h', blank: 'ea', suffix: 'vy', hint: '补全中间发短音 /e/ 的 2 个元音字母组合' },
@@ -328,11 +328,11 @@ const SNAPWORD_CURRICULUM = (() => {
       context: { en: 'My bag is so heavy.', zh: '我的包太重了。', origin: '教材五上 U6 p.72' }
     },
     {
-      id: 'u6_drink', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 72,
-      textbookCore: true, classRequirement: 'unverified_family',
+      id: 'u6_drink', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 72, wordlistOrder: 6,
+      textbookCore: true, classRequirement: 'dictation_verified',
       type: 'word', en: 'drink', acceptedVariants: [], zh: '喝，饮',
       helpKind: 'spelling_focus', displayChunks: 'dr ｜ ink',
-      helpNote: 'U6 p.74 重点语音词：辅音连缀 dr- ＋ ink。',
+      helpNote: '词表第 06 项（U6 p.74 重点语音词）：辅音连缀 dr- ＋ ink。',
       bridgeNote: 'dr 语音组（p.74）：drink、dress、drawing、children（词中也有 dr！）。',
       snap: { pieces: ['dr', 'ink'], decoys: [{ text: 'tr', tip: '🥤 喝水开头是浊音 d-r (drink)，不是 t-r 哦！' }] },
       cloze: { prefix: '', blank: 'dr', suffix: 'ink', hint: '本单元重点学习的两个辅音字母组合' },
@@ -340,11 +340,11 @@ const SNAPWORD_CURRICULUM = (() => {
       context: { en: 'I want to drink some water.', zh: '我想喝点水。', origin: '教材五上 U6 p.72' }
     },
     {
-      id: 'u6_some', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 73,
-      textbookCore: true, classRequirement: 'unverified_family',
+      id: 'u6_some', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 73, wordlistOrder: 7,
+      textbookCore: true, classRequirement: 'dictation_verified',
       type: 'word', en: 'some', acceptedVariants: [], zh: '有些事物，有些人；一些',
       helpKind: 'spelling_focus', displayChunks: 's ｜ ome',
-      helpNote: '四个字母 s-o-m-e，词尾的 e 不发音但千万不能漏。',
+      helpNote: '词表第 07 项：四个字母 s-o-m-e，词尾的 e 不发音但千万不能漏。',
       bridgeNote: '构词串联：some（一些）＋ time（时间）＋ s ＝ sometimes（有时）。',
       snap: { pieces: ['so', 'me'], decoys: [{ text: 'sam', tip: '🍰 一些是 s-o-m-e 哦！' }] },
       cloze: { prefix: 's', blank: 'ome', suffix: '', hint: '补全后 3 个字母（留心词尾不发音字母别漏写）' },
@@ -352,15 +352,15 @@ const SNAPWORD_CURRICULUM = (() => {
       context: { en: 'You can have some of my food.', zh: '你可以吃一些我的食物。', origin: '教材五上 U6 p.73' }
     },
     {
-      id: 'u6_way_back', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 73,
-      textbookCore: true, classRequirement: 'unverified_family',
+      id: 'u6_way_back', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 73, wordlistOrder: 8,
+      textbookCore: true, classRequirement: 'dictation_verified',
       type: 'phrase', en: "on one's way back", acceptedVariants: [],
       contextVariants: ['on their way back', 'on my way back', 'on his way back', 'on her way back'],
       zh: '在某人回去的路上',
       helpKind: 'word_boundary', displayChunks: "on ␣ one's ␣ way ␣ back",
-      helpNote: "词表原形为 on one's way back；在具体句子中把 one's 换成 their / my / his 等人称。",
+      helpNote: "词表第 08 项：词表原形为 on one's way back（注意 one's 带撇号 's）；在具体句子中把 one's 换成 their / my / his 等人称。",
       bridgeNote: '课本原句：Bobby, Sam and Billy are on their way back. (p.73)',
-      snap: { pieces: ['on', '␣', "one's", '␣', 'way', '␣', 'back'], decoys: [{ text: 'in', tip: '🛣️ 在路上介词用 on 哦！' }] },
+      snap: { pieces: ['on', '␣', "one's", '␣', 'way', '␣', 'back'], decoys: [{ text: 'in', tip: '🛣️ 在路上介词用 on 哦！' }, { text: 'ones', tip: "🎩 某人的 one's 右上角别漏了小撇号 's 哦！" }] },
       cloze: { prefix: 'on their ', blank: 'way back', suffix: '', hint: '填入“回去的路”（共 2 个词，中间留空格）' },
       sentencePrompt: { template: 'Bobby, Sam and Billy are ______.', zh: 'Bobby、Sam 和 Billy 在他们回去的路上。', expected: 'on their way back' },
       sentenceVariants: [
@@ -372,11 +372,11 @@ const SNAPWORD_CURRICULUM = (() => {
 
     // --- Story time: Liu Chi Xiang (p.75–77) ---
     {
-      id: 'u6_next_to', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 75,
-      textbookCore: true, classRequirement: 'unverified_family',
+      id: 'u6_next_to', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 75, wordlistOrder: 9,
+      textbookCore: true, classRequirement: 'dictation_verified',
       type: 'phrase', en: 'next to', acceptedVariants: [], zh: '紧邻，在……近旁',
       helpKind: 'word_boundary', displayChunks: 'next ␣ to',
-      helpNote: '两个词中间留空格：next（紧接着）＋ to。',
+      helpNote: '词表第 09 项：两个词中间留空格：next（紧接着）＋ to（一个 o）。',
       bridgeNote: '位置短语对比：next to（紧挨着） vs between（在两者中间）。',
       snap: { pieces: ['next', '␣', 'to'], decoys: [{ text: 'too', tip: '📍 紧挨着是 next to（一个 o），too（两个 o）是“太/也”！' }] },
       cloze: { prefix: '', blank: 'next', suffix: ' to', hint: '填入前面表示“紧邻/隔壁”的 4 字母单词' },
@@ -384,11 +384,11 @@ const SNAPWORD_CURRICULUM = (() => {
       context: { en: 'The Wu family live next to the Zhang family.', zh: '吴家住在张家隔壁。', origin: '教材五上 U6 p.75' }
     },
     {
-      id: 'u6_space', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 75,
-      textbookCore: true, classRequirement: 'unverified_family',
+      id: 'u6_space', version: 1, unit: 6, sourceScope: 'textbook_wordlist', bookPage: 75, wordlistOrder: 10,
+      textbookCore: true, classRequirement: 'dictation_verified',
       type: 'word', en: 'space', acceptedVariants: [], zh: '空地，空间',
       helpKind: 'spelling_focus', displayChunks: 'sp ｜ ace',
-      helpNote: 'a-c-e 结构，a 读 /eɪ/，c 在 e 前发 /s/，词尾 e 不发音。',
+      helpNote: '词表第 10 项：a-c-e 结构，a 读 /eɪ/，c 在 e 前发 /s/，词尾 e 不发音。',
       bridgeNote: '同类词：face（脸） → place（地方） → space（空地）。',
       snap: { pieces: ['sp', 'ace'], decoys: [{ text: 'ase', tip: '🌌 空地 s-p-a-c-e 里藏着字母 c，和 face（脸）一样！' }] },
       cloze: { prefix: 'sp', blank: 'ace', suffix: '', hint: '补全后 3 个字母（与“脸”的后三个字母结构相同）' },
@@ -749,7 +749,76 @@ const SNAPWORD_CURRICULUM = (() => {
     itemIds: items.map(item => item.id)
   }));
 
+  const U6_WL_1_10_IDS = [
+    'u6_get_along_with', 'u6_between', 'u6_wall', 'u6_neighbour', 'u6_heavy',
+    'u6_drink', 'u6_some', 'u6_way_back', 'u6_next_to', 'u6_space'
+  ];
+
+  const U6_WL_11_24_IDS = [
+    'u6_their', 'u6_too', 'u6_close_to', 'u6_use', 'u6_letter', 'u6_advice', 'u6_important',
+    'u6_friendly', 'u6_then', 'u6_time', 'u6_favourite', 'u6_problem', 'u6_do_homework', 'u6_classmate'
+  ];
+
+  const U6_DICTATION_PACKS = [
+    {
+      id: 'pack-u6-wl-1-10',
+      title: '📌 明日必默：五上 Unit 6 词汇表 1–10（全 10 项含星号全默）',
+      subtitle: '课本 p.111 整栏 10 项（含 *get along with 与 *neighbour 全部必默）',
+      kidTitle: 'Unit 6 词表 1–10 · 全部必默',
+      kidNote: '带星号与不带星号共 10 个词，一次全部拿下！',
+      homeworkLabel: 'U6词表 1–10 全默',
+      modeHint: 'standard',
+      paperCap: 10,
+      preserveFullPack: true,
+      forceDictationAll: true,
+      bugId: 'bug_u6_1_10',
+      itemIds: U6_WL_1_10_IDS
+    },
+    {
+      id: 'pack-u6-wl-1-5',
+      title: '📌 明日必默（上半场）：Unit 6 词汇表 1–5',
+      subtitle: '先攻前 5 项：*get along with / between / wall / *neighbour / heavy',
+      kidTitle: 'Unit 6 词表 1–5 · 前半场',
+      kidNote: '先背熟前 5 个：和睦相处、中间、围墙、邻居、重的',
+      homeworkLabel: 'U6词表 1–5',
+      modeHint: 'standard',
+      paperCap: 5,
+      preserveFullPack: true,
+      forceDictationAll: true,
+      bugId: 'bug_u6_1_10',
+      itemIds: U6_WL_1_10_IDS.slice(0, 5)
+    },
+    {
+      id: 'pack-u6-wl-6-10',
+      title: '📌 明日必默（下半场）：Unit 6 词汇表 6–10',
+      subtitle: "再攻后 5 项：drink / some / on one's way back / next to / space",
+      kidTitle: 'Unit 6 词表 6–10 · 后半场',
+      kidNote: '再背熟后 5 个：喝、一些、回去的路上、紧邻、空地',
+      homeworkLabel: 'U6词表 6–10',
+      modeHint: 'standard',
+      paperCap: 5,
+      preserveFullPack: true,
+      forceDictationAll: true,
+      bugId: 'bug_u6_1_10',
+      itemIds: U6_WL_1_10_IDS.slice(5)
+    },
+    {
+      id: 'pack-u6-wl-11-24',
+      title: '五上 Unit 6 词汇表 11–24（p.112 后半部分全默）',
+      subtitle: '课本 p.112 剩余 14 项（含带 * 词全部可默）',
+      kidTitle: 'Unit 6 词表 11–24 · 预备全默',
+      kidNote: '第 6 单元后半部分 14 个词与短语',
+      modeHint: 'standard',
+      paperCap: 14,
+      preserveFullPack: true,
+      forceDictationAll: true,
+      bugId: 'bug_6',
+      itemIds: U6_WL_11_24_IDS
+    }
+  ];
+
   const PACKS = [
+    ...U6_DICTATION_PACKS,
     ...HOMEWORK_PACKS,
     {
       id: 'pack-baseline',
@@ -1077,6 +1146,20 @@ const SNAPWORD_CURRICULUM = (() => {
         { text: 'He' },
         { text: 'trys', isBug: true, fix: 'tries', choices: ['tries', 'trys'], tip: 'try 遇到单数 He 要把 y 变成 i 再加 -es：tries！' },
         { text: 'to' }, { text: 'get' }, { text: 'out.' }
+      ]
+    },
+    {
+      id: 'bug_u6_1_10',
+      title: '🕵️ 好邻居与重书包侦探卡（揪出 3 只 U6 拼写臭虫！）',
+      zh: '我的邻居住在我们家隔壁，他的包太重了。',
+      tokens: [
+        { text: 'My' },
+        { text: 'nieghbour', isBug: true, fix: 'neighbour', choices: ['neighbour', 'nieghbour'], tip: '邻居前半截是 e-i-g-h，后半英式 -bour：neighbour！' },
+        { text: 'lives' },
+        { text: 'next' },
+        { text: 'too', isBug: true, fix: 'to', choices: ['to', 'too'], tip: '紧邻是 next to（一个 o），too（两个 o）是“太/也”！' },
+        { text: 'our' }, { text: 'house,' }, { text: 'and' }, { text: 'his' }, { text: 'bag' }, { text: 'is' }, { text: 'so' },
+        { text: 'hevy.', isBug: true, fix: 'heavy.', choices: ['heavy.', 'hevy.'], tip: '重的 heavy 中间藏着 e 和 a 两个元音字母！' }
       ]
     }
   ];

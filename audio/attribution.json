@@ -628,5 +628,59 @@
     "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
     "author": "Dvortygirl",
     "asset": "next.mp3"
+  },
+  "get": {
+    "file": "En-us-get.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/2/2f/En-us-get.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-get.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "get.mp3"
+  },
+  "along": {
+    "file": "en-us-along.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/3/39/En-us-along.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-along.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "along.mp3"
+  },
+  "way": {
+    "file": "En-us-way.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/a/a5/En-us-way.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-way.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "way.mp3"
+  },
+  "back": {
+    "file": "En-us-back.ogg",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/e/ec/En-us-back.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:En-us-back.ogg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "author": "Dvortygirl",
+    "asset": "back.mp3"
+  },
+  "to": {
+    "file": "LL-Q1860 (eng)-Vealhurl-to.wav",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/b/bc/LL-Q1860_%28eng%29-Vealhurl-to.wav",
+    "page": "https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-to.wav",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Speaker: Vealhurl\nRecorder: Vealhurl",
+    "asset": "to.mp3"
+  },
+  "on": {
+    "file": "LL-Q1860 (eng)-Back ache-on.wav",
+    "media": "https://upload.wikimedia.org/wikipedia/commons/f/fe/LL-Q1860_%28eng%29-Back_ache-on.wav",
+    "page": "https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Back_ache-on.wav",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "author": "Speaker: Back ache\nRecorder: Back ache",
+    "asset": "on.mp3"
   }
 }

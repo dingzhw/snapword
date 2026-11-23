@@ -1,11 +1,11 @@
 # 词哒 · SnapWord
 
-> **面向小学英语起步与补差阶段的「趣味磁吸拆词 + 亲子同屏黑板 + 两遍红笔落纸」轻量伴学工作台**  
-> A playful, zero-frustration, offline-first English word chunking & parent-child companion workbench that bridges spoken English, visual word blocks, and real pen-and-paper mastery.
+> **面向江苏小学五年级英语背记的「多模型 AI 智能伴学 + 三档趣味微游戏 + 全流程无纸化盲打」轻量工作台**  
+> A playful, zero-friction, AI-assisted & offline-ready English vocabulary and sentence mastery workbench with multi-LLM support, adaptive micro-games, and instant web dictation.
 
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
-![Runtime](https://img.shields.io/badge/Runtime-Offline%20Single%20HTML-blue.svg)
-![Version](https://img.shields.io/badge/Version-v0.2.2-teal.svg)
+![Runtime](https://img.shields.io/badge/Runtime-Offline%20%2B%20Multi--LLM-blue.svg)
+![Version](https://img.shields.io/badge/Version-v0.3.0-teal.svg)
 
 ---
 

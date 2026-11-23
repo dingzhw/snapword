@@ -90,3 +90,11 @@ Recorder: Vealhurl | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q
 Recorder: Vealhurl | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-classmate.wav
 - close: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-close-verb.ogg
 - next: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-next.ogg
+- get: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-get.ogg
+- along: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-along.ogg
+- way: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-way.ogg
+- back: Dvortygirl | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:En-us-back.ogg
+- to: Speaker: Vealhurl
+Recorder: Vealhurl | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Vealhurl-to.wav
+- on: Speaker: Back ache
+Recorder: Back ache | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:LL-Q1860_(eng)-Back_ache-on.wav

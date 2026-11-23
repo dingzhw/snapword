@@ -53,6 +53,7 @@ def main():
         ("/*SNAPWORD_CURRICULUM*/", (SRC / "curriculum.js").read_text(encoding="utf-8")),
         ("/*SNAPWORD_CORE*/", (SRC / "core.js").read_text(encoding="utf-8")),
         ("/*SNAPWORD_AUDIO*/", (SRC / "audio.js").read_text(encoding="utf-8")),
+        ("/*SNAPWORD_AI*/", (SRC / "ai.js").read_text(encoding="utf-8")),
         ("/*SNAPWORD_APP*/", (SRC / "app.js").read_text(encoding="utf-8")),
     ]
 

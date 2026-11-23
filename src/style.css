@@ -978,3 +978,366 @@ textarea { width: 100%; min-height: 110px; resize: vertical; }
   body { background: #fff; }
   .card { box-shadow: none; border-color: #94a3b8; }
 }
+
+/* ==================== v0.3.0 无纸化闯关 · 三档难度 · 微游戏 · AI 面板 ==================== */
+.urgent-dictation-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  border: 2px solid #93c5fd;
+  background: linear-gradient(90deg, #eff6ff 0%, #f0fdf4 100%);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);
+}
+
+.urgent-dictation-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: #1e3a8a;
+}
+
+.ai-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  border: 1.5px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+}
+.ai-status-pill.ready {
+  border-color: #34d399;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.diff-selector {
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1.5px solid #dbeafe;
+  border-radius: 16px;
+}
+
+.diff-selector-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-muted);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.diff-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.diff-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.14s, background 0.14s, transform 0.08s;
+}
+.diff-btn:hover { border-color: #93c5fd; transform: translateY(-1px); }
+.diff-btn b { font-size: 14px; font-weight: 900; }
+.diff-btn span { font-size: 11.5px; color: var(--ink-muted); line-height: 1.25; }
+.diff-btn.active-easy { border-color: #10b981; background: #ecfdf5; box-shadow: 0 3px 0 #10b981; }
+.diff-btn.active-normal { border-color: #2563eb; background: #eff6ff; box-shadow: 0 3px 0 #2563eb; }
+.diff-btn.active-challenge { border-color: #ea580c; background: #fff7ed; box-shadow: 0 3px 0 #ea580c; }
+.diff-btn.active-adaptive { border-color: #7c3aed; background: #f5f3ff; box-shadow: 0 3px 0 #7c3aed; }
+
+/* Sound & Meaning Match Micro-Game */
+.match-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.match-col {
+  display: grid;
+  gap: 10px;
+}
+
+.match-card {
+  min-height: 58px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 2px solid #cbd5e1;
+  background: #fff;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-shadow: 0 4px 0 #cbd5e1;
+  transition: transform 0.1s ease, border-color 0.15s, background 0.15s, opacity 0.2s;
+}
+.match-card:hover:not(:disabled) { border-color: #60a5fa; background: #f8fafc; transform: translateY(-1px); }
+.match-card.selected {
+  border-color: #2563eb;
+  background: #dbeafe;
+  color: #1e3a8a;
+  box-shadow: 0 4px 0 #1d4ed8;
+}
+.match-card.matched {
+  border-color: #10b981;
+  background: #ecfdf5;
+  color: #065f46;
+  opacity: 0.48;
+  box-shadow: none;
+  cursor: default;
+}
+.match-card.wrong {
+  animation: tileWobble 0.35s ease;
+  border-color: #ef4444;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Paperless Web Dictation Arena */
+.arena-shell {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 2px solid #bfdbfe;
+  border-radius: 22px;
+  padding: 24px 26px;
+  box-shadow: 0 10px 28px rgba(19, 34, 56, 0.07);
+}
+
+.arena-progress-track {
+  width: 100%;
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 10px 0 18px;
+}
+.arena-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #10b981);
+  border-radius: 999px;
+  transition: width 0.28s ease;
+}
+
+.streak-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #fff7ed;
+  border: 1.5px solid #fb923c;
+  color: #9a3412;
+  font-weight: 900;
+  font-size: 13.5px;
+}
+
+.arena-prompt-box {
+  text-align: center;
+  padding: 20px 18px;
+  background: #fff;
+  border: 2px solid #dbeafe;
+  border-radius: 18px;
+  margin-bottom: 16px;
+}
+
+.arena-zh-prompt {
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 900;
+  color: var(--ink);
+  margin: 6px 0;
+}
+
+.arena-sentence-template {
+  font-size: clamp(21px, 2.6vw, 28px);
+  font-weight: 850;
+  color: #1e3a8a;
+  margin: 10px 0 6px;
+  line-height: 1.4;
+}
+
+.slot-rhythm-guide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 12px 0 6px;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 22px;
+  font-weight: 900;
+  color: #3b82f6;
+  letter-spacing: 0.12em;
+}
+
+.slot-word-group {
+  background: #eff6ff;
+  border: 1.5px dashed #93c5fd;
+  padding: 4px 10px;
+  border-radius: 9px;
+}
+
+.arena-input-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.arena-main-input {
+  width: min(100%, 540px);
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 850;
+  text-align: center;
+  padding: 13px 18px;
+  border: 3px solid #2563eb;
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.arena-main-input:focus {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+}
+.arena-main-input.is-correct {
+  border-color: #10b981;
+  background: #ecfdf5;
+  color: #065f46;
+}
+.arena-main-input.is-repair {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.kbd-hint-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+
+.kbd-chip {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #f1f5f9;
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 12px;
+  color: #334155;
+}
+
+/* Character-Level Spelling Diff Card */
+.diff-box {
+  background: #fffbeb;
+  border: 2px solid #fbbf24;
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin: 12px auto;
+  max-width: 620px;
+  text-align: center;
+}
+
+.diff-tokens {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+  font-size: 28px;
+  font-weight: 900;
+  padding: 8px 14px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1.5px solid #fde68a;
+  margin: 8px 0;
+}
+
+.diff-tok-same { color: #0f172a; }
+.diff-tok-case { color: #b45309; background: #fef3c7; padding: 0 4px; border-radius: 6px; border-bottom: 3px solid #f59e0b; }
+.diff-tok-missing { color: #047857; background: #d1fae5; padding: 0 5px; border-radius: 6px; border-bottom: 3px solid #10b981; }
+.diff-tok-extra { color: #b91c1c; background: #fee2e2; text-decoration: line-through; padding: 0 4px; border-radius: 6px; opacity: 0.8; }
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  max-width: 620px;
+  margin: 12px auto;
+}
+
+.choice-btn {
+  padding: 12px 16px;
+  border-radius: 13px;
+  border: 2px solid #cbd5e1;
+  background: #fff;
+  font-size: 20px;
+  font-weight: 850;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #cbd5e1;
+}
+.choice-btn:hover { border-color: #2563eb; background: #eff6ff; }
+
+/* Multi-Model AI Config Panel */
+.ai-config-card {
+  border: 2px solid #93c5fd;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+}
+
+.ai-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.ai-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ai-field label {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.ai-field input, .ai-field select {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .diff-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .match-board { grid-template-columns: minmax(0, 1fr); }
+  .arena-shell { padding: 16px 14px; }
+}

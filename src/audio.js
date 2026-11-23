@@ -18,6 +18,13 @@ const SnapAudio = (() => {
     return null;
   }
 
+  function resolvePhraseClips(text) {
+    const words = String(text ?? '').trim().replace(/[.?!,]/g, '').split(/\s+/).filter(Boolean);
+    if (words.length < 2 || words.length > 6) return null;
+    const clips = words.map(w => findBundledRecord(w));
+    return clips.every(Boolean) ? clips : null;
+  }
+
   function resolveSourceInfo(state, itemOrText) {
     if (typeof itemOrText === 'object' && itemOrText !== null) {
       const custom = state?.recordings?.[itemOrText.id];
@@ -28,14 +35,22 @@ const SnapAudio = (() => {
       if (bundled) {
         return { kind: 'human_cc', label: '🔊 内置真人发音 (CC)', data: bundled.data, meta: bundled, text: itemOrText.en };
       }
-      return { kind: 'tts', label: '🤖 系统合成朗读（建议爸爸听核）', data: null, text: itemOrText.en };
+      const phraseClips = resolvePhraseClips(itemOrText.en);
+      return {
+        kind: 'tts',
+        label: phraseClips ? '🔊 智能连读发音（含真人词音兜底）' : '🔊 智能连读发音',
+        data: null,
+        phraseClips,
+        text: itemOrText.en
+      };
     }
     const text = String(itemOrText ?? '').trim();
     const bundled = findBundledRecord(text);
     if (bundled) {
       return { kind: 'human_cc', label: '🔊 内置真人发音 (CC)', data: bundled.data, meta: bundled, text };
     }
-    return { kind: 'tts', label: '🤖 系统合成朗读', data: null, text };
+    const phraseClips = resolvePhraseClips(text);
+    return { kind: 'tts', label: '🔊 智能连读发音', data: null, phraseClips, text };
   }
 
   function stop() {
@@ -50,14 +65,39 @@ const SnapAudio = (() => {
     activeUtterance = null;
   }
 
-  function speakTTS(text, token, onNotice) {
+  function playClipSequence(clips, idx, token, fallbackFn) {
+    if (token !== seq || idx >= clips.length) {
+      activeAudio = null;
+      return;
+    }
+    const clip = clips[idx];
+    const player = new Audio(clip.data);
+    activeAudio = player;
+    player.onended = () => playClipSequence(clips, idx + 1, token, fallbackFn);
+    player.play().catch(() => {
+      if (token === seq) {
+        activeAudio = null;
+        fallbackFn?.();
+      }
+    });
+  }
+
+  function speakTTS(text, token, onNotice, phraseClips = null) {
     if (token !== seq) return;
     const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
     if (!synth || typeof SpeechSynthesisUtterance === 'undefined') {
-      onNotice?.('当前浏览器未提供系统朗读，请直接由爸爸在视频中口头范读即可。');
+      if (phraseClips?.length) {
+        playClipSequence(phraseClips, 0, token);
+        return;
+      }
+      onNotice?.('当前浏览器未开启系统英文语音。');
       return;
     }
     const voices = (synth.getVoices?.() || []).filter(v => /^en(?:[-_]|$)/i.test(v.lang));
+    if (!voices.length && phraseClips?.length) {
+      playClipSequence(phraseClips, 0, token);
+      return;
+    }
     const chosen = voices.find(v => v.localService && /^en[-_]GB$/i.test(v.lang))
       || voices.find(v => v.localService)
       || voices.find(v => /^en[-_]GB$/i.test(v.lang))
@@ -114,7 +154,7 @@ const SnapAudio = (() => {
       return info;
     }
 
-    speakTTS(info.text, token, onNotice);
+    speakTTS(info.text, token, onNotice, info.phraseClips);
     return info;
   }
 

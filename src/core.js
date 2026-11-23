@@ -130,6 +130,96 @@ const SnapCore = (() => {
     return { ok: false, kind: 'spelling', suggestedTag: 'missing_letter' };
   }
 
+  // v0.3.0 Paperless Auto-Diagnostic & Character-Level Diff Engine
+  function computeCharDiff(expectedStr, actualStr) {
+    const exp = String(expectedStr || '');
+    const act = String(actualStr || '');
+    const m = exp.length;
+    const n = act.length;
+    const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+    for (let i = m - 1; i >= 0; i--) {
+      for (let j = n - 1; j >= 0; j--) {
+        if (exp[i].toLowerCase() === act[j].toLowerCase()) {
+          dp[i][j] = 1 + dp[i + 1][j + 1];
+        } else {
+          dp[i][j] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+        }
+      }
+    }
+    const tokens = [];
+    let i = 0, j = 0;
+    while (i < m && j < n) {
+      if (exp[i].toLowerCase() === act[j].toLowerCase()) {
+        const caseDiff = exp[i] !== act[j] && /[A-Z]/.test(exp[i]);
+        tokens.push({ type: caseDiff ? 'case' : 'same', char: exp[i], typed: act[j] });
+        i++; j++;
+      } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+        tokens.push({ type: 'missing', char: exp[i] });
+        i++;
+      } else {
+        tokens.push({ type: 'extra', char: act[j] });
+        j++;
+      }
+    }
+    while (i < m) { tokens.push({ type: 'missing', char: exp[i++] }); }
+    while (j < n) { tokens.push({ type: 'extra', char: act[j++] }); }
+    return tokens;
+  }
+
+  function diagnoseSpellingAttempt(item, rawInput, options = {}) {
+    const targetInfo = getTargetAnswers(item, options);
+    const expected = targetInfo.primary;
+    const res = judgeSpelling(item, rawInput, options);
+    const input = normText(rawInput);
+
+    if (res.ok) {
+      return {
+        ...res,
+        expected,
+        errorTags: [],
+        diffTokens: [],
+        feedback: res.note || '拼写完全正确！'
+      };
+    }
+
+    const tags = new Set();
+    if (res.suggestedTag) tags.add(res.suggestedTag);
+
+    const lowExp = expected.toLowerCase();
+    const lowIn = input.toLowerCase();
+
+    if (/walk/.test(lowIn) && /work/.test(lowExp)) tags.add('chunk_replace');
+    if (/\b(was|too|there|in)\b/.test(lowIn) && /\b(with|to|their|on)\b/.test(lowExp)) tags.add('word_choice');
+    if (/(watches|eats|goes|tries|swimming)/.test(lowExp) && /\b(watch|eat|go|try|trys|swiming)\b/.test(lowIn)) {
+      tags.add('verb_form');
+    }
+    if (res.kind === 'spelling') {
+      if (Math.abs(lowIn.length - lowExp.length) <= 1 && lowIn.length >= 3) {
+        tags.add('letter_swap');
+      } else {
+        tags.add('missing_letter');
+      }
+    }
+
+    const diffTokens = input ? computeCharDiff(expected, input) : expected.split('').map(c => ({ type: 'missing', char: c }));
+    let feedback = res.note || '';
+    if (!feedback) {
+      if (res.kind === 'case_missing') feedback = '🎩 字母顺序全对！注意首字母或专有缩写的大小写。';
+      else if (res.kind === 'space_missing') feedback = '✂️ 单词拼对啦！词与词之间记得敲空格分开。';
+      else if (res.kind === 'boundary_punct') feedback = '✨ 差一点点！请检查右上角撇号或句末标点。';
+      else if (res.kind === 'blank') feedback = '先听发音想一想，试着敲出你记得的部分吧！';
+      else feedback = '对比下方高亮位置，留意漏掉或换错的字母块。';
+    }
+
+    return {
+      ...res,
+      expected,
+      errorTags: [...tags],
+      diffTokens,
+      feedback
+    };
+  }
+
   function emptyMastery() {
     return {
       badge: 'none', // 'none' | 'bronze' | 'silver' | 'gold'
@@ -167,7 +257,8 @@ const SnapCore = (() => {
         allowAmericanSpelling: false
       },
       actorMode: 'student', // 'student' | 'parent_demo'
-      selectedPackId: 'pack-autumn-1',
+      difficultyMode: 'normal', // 'easy' | 'normal' | 'challenge' | 'adaptive'
+      selectedPackId: curriculum.PACKS?.some(p => p.id === 'pack-u6-wl-1-10') ? 'pack-u6-wl-1-10' : 'pack-autumn-1',
       packOverrides: {},
       items: clone(curriculum.ITEMS),
       itemHistory: [],
@@ -656,6 +747,7 @@ const SnapCore = (() => {
   function planPackAllocation(state, packId, itemIds, options = {}) {
     const totalPaperCap = options.totalPaperCap ?? 5;
     const dueIds = options.dueIds || [];
+    const forceDictationAll = Boolean(options.forceDictationAll);
     const remainingPaperSlots = Math.max(0, totalPaperCap - dueIds.length);
     const overrides = state.packOverrides?.[packId] || {};
 
@@ -667,7 +759,9 @@ const SnapCore = (() => {
       if (dueIds.includes(id)) continue;
       const it = state.items.find(x => x.id === id);
       if (!it) continue;
-      const act = defaultActivityForItem(it, overrides[id]);
+      const act = overrides[id]
+        ? overrides[id]
+        : (forceDictationAll ? 'paper_dictation' : defaultActivityForItem(it, overrides[id]));
       if (act === 'oral_only') {
         oralOnlyIds.push(id);
       } else if (act === 'next_candidate') {
@@ -866,9 +960,12 @@ const SnapCore = (() => {
       sessionId: d.sessionId || null,
       lockedActor: d.lockedActor || 'student',
       mode: d.mode || 'standard',
+      difficulty: d.difficulty || 'normal',
       packId: d.packId || null,
       packTitle: d.packTitle || '',
       step: d.step || '',
+      arenaIndex: Number(d.arenaIndex || 0),
+      arenaResults: d.arenaResults || {},
       paperPhase: d.paperPhase || '',
       oralPhase: d.oralPhase || 'active',
       promptMode: d.promptMode || 'audio_plus_zh',
@@ -908,7 +1005,9 @@ const SnapCore = (() => {
 
   function summarizeDraft(d) {
     if (!d) return null;
-    const gradedCount = Object.values(d.paperGrades || {}).filter(g => g?.outcome && g.outcome !== 'unjudged').length;
+    const arenaDone = Object.values(d.arenaResults || {}).filter(r => r?.done).length;
+    const paperGraded = Object.values(d.paperGrades || {}).filter(g => g?.outcome && g.outcome !== 'unjudged').length;
+    const gradedCount = Math.max(arenaDone, paperGraded);
     const oralCount = Object.values(d.oralChecked || {}).filter(Boolean).length;
     const hintedCount = Object.keys(cleanBoolMap(d.hintedOnPaper)).length;
     const revealedCount = Object.keys(cleanBoolMap(d.answerRevealed)).length;
@@ -948,6 +1047,9 @@ const SnapCore = (() => {
       preserveDraftStatus: true
     });
     merged.actorMode = saved.actorMode === 'parent_demo' ? 'parent_demo' : 'student';
+    if (['easy', 'normal', 'challenge', 'adaptive'].includes(saved.difficultyMode)) {
+      merged.difficultyMode = saved.difficultyMode;
+    }
     if (saved.selectedPackId && merged.packs.some(p => p.id === saved.selectedPackId)) {
       merged.selectedPackId = saved.selectedPackId;
     }
@@ -1273,6 +1375,7 @@ const SnapCore = (() => {
     VERIFIED_DENOMINATOR_OUTCOMES,
     getTargetAnswers,
     judgeSpelling,
+    diagnoseSpellingAttempt,
     freshState,
     restoreLocalState,
     rebuildMastery,

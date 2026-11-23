@@ -1,4 +1,4 @@
-// Comprehensive Unit + Adversarial Offline Chromium E2E + Privacy Gate Suite for 词哒 · SnapWord (v0.2.0)
+// Comprehensive Unit + Adversarial Offline Chromium E2E + Privacy Gate Suite for 词哒 · SnapWord (v0.2.2)
 // Covers Party A Round 1 (F01–F08), Round 2 (R01–R08), Round 3 (N01–N05), Round 4 (Q01–Q02), and U5 Key Sentences (01–06).
 const assert = require('node:assert/strict');
 const path = require('node:path');
@@ -585,8 +585,7 @@ async function runBrowserE2E() {
 
   const browser = await chromium.launch({ executablePath: CHROME_EXE, headless: true, args: extraArgs });
 
-  // v0.2.0: the lobby is now a single kid-facing card; pack allocation controls live in a
-  // collapsed「家长微调」panel. Open it before touching the advanced selectors.
+  // The advanced allocation controls are in the collapsed parent settings.
   async function openParentTune(page) {
     const details = page.locator('details[data-parent-tune]');
     if (!(await details.count())) return;
@@ -606,6 +605,9 @@ async function runBrowserE2E() {
       await page.screenshot({ path: path.join(MEDIA_DIR, 'home-lobby.png') });
 
       await page.locator('[data-start-mode="standard"]').click();
+      assert.equal(await page.locator('.study-target').innerText(), 'Saturday');
+      assert.equal(await page.locator('#board-live-sentence').count(), 0);
+      await page.locator('[data-jump-step="board"]').click();
       await page.locator('#board-live-sentence').waitFor();
       await page.screenshot({ path: path.join(MEDIA_DIR, 'slot-blackboard.png') });
 
@@ -1009,6 +1011,8 @@ async function runBrowserE2E() {
       // Step 0: set due homework to audio_only and lock!
       await page.locator('#prompt-mode-select').selectOption('audio_only');
       await page.locator('[data-act="finish-due-precheck"]').click();
+      assert.equal(await page.locator('.study-target').innerText(), 'football');
+      assert.equal(await page.locator('#board-live-sentence').count(), 0);
 
       // Jump to Step 4 paper -> switch new items to sentence_context!
       await page.locator('.step-pill[data-jump-step="paper"]').click();
@@ -1344,7 +1348,9 @@ async function runBrowserE2E() {
       if (await page.locator('[data-act="finish-due-precheck"]').count()) {
         await page.locator('[data-act="finish-due-precheck"]').click();
       }
-      // Step 1 loads Billy slot deck & 4-scene cartoon pre-read
+      assert.equal(await page.locator('.study-target').innerText(), Curriculum.ITEMS.find(item => item.id === 'u5_sent_01').en);
+      // The original cartoon pre-read is still available as an optional activity.
+      await page.locator('[data-jump-step="board"]').click();
       await page.getByText('四幕故事串联记忆法').waitFor();
 
       // Step 2 sense-group magnetic sentence assembly on Sentence 01
@@ -1388,7 +1394,96 @@ async function runBrowserE2E() {
       await ctx.close();
     }
 
-    console.log('   ✔ Adversarial Chromium E2E tests & screenshots passed (F01–F07, R01–R08, N01–N05, Q01–Q02 & U5 Sentences).');
+    // The learner can find and select the complete library without using parent settings.
+    {
+      const ctx = await browser.newContext({ offline: true, viewport: { width: 390, height: 844 } });
+      const page = await ctx.newPage();
+      await page.goto(fileUrl);
+      await page.locator('#lesson-heading').waitFor();
+      assert.equal(await page.locator('details[data-parent-tune]').evaluate(el => el.open), false);
+      const search = page.locator('#pack-query');
+      await search.fill('75页');
+      assert.ok(await page.locator('[data-pick-pack="pack-u6-p75"]').isVisible());
+      await search.fill('游泳');
+      assert.ok(await page.locator('[data-pick-pack="pack-u5-sent-b"]').isVisible());
+      await page.locator('[data-pack-group="sentences"]').click();
+      assert.equal(await page.locator('[data-pick-pack]').count(), 3);
+      await page.screenshot({ path: path.join(MEDIA_DIR, 'mobile-pack-library.png'), fullPage: true });
+      await page.locator('[data-pick-pack="pack-u5-sent-all"]').click();
+      await page.reload();
+      assert.match(await page.locator('#lesson-heading').innerText(), /比利的一天/);
+      await page.locator('[data-lesson-details] summary').click();
+      assert.equal(await page.getByRole('heading', { name: '本轮默写 · 6 项' }).count(), 1);
+      assert.equal(await page.getByRole('heading', { name: '选 8 分钟时的新默写 · 3 项' }).count(), 1);
+      assert.ok(await page.locator('[data-lesson-details]').getByText(/他尝试出去/).isVisible());
+      assert.equal((await page.locator('.lobby-layout').innerText()).includes('watches TV'), false);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+      await page.locator('[data-start-mode="quick8"]').click();
+      await page.locator('[data-jump-step="paper"]').click();
+      assert.equal(await page.locator('.paper-list .paper-item').count(), 3);
+      await ctx.close();
+    }
+
+    {
+      const ctx = await browser.newContext({ offline: true });
+      const page = await ctx.newPage();
+      await page.goto(fileUrl);
+      await page.locator('[data-nav="prep"]').click();
+      await page.locator('#qp-title').fill('周末练习单');
+      await page.locator('#qp-lines').fill('cloud | 云\nriver | 河流');
+      await page.locator('#quick-pack-form button[type="submit"]').click();
+      assert.match(await page.locator('#lesson-heading').innerText(), /周末练习单/);
+      assert.equal(await page.locator('[data-pack-group="mine"]').getAttribute('aria-pressed'), 'true');
+      await page.locator('[data-pack-group="sentences"]').click();
+      assert.equal(await page.locator('#pack-results').getByRole('button', { name: /周末练习单/ }).count(), 0);
+      await page.locator('[data-pack-group="mine"]').click();
+      assert.ok(await page.locator('#pack-results').getByRole('button', { name: /周末练习单/ }).isVisible());
+      await ctx.close();
+    }
+
+    // Different homepage choices must lead immediately to their own learning items.
+    {
+      const ctx = await browser.newContext({ offline: true, viewport: { width: 390, height: 844 } });
+      const page = await ctx.newPage();
+      await page.goto(fileUrl);
+      await page.locator('[data-pick-pack="pack-autumn-3"]').click();
+      await page.locator('[data-start-mode="standard"]').click();
+      for (const item of ['sometimes', 'with', 'have a picnic', 'stay up late']) {
+        assert.equal(await page.locator('.study-target').innerText(), item);
+        assert.equal(await page.locator('#board-live-sentence').count(), 0);
+        await page.locator('[data-act="skip-to-next-word"]').click();
+      }
+      assert.equal(await page.locator('.paper-list .paper-item').count(), 4);
+      assert.equal(await page.locator('.bug-token').count(), 0);
+      await page.locator('[data-act="abandon-session"]').click();
+      await page.locator('[data-pack-group="sentences"]').click();
+      await page.locator('[data-pick-pack="pack-u5-sent-b"]').click();
+      await page.locator('[data-start-mode="standard"]').click();
+      assert.equal(await page.locator('.study-target').innerText(), Curriculum.ITEMS.find(item => item.id === 'u5_sent_04').en);
+      assert.equal(await page.locator('#board-live-sentence').count(), 0);
+      await ctx.close();
+    }
+
+    // The pictured homework keeps each question and answer in order and available to dictate.
+    {
+      const ctx = await browser.newContext({ offline: true });
+      const page = await ctx.newPage();
+      await page.goto(fileUrl);
+      await page.locator('[data-select-pack="pack-hw-20261120-all"]').click();
+      assert.equal(await page.locator('[data-pick-pack]').count(), 3);
+      assert.equal(await page.locator('.kid-note').innerText(), '默写 11 项');
+      await page.locator('[data-start-mode="standard"]').click();
+      assert.equal(await page.locator('.study-target').innerText(), 'How can you spend your weekends well?');
+      await page.locator('[data-act="skip-to-next-word"]').click();
+      assert.equal(await page.locator('.study-target').innerText(), 'Sometimes I go climbing with my parents.');
+      await page.locator('[data-jump-step="paper"]').click();
+      assert.equal(await page.locator('.paper-list .paper-item').count(), 11);
+      assert.match(await page.locator('.paper-list').innerText(), /12 · 我在周末过得很开心。/);
+      assert.equal(await page.locator('#board-live-sentence').count(), 0);
+      await ctx.close();
+    }
+
+    console.log('   ✔ Offline Chromium regression and learner course selection passed.');
   } finally {
     await browser.close();
   }
@@ -1398,7 +1493,7 @@ async function runBrowserE2E() {
   runPrivacyGate();
   runUnitTests();
   await runBrowserE2E();
-  console.log('4/4 All SnapWord v0.2.0 verifications succeeded!');
+  console.log('4/4 All SnapWord v0.2.2 verifications succeeded!');
 })().catch(err => {
   console.error(err);
   process.exit(1);

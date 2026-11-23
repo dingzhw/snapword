@@ -5,3 +5,9 @@ c44b380edcb633eee9d9dadaf7fab34401af704d357a81f8309222a609df1f60  SnapWord-词�
 e2b66c5b8c34f5fbd724f3574db33e942cbe54f55b39a5904dd97d094a0c46d6  dist/SnapWord-词哒.html (v0.2.0)
 5e1ca342f14b417fc127a4c362170262d84d58a9562eb13f175101d2e4df9303  SnapWord-词哒-v0.2.0-离线解压即用包.zip
 ee433785a9be9ba2c707719b402d3962a74c47987e0fc31a45d7ff159ddcb2a2  dist/SnapWord-词哒.html (v0.2.0)
+7f77274c6c62483f7fa8ae23783e7363ecff37955352ba493e5ba043e4f564e4  dist/SnapWord-词哒.html (v0.2.1)
+bd72c23cb56527e622032fcb90c74a69b1f195cb7d8227fc54dfabe4f2872d59  SnapWord-词哒-v0.2.1-离线解压即用包.zip
+79f9c3383f40ac483d1301a5a2ace1418f322b20280724ea180000d6238d2a17  dist/SnapWord-词哒.html (v0.2.1)
+6c1256bb4fc3b01c2edb57e39781d8c9cce61fad4d1edfca583cb8e981316cbf  dist/SnapWord-词哒.html (v0.2.2)
+ad5b2a443ed08592eeea620d662c685440daf47bd9069a646c2ef4beb3b80ae7  SnapWord-词哒-v0.2.2-离线解压即用包.zip
+b9ae958434f9a8ca30461c8aa5ca9bcb677f55b3b73f1b3c319bebfaa723f5e3  dist/SnapWord-词哒.html (v0.2.2)

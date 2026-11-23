@@ -690,7 +690,67 @@ const SNAPWORD_CURRICULUM = (() => {
     }
   ];
 
+  // 11 月 20 日背诵作业，按家长提供的图片保留顺序、拼写和标点。
+  const WEEKEND_HOMEWORK = [
+    ['07q', '你怎样才能好好度过周末？', ['How can you', 'spend your weekends', 'well?'], 1, '补上“度过你的周末”（3 个词）。'],
+    ['07a', '有时候我和父母去爬山。', ['Sometimes I', 'go climbing', 'with my parents.'], 1, '补上“去爬山”（2 个词）。'],
+    ['08q', '你在周末做什么？', ['What do you do', 'at weekends?'], 0, '补上“你做什么”（4 个词），留心问句中的两个动词。'],
+    ['08a', '我通常拜访祖父母。', ['I usually', 'visit my grandparents.'], 1, '补上“拜访我的祖父母”（3 个词）。'],
+    ['09q', '你在周末还做些什么？', ['What else', 'do you do', 'at weekends?'], 0, '补上“还有什么”（2 个词）。'],
+    ['09a', '我经常弹钢琴。', ['I often', 'play the piano.'], 1, '补上“弹钢琴”（3 个词），留心乐器前的冠词。'],
+    ['10q', '她在周末做什么？', ['What does she do', 'at weekends?'], 0, '补上“她做什么”（4 个词），留心单数主语。'],
+    ['10a', '有时她和朋友去电影院。', ['Sometimes she', 'goes to the cinema', 'with her friends.'], 1, '补上“去电影院”（4 个词），留心动词词尾。'],
+    ['11q', '他们在周末做什么？', ['What do they do', 'at weekends?'], 0, '补上“他们做什么”（4 个词），留心复数主语。'],
+    ['11a', '他们通常踢足球。', ['They usually', 'play football.'], 1, '补上“踢足球”（2 个词），留心球类前的用法。'],
+    ['12', '我在周末过得很开心。', ['I have', 'great fun', 'at weekends.'], 1, '补上“很开心”对应的部分（2 个词）。']
+  ].map(([key, zh, pieces, blankIndex, hint]) => {
+    const en = pieces.join(' ');
+    const blank = pieces[blankIndex].replace(/[.?]$/, '');
+    const punctuation = pieces[blankIndex].slice(blank.length);
+    const before = pieces.slice(0, blankIndex).join(' ');
+    const after = pieces.slice(blankIndex + 1).join(' ');
+    const prefix = before ? before + ' ' : '';
+    const suffix = punctuation + (after ? ' ' + after : '');
+    const label = key.endsWith('q') ? '问' : key.endsWith('a') ? '答' : '';
+    return {
+      id: 'homework_20261120_' + key,
+      version: 1,
+      unit: 5,
+      sourceScope: 'homework',
+      textbookCore: false,
+      classRequirement: 'dictation_verified',
+      type: 'sentence',
+      en,
+      acceptedVariants: [],
+      zh: key.slice(0, 2) + label + ' · ' + zh,
+      helpKind: 'sentence_grammar',
+      displayChunks: pieces.join(' ｜ '),
+      helpNote: '先听整句，按词组顺序背。纸上默写时检查首字母、空格和句末标点。',
+      snap: { pieces, decoys: [] },
+      cloze: { prefix, blank, suffix, hint },
+      sentencePrompt: { template: prefix + '______' + suffix, zh, expected: blank },
+      context: { en, zh, origin: '11 月 20 日背诵作业图片' }
+    };
+  });
+  ITEMS.push(...WEEKEND_HOMEWORK);
+
+  const HOMEWORK_PACKS = [
+    ['all', '作业 07–12 · 全部', '11 句', WEEKEND_HOMEWORK],
+    ['a', '作业 07–09 · 怎样过周末', '前 6 句', WEEKEND_HOMEWORK.slice(0, 6)],
+    ['b', '作业 10–12 · 她和他们的周末', '后 5 句', WEEKEND_HOMEWORK.slice(6)]
+  ].map(([key, kidTitle, homeworkLabel, items]) => ({
+    id: 'pack-hw-20261120-' + key,
+    title: '11 月 20 日周末背诵 · ' + kidTitle,
+    kidTitle,
+    homeworkLabel,
+    modeHint: 'standard',
+    paperCap: items.length,
+    preserveFullPack: true,
+    itemIds: items.map(item => item.id)
+  }));
+
   const PACKS = [
+    ...HOMEWORK_PACKS,
     {
       id: 'pack-baseline',
       title: '00 · 首次 10 分钟纸笔基线短测',

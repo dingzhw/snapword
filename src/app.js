@@ -1,4 +1,4 @@
-/* 词哒 · SnapWord Main Interactive Workbench Controller (v0.2.0)
+/* 词哒 · SnapWord Main Interactive Workbench Controller (v0.2.2)
  * Closes F01–F07, R01–R08, N01–N05, Q01–Q02, and Blind-Cloze Zero-Leak Separation.
  */
 'use strict';
@@ -23,7 +23,9 @@
   let submitLock = false;
   let saveChain = Promise.resolve({ ok: true });
   let parentTuneOpen = false;   // 家长微调折叠区展开状态（跨 render 保持）
-  let packPickerOpen = false;   // 「换一组」卡片选择器打开状态
+  let packGroup = null;
+  let packQuery = '';
+  let lessonDetailsOpen = false;
 
   const slotUI = { deckIndex: 0, subj: 1, adv: 3, act: 0, customEn: '', customZh: '', customHl: '' };
 
@@ -95,7 +97,7 @@
     // keep 'suspended' drafts intact on Lobby so user can resume at any time!
     if (state.activeDraft && state.activeDraft.lockedActor === state.actorMode) {
       if (state.activeDraft.draftStatus === 'in_progress') {
-        activeSession = SnapCore.clone(state.activeDraft);
+        activeSession = resumeLesson(state.activeDraft);
         currentTab = 'learn';
       }
     }
@@ -327,6 +329,25 @@
     });
   }
 
+  function firstLessonStep(focusIds, paperIds, preread) {
+    if (focusIds.length) return 'snap';
+    if (paperIds.length) return 'paper';
+    return preread ? 'board' : 'oral_wrapup';
+  }
+
+  function resumeLesson(draft) {
+    const lesson = SnapCore.clone(draft);
+    // v0.2.1 opened standard lessons on the blackboard. Move untouched openings to the lesson.
+    if (!lesson.practiceFirst && lesson.mode === 'standard' && lesson.step === 'board' &&
+        !lesson.prereadDone && !lesson.prereadNote && !Object.values(lesson.stepsDone || {}).some(Boolean)) {
+      lesson.step = lesson.dueIds.length && !lesson.duePrewritten
+        ? 'due_precheck'
+        : firstLessonStep(lesson.focusIds, lesson.paperIds, lesson.preread);
+    }
+    lesson.practiceFirst = true;
+    return lesson;
+  }
+
   // ==================== Session Creation & Lifecycle (R02, R05, R07, N02) ====================
   async function startSession(mode = 'standard', explicitDueIds = null, sessionOpts = {}) {
     SnapAudio.stop();
@@ -438,9 +459,7 @@
     // Standard / Quick8: R02 strict adherence to allocation preview (NO fallback to slice(0,3)!)
     const dueLimit = 2;
     const dueIds = SnapCore.getDueQueue(state, SnapCore.todayISO(), dueLimit).todayPick.map(d => d.item.id);
-    const baseCap = (pack.paperCap || 5) + (pack.preserveFullPack ? dueIds.length : 0);
-    const totalPaperCap = mode === 'quick8' ? Math.min(baseCap, 3 + (pack.preserveFullPack ? dueIds.length : 0)) : baseCap;
-    const alloc = SnapCore.planPackAllocation(state, pack.id, pack.itemIds, { totalPaperCap, dueIds });
+    const alloc = planLesson(pack, dueIds, mode);
 
     if (pack.slotDeckId) {
       const deckIdx = SNAPWORD_CURRICULUM.SLOT_DECKS.findIndex(d => d.id === pack.slotDeckId);
@@ -459,12 +478,7 @@
     const paperIds = [...alloc.combinedPaperIds]; // R02: May legitimately be [] for pure oral/preread lessons!
     const bugCard = SNAPWORD_CURRICULUM.BUG_CARDS.find(b => b.id === pack.bugId) || SNAPWORD_CURRICULUM.BUG_CARDS[0];
 
-    let initialStep = 'board';
-    if (dueIds.length > 0) {
-      initialStep = 'due_precheck';
-    } else if (mode === 'quick8') {
-      initialStep = focusIds.length ? 'snap' : (paperIds.length ? 'paper' : 'oral_wrapup');
-    }
+    const initialStep = dueIds.length ? 'due_precheck' : firstLessonStep(focusIds, paperIds, pack.preread);
 
     activeSession = {
       sessionId,
@@ -472,6 +486,7 @@
       mode,
       packId: pack.id,
       packTitle: pack.title,
+      practiceFirst: true,
       preread: pack.preread || null,
       prereadDone: false,
       prereadNote: '',
@@ -578,8 +593,7 @@
     };
     const modals = [
       roleSwitchModalOpen ? renderRoleSwitchModal() : '',
-      dueNavGate ? renderDueNavGateModal() : '',
-      packPickerOpen && currentTab === 'learn' ? renderPackPicker() : ''
+      dueNavGate ? renderDueNavGateModal() : ''
     ].join('');
     $('#app-main').innerHTML = (views[currentTab] || renderLearnTab)() + modals;
     bindEvents();
@@ -652,52 +666,36 @@
   }
 
   // ==================== Tab 1: Lobby & Allocation Preview ====================
+  function planLesson(pack, dueIds, mode = 'standard') {
+    const extraSlots = pack.preserveFullPack ? dueIds.length : 0;
+    const baseCap = (pack.paperCap || 5) + extraSlots;
+    const totalPaperCap = mode === 'quick8' ? Math.min(baseCap, 3 + extraSlots) : baseCap;
+    return SnapCore.planPackAllocation(state, pack.id, pack.itemIds, { totalPaperCap, dueIds });
+  }
+
   function renderLearnTab() {
     if (activeSession) return renderActiveSession();
 
     const summary = SnapCore.getStatsSummary(state, 'student');
     const dueInfo = SnapCore.getDueQueue(state, SnapCore.todayISO(), 3);
     const pack = selectedPack();
-    const dueIds = dueInfo.todayPick.slice(0, 2).map(d => d.item.id);
-    const previewCap = (pack.paperCap || 5) + (pack.preserveFullPack ? dueIds.length : 0);
-    const alloc = SnapCore.planPackAllocation(state, pack.id, pack.itemIds, { totalPaperCap: previewCap, dueIds });
-    const hasDraft = Boolean(state.activeDraft && state.activeDraft.lockedActor === state.actorMode);
-    const canStartPack = pack.modeHint === 'baseline' || alloc.hasAnyActiveTask || Boolean(pack.preread);
-    const dueList = dueInfo.todayPick.slice(0, 2);
-    const total = pack.itemIds.length;
-    const learned = packMasteryCount(pack);
-    const pct = total ? Math.round((learned / total) * 100) : 0;
     const isBaseline = pack.modeHint === 'baseline';
-    const stageMeta = PACK_STAGES.find(s => s.id === stageOfPack(pack)) || PACK_STAGES[1];
-    const lessonLabel = isBaseline ? '先花 10 分钟摸个底' : packLessonLabel(pack);
-    const minsText = isBaseline ? '约 10 分钟'
-      : total <= 3 ? '约 10–15 分钟'
-      : total <= 5 ? '约 15 分钟'
-      : '约 15–18 分钟';
+    const dueList = isBaseline ? [] : dueInfo.todayPick.slice(0, 2);
+    const dueIds = dueList.map(d => d.item.id);
+    const alloc = planLesson(pack, dueIds);
+    const quick = planLesson(pack, dueIds, 'quick8');
+    const hasDraft = Boolean(state.activeDraft && state.activeDraft.lockedActor === state.actorMode);
+    const canStartPack = isBaseline || alloc.hasAnyActiveTask || Boolean(pack.preread);
+    const learned = pack.itemIds.filter(id => ['silver', 'gold'].includes(state.mastery?.[id]?.badge)).length;
+    const planText = [
+      alloc.paperNowIds.length ? '默写 ' + alloc.paperNowIds.length + ' 项' : '',
+      alloc.oralOnlyIds.length ? '听读认义 ' + alloc.oralOnlyIds.length + ' 项' : '',
+      pack.preread ? '看一小段课本' : ''
+    ].filter(Boolean).join(' · ');
+    const teaserIds = isBaseline ? pack.itemIds : [...alloc.paperNowIds, ...alloc.oralOnlyIds];
+    const teaser = teaserIds.slice(0, 2).map(itemById).filter(Boolean).map(itemMeaning).join(' · ');
 
     return `
-      <div class="badge-strip compact">
-        <div class="stat-tile">
-          <span class="medal-icon medal-gold">🥇</span>
-          <div>
-            <div class="stat-num">${summary.gold}</div>
-            <div class="stat-label">金牌 · 隔日也写对${summary.goldSlip ? `（${summary.goldSlip} 个要补测）` : ''}</div>
-          </div>
-        </div>
-        <div class="stat-tile">
-          <span class="medal-icon medal-silver">🥈</span>
-          <div><div class="stat-num">${summary.silver}</div><div class="stat-label">银牌 · 第一次写对</div></div>
-        </div>
-        <div class="stat-tile">
-          <span class="medal-icon medal-bronze">🥉</span>
-          <div><div class="stat-num">${summary.bronze}</div><div class="stat-label">铜牌 · 练过一轮</div></div>
-        </div>
-        <div class="stat-tile">
-          <span class="medal-icon medal-due">📅</span>
-          <div><div class="stat-num">${dueInfo.totalDue}</div><div class="stat-label">今天要复习</div></div>
-        </div>
-      </div>
-
       ${hasDraft ? `
         <div class="card" style="background:#fef3c7;border-color:#f59e0b" id="draft-resume-card">
           <div class="row between">
@@ -722,36 +720,38 @@
         </div>
       ` : ''}
 
-      <section class="kid-hero ${isBaseline ? 'is-baseline' : ''}">
-        <div class="kid-hero-top">
-          <span class="kid-stage">${stageMeta.label}</span>
-          <span class="kid-meta">⏱ ${minsText} · ${total} 个${isBaseline ? '词和句' : '词'}</span>
-        </div>
-        <div class="kid-lesson">${lessonLabel}</div>
-        <h1 class="kid-title">${esc(pack.kidTitle || pack.title)}</h1>
-        <p class="kid-note">${esc(pack.kidNote || '')}</p>
-        <div class="kid-words"><span>今天要练</span><b>${packWordChips(pack)}</b></div>
-        <div class="kid-progress">
-          <div class="kid-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${learned}"><i style="width:${pct}%"></i></div>
-          <span class="kid-progress-text">${learned ? `这组已经会 ${learned} / ${total}` : `这组 ${total} 个词都是新的`}</span>
-        </div>
-        ${dueList.length ? `<div class="kid-due-tip">📅 开始后会先复习 ${dueList.length} 个旧词</div>` : ''}
-        <div class="kid-actions">
-          <button type="button" class="btn btn-primary kid-start" data-start-mode="${isBaseline ? 'baseline' : 'standard'}" ${canStartPack ? '' : 'disabled'}>
-            ${isBaseline ? '📏 开始摸底小测' : '▶ 开始今天这一课'}
-          </button>
-          <button type="button" class="btn" data-act="open-pack-picker">🔄 换一组</button>
-          ${!isBaseline ? `<button type="button" class="btn" data-start-mode="quick8" ${canStartPack ? '' : 'disabled'}>⚡ 只有 8 分钟</button>` : ''}
-          ${dueList.length ? `<button type="button" class="btn btn-sm" data-start-mode="due_only">只复习旧词（${dueList.length} 个）</button>` : ''}
-        </div>
-        <div class="kid-foot">
-          ${!canStartPack ? '<span class="kid-warn">这一组被设成「下次再练」了，请家长展开下面微调，至少留 1 个词。</span>' : `<span>${isBaseline ? '第一次用？先做这个小测，后面用时更准。' : '先复习旧词 → 读句子 → 拆词 → 找错 → 纸上默写。'}</span>`}
-          <button type="button" class="kid-baseline-link" data-quick-baseline="1">第一次来？先做摸底小测</button>
-        </div>
-      </section>
 
+      <div class="homework-entry no-print">
+        <div><strong>11 月 20 日作业</strong><span> 周末问答 07–12，共 11 句</span></div>
+        <button type="button" class="btn btn-sm" data-select-pack="pack-hw-20261120-all">选这份作业 →</button>
+      </div>
+      <div class="lobby-layout">
+        <section class="kid-hero ${isBaseline ? 'is-baseline' : ''}" aria-labelledby="lesson-heading">
+          <div class="kid-hero-top">
+            <span class="kid-stage">当前练习</span>
+            <span class="kid-meta">${esc(packLabel(pack) || PACK_GROUPS.find(g => g.id === groupOfPack(pack)).label)}</span>
+          </div>
+          <h1 class="kid-title" id="lesson-heading" tabindex="-1">${esc(pack.kidTitle || pack.title)}</h1>
+          <p class="kid-note">${isBaseline ? '在纸上写一写，看看哪些已经会了。' : esc(planText)}</p>
+          ${teaser ? `<p class="kid-words">${esc(teaser)}</p>` : ''}
+          ${learned ? `<p class="kid-progress-text">这组曾独立写对 ${learned} / ${pack.itemIds.length} 项</p>` : ''}
+          ${dueList.length ? `<p class="kid-due-tip">先复习 ${dueList.length} 项旧内容</p>` : ''}
+          <div class="kid-actions">
+            <button type="button" class="btn btn-primary kid-start" data-start-mode="${isBaseline ? 'baseline' : 'standard'}" ${canStartPack ? '' : 'disabled'}>
+              ${isBaseline ? '开始摸底小测' : '开始背记'}
+            </button>
+            <a class="btn kid-browse-link" href="#pack-library">换一组</a>
+            ${!isBaseline ? `<button type="button" class="btn" data-start-mode="quick8" ${canStartPack ? '' : 'disabled'}>只有 8 分钟</button>` : ''}
+            ${dueInfo.todayPick.length ? `<button type="button" class="btn" data-start-mode="due_only">只复习旧内容（${dueInfo.todayPick.length} 项）</button>` : ''}
+          </div>
+          ${!canStartPack ? '<p class="kid-warn">这组都留到下次了。可以选另一组，或请家长调整。</p>' : ''}
+          ${renderLessonDetails(pack, alloc, quick, dueList, isBaseline)}
+          ${!isBaseline ? '<button type="button" class="kid-baseline-link" data-quick-baseline="1">第一次用？做个摸底小测</button>' : ''}
+        </section>
+        ${renderPackLibrary(pack)}
+      </div>
       <details class="parent-tune" data-parent-tune ${parentTuneOpen ? 'open' : ''}>
-        <summary>🧰 家长微调：换课程包、调本轮词量（孩子不用点）</summary>
+        <summary>家长设置 · 调整默写、认读和下次再练</summary>
         <div class="parent-tune-body">
           <label for="pack-select" class="parent-label">📚 全部课程包（含教材页码与排课说明）</label>
           <select id="pack-select" style="width:100%;max-width:620px;font-weight:700">
@@ -764,91 +764,139 @@
             <button type="button" class="btn btn-sm ${pack.id === 'pack-u5-sent-b' ? 'btn-primary' : ''}" data-select-pack="pack-u5-sent-b">下半场 (04–06)</button>
           </div>
           <p class="muted" style="margin:8px 0 0">${esc(pack.subtitle || '')}</p>
-          ${pack.modeHint !== 'baseline' ? renderAllocationPreview(pack, alloc, dueInfo.todayPick.slice(0, 2)) : ''}
+          ${pack.modeHint !== 'baseline' ? renderAllocationPreview(pack, alloc, dueList) : ''}
         </div>
       </details>
-    `;
-  }
-
-  // ==================== Kid-friendly Pack Picker ====================
-  const PACK_STAGES = [
-    { id: 'start', label: '👣 第一次来', hint: '不确定从哪开始？先摸个底' },
-    { id: 'autumn', label: '🔥 秋假闯关', hint: '一天一课，从时间词开始' },
-    { id: 'u6', label: '📖 课本 Unit 6', hint: '跟着课本页数顺序练' },
-    { id: 'sentences', label: '✍️ 必背句子', hint: '先练半场，再练全场' }
-  ];
-
-  function stageOfPack(pack) {
-    if (pack.id === 'pack-baseline') return 'start';
-    if (pack.id.startsWith('pack-autumn')) return 'autumn';
-    if (pack.id.startsWith('pack-u6')) return 'u6';
-    return 'sentences';
-  }
-
-  function packMasteryCount(pack) {
-    return (pack.itemIds || []).filter(id => {
-      const b = state.mastery?.[id]?.badge;
-      return b === 'silver' || b === 'gold';
-    }).length;
-  }
-
-  // 首页只显示中文释义：英文拼写必须留给孩子在纸上第一次写出，避免同屏泄题
-  function packWordChips(pack, limit = 3) {
-    const ids = pack.itemIds || [];
-    const items = ids.map(id => itemById(id)).filter(Boolean);
-    const sentenceCount = items.filter(it => it.type === 'sentence' || it.sourceScope === 'textbook_sentence').length;
-    if (items.length && sentenceCount === items.length) return `${items.length} 句整句听写`;
-    const names = items.slice(0, limit).map(it => esc(String(it.zh).replace(/；/g, ' / ')));
-    const rest = ids.length - names.length;
-    return names.join(' · ') + (rest > 0 ? `，还有 ${rest} 个` : '');
-  }
-
-  function packLessonLabel(pack) {
-    if (pack.modeHint === 'baseline') return '👣 摸底';
-    const half = pack.id.endsWith('-sent-a') ? ' · 上半场' : pack.id.endsWith('-sent-b') ? ' · 下半场' : '';
-    return `第 ${pack.lessonNo ?? ''} 课${half}`;
-  }
-
-  function renderPackPicker() {
-    const cur = selectedPack();
-    return `
-      <div class="modal-backdrop no-print" role="dialog" aria-modal="true" aria-label="选择今天要练的一组">
-        <div class="modal-card pack-picker-card">
-          <div class="row between" style="align-items:flex-start">
-            <div>
-              <h3 style="margin:0">今天想练哪一组？</h3>
-              <p class="muted" style="margin:4px 0 0">建议按顺序练。写「已会」表示这组已经能默写。</p>
-            </div>
-            <button type="button" class="btn btn-sm" data-act="close-pack-picker">✕ 关闭</button>
-          </div>
-          <div class="pack-picker-body">
-            ${PACK_STAGES.map(st => {
-              const list = state.packs.filter(p => stageOfPack(p) === st.id);
-              if (!list.length) return '';
-              return `
-                <div class="pack-stage">
-                  <div class="pack-stage-head"><b>${st.label}</b><span>${st.hint}</span></div>
-                  <div class="pack-cards">
-                    ${list.map(p => {
-                      const learned = packMasteryCount(p);
-                      const done = learned >= p.itemIds.length;
-                      return `
-                        <button type="button" class="pack-card ${p.id === cur.id ? 'active' : ''}" data-pick-pack="${esc(p.id)}">
-                          <span class="pack-card-top">
-                            <b>${packLessonLabel(p)}</b>
-                            <span>${done ? '✅ 已练完' : learned ? `已会 ${learned}/${p.itemIds.length}` : `${p.itemIds.length} 个词`}</span>
-                          </span>
-                          <span class="pack-card-title">${esc(p.kidTitle || p.title)}</span>
-                          <span class="pack-card-words">${packWordChips(p)}</span>
-                        </button>`;
-                    }).join('')}
-                  </div>
-                </div>`;
-            }).join('')}
+      <div class="badge-strip compact">
+        <div class="stat-tile">
+          <span class="medal-icon medal-gold">🥇</span>
+          <div>
+            <div class="stat-num">${summary.gold}</div>
+            <div class="stat-label">金牌 · 隔日也写对${summary.goldSlip ? `（${summary.goldSlip} 个要补测）` : ''}</div>
           </div>
         </div>
+        <div class="stat-tile">
+          <span class="medal-icon medal-silver">🥈</span>
+          <div><div class="stat-num">${summary.silver}</div><div class="stat-label">银牌 · 第一次写对</div></div>
+        </div>
+        <div class="stat-tile">
+          <span class="medal-icon medal-bronze">🥉</span>
+          <div><div class="stat-num">${summary.bronze}</div><div class="stat-label">铜牌 · 练过一轮</div></div>
+        </div>
+        <div class="stat-tile">
+          <span class="medal-icon medal-due">📅</span>
+          <div><div class="stat-num">${dueInfo.totalDue}</div><div class="stat-label">今天要复习</div></div>
+        </div>
       </div>
+
     `;
+  }
+
+  const PACK_GROUPS = [
+    { id: 'words', label: '单词和短语' },
+    { id: 'homework', label: '作业' },
+    { id: 'sentences', label: '课本重点句' },
+    { id: 'u6', label: '第 6 单元' },
+    { id: 'mine', label: '我的词单' },
+    { id: 'start', label: '摸底小测' }
+  ];
+
+  function groupOfPack(pack) {
+    if (pack.id === 'pack-baseline') return 'start';
+    if (pack.homeworkLabel) return 'homework';
+    if (pack.id.startsWith('pack-u5-sent-')) return 'sentences';
+    if (/^pack-autumn-[45]$/.test(pack.id) || pack.id.startsWith('pack-u6-')) return 'u6';
+    if (/^pack-autumn-[1-3]$/.test(pack.id)) return 'words';
+    return 'mine';
+  }
+
+  function itemMeaning(item) {
+    return String(item.zh || '').replace(/；/g, ' / ');
+  }
+
+  function packLabel(pack) {
+    if (pack.homeworkLabel) return '11 月 20 日作业 · ' + pack.homeworkLabel;
+    if (pack.id === 'pack-u5-sent-all') return '第 60–61 页 · 全部 6 句';
+    if (pack.id === 'pack-u5-sent-a') return '第 60 页 · 前 3 句';
+    if (pack.id === 'pack-u5-sent-b') return '第 61 页 · 后 3 句';
+    if (pack.id === 'pack-u6-p75') return '第 75 页';
+    if (pack.id === 'pack-u6-p78') return '第 78–79 页';
+    if (pack.id === 'pack-autumn-4') return '第 70–73 页 · 预习';
+    if (pack.id === 'pack-autumn-5') return '第 75–76 页 · 预习';
+    return '';
+  }
+
+  function packSizeLabel(pack) {
+    const items = pack.itemIds.map(itemById).filter(Boolean);
+    const sentences = items.filter(it => it.type === 'sentence').length;
+    const words = items.length - sentences;
+    return [words ? `${words} 个词或短语` : '', sentences ? `${sentences} 句` : ''].filter(Boolean).join('，') || '0 项';
+  }
+
+  function renderPackResults(group, query = '') {
+    const chosen = selectedPack();
+    const normalizeSearch = value => SnapCore.normText(value).toLowerCase().replace(/\s/g, '');
+    const term = normalizeSearch(query);
+    const packs = state.packs.filter(pack => {
+      if (!term) return groupOfPack(pack) === group;
+      const fields = [pack.kidTitle, pack.title, packLabel(pack), pack.subtitle, PACK_GROUPS.find(g => g.id === groupOfPack(pack)).label];
+      for (const id of pack.itemIds) {
+        const item = itemById(id);
+        if (item) fields.push(item.zh, item.en);
+      }
+      return fields.some(field => normalizeSearch(field).includes(term));
+    });
+    return `
+      <p class="pack-results-count" role="status">${term ? `找到 ${packs.length} 组` : `${packs.length} 组可以选`}</p>
+      ${packs.length ? `<div class="pack-cards">
+        ${packs.map(pack => {
+          const label = packLabel(pack);
+          const active = pack.id === chosen.id;
+          const preview = pack.itemIds.slice(0, 2).map(itemById).filter(Boolean).map(itemMeaning).join(' · ');
+          return `<button type="button" class="pack-card ${active ? 'active' : ''}" aria-pressed="${active}" data-pick-pack="${esc(pack.id)}">
+            <span class="pack-card-top"><span>${esc(label || packSizeLabel(pack))}</span>${active ? '<b>当前选中</b>' : ''}</span>
+            <span class="pack-card-title">${esc(pack.kidTitle || pack.title)}</span>
+            <span class="pack-card-words">${esc(label ? packSizeLabel(pack) : preview)}</span>
+          </button>`;
+        }).join('')}
+      </div>` : `<p class="muted">${term ? '试试课本页码或中文词义。' : '家长添加的词单会出现在这里。'}</p>`}
+    `;
+  }
+
+  function renderPackLibrary(pack) {
+    const group = packGroup || groupOfPack(pack);
+    return `
+      <section class="pack-library" aria-labelledby="pack-library-heading" id="pack-library">
+        <h2 id="pack-library-heading" tabindex="-1">选一组练习</h2>
+        <div class="pack-filters" aria-label="按练习内容选">
+          ${PACK_GROUPS.map(g => `<button type="button" aria-pressed="${!packQuery && g.id === group}" data-pack-group="${g.id}">${g.label}</button>`).join('')}
+        </div>
+        <label class="pack-search" for="pack-query">
+          <span>找练习</span>
+          <input id="pack-query" type="search" placeholder="比如：足球、游泳、75 页" value="${esc(packQuery)}" autocomplete="off">
+        </label>
+        <div id="pack-results">${renderPackResults(group, packQuery)}</div>
+      </section>
+    `;
+  }
+
+  function renderLessonDetails(pack, alloc, quick, dueList, isBaseline) {
+    const lessonItems = isBaseline ? pack.itemIds : alloc.paperNowIds;
+    const list = (label, ids) => {
+      const items = ids.map(itemById).filter(Boolean);
+      return items.length ? `<div class="lesson-list"><h3>${label} · ${items.length} 项</h3>
+        <ul>${items.map(it => `<li>${esc(itemMeaning(it))}</li>`).join('')}</ul></div>` : '';
+    };
+    return `<details class="lesson-details" data-lesson-details ${lessonDetailsOpen ? 'open' : ''}>
+      <summary>查看这组的完整内容</summary>
+      ${list('先复习', dueList.map(entry => entry.item.id))}
+      ${list(isBaseline ? '小测' : '本轮默写', lessonItems)}
+      ${isBaseline && pack.extraSentence ? `<p class="muted">还有一句可选练习：${esc(pack.extraSentence.zh)}</p>` : ''}
+      ${!isBaseline ? list('听读认义', alloc.oralOnlyIds) : ''}
+      ${!isBaseline && pack.preread ? '<p class="muted">含课本预读。</p>' : ''}
+      ${!isBaseline ? list('下次再练', alloc.deferredIds) : ''}
+      ${!isBaseline && quick.paperNowIds.length !== alloc.paperNowIds.length ? list('选 8 分钟时的新默写', quick.paperNowIds) || '<p class="muted">选 8 分钟时只复习旧词和听读。</p>' : ''}
+    </details>`;
   }
 
   function renderAllocationPreview(pack, alloc, dueList) {
@@ -941,10 +989,11 @@
     }
 
     const hasPaperStep = s.paperIds.length > 0;
+    const lesson = state.packs.find(pack => pack.id === s.packId);
     const roleText = {
-      due_precheck: '✍️ 主控建议：先遮住答案在纸本写完到期词首答（防后续看黑板泄题）',
-      board: '🎙️ 主控建议：爸爸点黑板 / 父子一起摇句子开口读',
-      snap: '🖱️ 主控建议：孩子握鼠标玩磁吸块（爸爸语音听读点拨）',
+      due_precheck: '先把到期内容写在纸上，再练今天这组。',
+      board: '可以听读例句，读完回到背记。',
+      snap: '听发音，记拼写，再试着拼出来。',
       bug: '🕵️ 主控建议：孩子点鼠标揪出句子里的拼写臭虫',
       paper: '✍️ 主控建议：纸本手写 + 红笔两遍自查 + 家长按纸面核验',
       oral_wrapup: '🗣️ 主控建议：核对今日纯听读认义与预读收工（本轮 0 纸写）'
@@ -952,20 +1001,21 @@
 
     return `
       <div class="session-bar no-print">
+        <strong class="session-lesson-title">${esc(lesson?.kidTitle || s.packTitle)}</strong>
         <div class="step-pills" role="tablist" aria-label="闯关步骤">
           ${s.dueIds.length ? `
-            <button type="button" class="step-pill ${s.step === 'due_precheck' ? 'active' : (s.duePrewritten ? 'done' : '')}" data-jump-step="due_precheck">0. 课前抽查 (${s.dueIds.length})</button>
+            <button type="button" class="step-pill ${s.step === 'due_precheck' ? 'active' : (s.duePrewritten ? 'done' : '')}" data-jump-step="due_precheck">先复习（${s.dueIds.length}）</button>
           ` : ''}
-          <button type="button" class="step-pill ${s.step === 'board' ? 'active' : (s.stepsDone.board ? 'done' : '')}" data-jump-step="board">1. 摇句与预读</button>
           ${s.focusIds.length ? `
-            <button type="button" class="step-pill ${s.step === 'snap' ? 'active' : (s.stepsDone.snap ? 'done' : '')}" data-jump-step="snap">2. 咔嗒拆词 (${s.focusIds.length})</button>
+            <button type="button" class="step-pill ${s.step === 'snap' ? 'active' : (s.stepsDone.snap ? 'done' : '')}" data-jump-step="snap">背记（${s.focusIds.length}）</button>
           ` : ''}
-          <button type="button" class="step-pill ${s.step === 'bug' ? 'active' : (s.stepsDone.bug ? 'done' : '')}" data-jump-step="bug">3. 抓臭虫</button>
           ${hasPaperStep ? `
-            <button type="button" class="step-pill ${s.step === 'paper' ? 'active' : ''}" data-jump-step="paper">4. 纸写核验 (${s.paperIds.length})</button>
+            <button type="button" class="step-pill ${s.step === 'paper' ? 'active' : ''}" data-jump-step="paper">纸上默写（${s.paperIds.length}）</button>
           ` : `
-            <button type="button" class="step-pill ${s.step === 'oral_wrapup' ? 'active' : ''}" data-jump-step="oral_wrapup">4. 认读收工 (0纸写)</button>
+            <button type="button" class="step-pill ${s.step === 'oral_wrapup' ? 'active' : ''}" data-jump-step="oral_wrapup">认读收工</button>
           `}
+          <button type="button" class="step-pill ${s.step === 'board' ? 'active' : ''}" data-jump-step="board">${!s.focusIds.length && !hasPaperStep && s.preread ? '课文预读' : '拓展 · 摇句与预读'}</button>
+          <button type="button" class="step-pill ${s.step === 'bug' ? 'active' : ''}" data-jump-step="bug">拓展 · 找错</button>
         </div>
         <div class="row">
           <span class="role-indicator">${roleText}</span>
@@ -1140,10 +1190,11 @@
     const activeEn = slotUI.customEn || slot.en;
     const activeZh = slotUI.customZh || slot.zh;
     const activeHl = slotUI.customEn ? slotUI.customHl : slot.highlight;
-    const nextStep = s.focusIds.length ? 'snap' : (s.paperIds.length ? 'bug' : 'oral_wrapup');
+    const nextStep = firstLessonStep(s.focusIds, s.paperIds, null);
+    const prereadOnly = !s.focusIds.length && !s.paperIds.length && Boolean(s.preread);
 
     return `
-      <section class="blackboard">
+      ${!prereadOnly ? `<section class="blackboard">
         <div class="row between">
           <span class="pill" style="background:#334155;color:#fbbf24">Step 1 · 说一句、读一句（单次仅高亮 1 处难点）</span>
           <select id="slot-deck-select" class="reel-select" style="width:auto">
@@ -1159,7 +1210,7 @@
         <div class="row" style="margin-bottom:18px">
           <button type="button" class="btn btn-amber" data-act="spin-slot">🎰 咔嗒摇一句新组合！</button>
           <button type="button" class="btn" data-speak-raw="${esc(activeEn)}">🔊 听整句朗读</button>
-          <button type="button" class="btn btn-mint" data-complete-step="board" data-next-step="${nextStep}">🗣️ 开口读顺啦，下一步 →</button>
+          <button type="button" class="btn btn-mint" data-complete-step="board" data-next-step="${nextStep}">${nextStep === 'snap' ? '回到背记' : '继续练习'} →</button>
         </div>
 
         <div class="slot-reels">
@@ -1194,7 +1245,7 @@
             ${slotUI.customEn ? '<button type="button" class="btn btn-sm" data-act="clear-board">切回摇奖机</button>' : ''}
           </div>
         </details>
-      </section>
+      </section>` : ''}
 
       ${s.preread ? `
         <section class="card">
@@ -1213,6 +1264,7 @@
             <button type="button" class="btn btn-sm ${s.prereadDone ? 'btn-mint' : 'btn-primary'}" data-act="mark-preread-done">
               ${s.prereadDone ? '✅ 已记录理解回应' : '记录孩子已读懂回应'}
             </button>
+            ${prereadOnly ? '<button type="button" class="btn btn-mint" data-complete-step="board" data-next-step="oral_wrapup">读完了，收工 →</button>' : ''}
           </div>
         </section>
       ` : ''}
@@ -1229,6 +1281,7 @@
     const audioInfo = SnapAudio.resolveSourceInfo(state, item);
     const isOralOnly = s.oralOnlyIds?.includes(item.id);
     const isSentence = item.type === 'sentence';
+    const itemLabel = isSentence ? '句子' : item.type === 'phrase' ? '短语' : '单词';
     const hasCloze = Boolean(item.cloze && !isOralOnly);
 
     // Stage 2B: Dedicated Blind Cloze View — ALL magnetic blocks, model answers & spelling notes are hidden!
@@ -1282,12 +1335,12 @@
       <section class="card">
         <div class="row between" style="margin-bottom:10px">
           <div>
-            <span class="pill pill-core">Step 2 · ${isSentence ? '咔嗒语块拼句' : '咔嗒磁吸拆词'}（第 ${s.snapIndex + 1} / ${s.focusIds.length} 项）</span>
+            <span class="pill pill-core">背记${itemLabel} · 第 ${s.snapIndex + 1} / ${s.focusIds.length} 项</span>
             ${isOralOnly ? '<span class="pill pill-star">🗣️ 本轮仅听读认义（不进纸写默写）</span>' : `<span class="pill pill-core">✍️ ${isSentence ? '本轮整句默写目标' : '本轮纸写目标词'}</span>`}
             ${badgeLabel(state.mastery[item.id])}
           </div>
           <button type="button" class="btn btn-sm btn-mint" data-act="skip-to-next-word">
-            ⚡ ${isOralOnly ? '已听熟认清意思，下一项 →' : (isSentence ? '这句我会写，跳过直接留到纸上验 →' : '这词我会写，跳过直接留到纸上验 →')}
+            ${s.snapIndex + 1 < s.focusIds.length ? '我会了，下一项 →' : (s.paperIds.length ? '我会了，去纸上默写 →' : '我会了，去收工 →')}
           </button>
         </div>
 
@@ -1297,7 +1350,8 @@
           ${st.hideModel ? `
             <div class="chunk-display" style="color:#64748b;border-style:dashed">🙈 ${isSentence ? '原句与拆解锦囊已全部遮住，按语块顺序凭记忆盲拼吧！' : '原词与拆词锦囊已全部遮住，凭记忆盲拼吧！'}</div>
           ` : `
-            <div class="chunk-display english" style="${isSentence ? 'font-size:21px' : ''}">${esc(item.displayChunks || item.en)}</div>
+            <div class="study-target english">${esc(item.en)}</div>
+            ${item.displayChunks && item.displayChunks !== item.en ? `<div class="chunk-display english">${esc(item.displayChunks)}</div>` : ''}
           `}
           <div style="margin-top:8px">
             <button type="button" class="btn btn-primary" data-speak-item="${esc(item.id)}">🔊 ${isSentence ? '听整句朗读' : '听完整发音'}</button>
@@ -2258,7 +2312,6 @@
           return;
         }
         SnapAudio.stop();
-        packPickerOpen = false;
         currentTab = targetTab;
         render();
       };
@@ -2353,47 +2406,65 @@
       };
     });
 
-    $('#pack-select')?.addEventListener('change', async e => {
-      state.selectedPackId = e.target.value;
+    async function selectLessonPack(id, focusLesson = false) {
+      const pack = state.packs.find(entry => entry.id === id);
+      if (!pack) return;
+      state.selectedPackId = id;
+      packGroup = groupOfPack(pack);
+      packQuery = '';
+      lessonDetailsOpen = false;
       render();
+      if (focusLesson) {
+        $('#lesson-heading')?.focus({ preventScroll: true });
+        $('#lesson-heading')?.scrollIntoView({ block: 'nearest' });
+      }
       await saveState();
+    }
+
+    $('#pack-select')?.addEventListener('change', e => selectLessonPack(e.target.value));
+    document.querySelectorAll('[data-select-pack]').forEach(btn => {
+      btn.onclick = () => selectLessonPack(btn.dataset.selectPack, true);
     });
 
-    // 「换一组」卡片选择器：孩子看中文主题卡选课，不再面对一长串专业下拉框
-    document.querySelectorAll('[data-act="open-pack-picker"]').forEach(btn => {
-      btn.onclick = () => {
-        packPickerOpen = true;
-        render();
-      };
-    });
-
-    document.querySelector('[data-act="close-pack-picker"]')?.addEventListener('click', () => {
-      packPickerOpen = false;
-      render();
-    });
-
-    document.querySelectorAll('[data-pick-pack]').forEach(btn => {
-      btn.onclick = async () => {
-        state.selectedPackId = btn.dataset.pickPack;
-        packPickerOpen = false;
-        render();
-        await saveState();
-      };
+    document.querySelector('[data-lesson-details]')?.addEventListener('toggle', e => {
+      lessonDetailsOpen = e.target.open;
     });
 
     document.querySelector('[data-parent-tune]')?.addEventListener('toggle', e => {
       parentTuneOpen = e.target.open;
     });
 
-    document.querySelectorAll('[data-select-pack]').forEach(btn => {
-      btn.onclick = async () => {
-        const pid = btn.dataset.selectPack;
-        if (state.packs.some(p => p.id === pid)) {
-          state.selectedPackId = pid;
-          render();
-          await saveState();
-        }
+    $('.kid-browse-link')?.addEventListener('click', e => {
+      e.preventDefault();
+      $('#pack-library-heading')?.focus();
+      $('#pack-library')?.scrollIntoView({ block: 'nearest' });
+    });
+
+    const packResults = $('#pack-results');
+    const packSearch = $('#pack-query');
+    const packFilters = document.querySelectorAll('[data-pack-group]');
+    function updatePackResults() {
+      const group = packGroup || groupOfPack(selectedPack());
+      packResults.innerHTML = renderPackResults(group, packQuery);
+      packFilters.forEach(btn => {
+        btn.setAttribute('aria-pressed', String(!packQuery.trim() && btn.dataset.packGroup === group));
+      });
+    }
+    packFilters.forEach(btn => {
+      btn.onclick = () => {
+        packGroup = btn.dataset.packGroup;
+        packQuery = '';
+        packSearch.value = '';
+        updatePackResults();
       };
+    });
+    packSearch?.addEventListener('input', e => {
+      packQuery = e.target.value;
+      updatePackResults();
+    });
+    packResults?.addEventListener('click', e => {
+      const card = e.target.closest('[data-pick-pack]');
+      if (card) selectLessonPack(card.dataset.pickPack, true);
     });
 
     document.querySelectorAll('[data-pack-item-act]').forEach(sel => {
@@ -2418,7 +2489,7 @@
     // R01: Resume & Discard Suspended Drafts
     document.querySelector('[data-act="resume-draft"]')?.addEventListener('click', async () => {
       if (state.activeDraft && state.activeDraft.lockedActor === state.actorMode) {
-        activeSession = SnapCore.clone(state.activeDraft);
+        activeSession = resumeLesson(state.activeDraft);
         activeSession.draftStatus = 'in_progress';
         setActorDraft(state.actorMode, activeSession);
         render();
@@ -2494,9 +2565,7 @@
       if (!activeSession) return;
       lockItemsContext(activeSession, activeSession.dueIds);
       activeSession.duePrewritten = true;
-      activeSession.step = activeSession.mode === 'quick8'
-        ? (activeSession.focusIds.length ? 'snap' : (activeSession.paperIds.length ? 'paper' : 'oral_wrapup'))
-        : 'board';
+      activeSession.step = firstLessonStep(activeSession.focusIds, activeSession.paperIds, activeSession.preread);
       render();
       await saveState();
     });
@@ -2758,9 +2827,7 @@
         initSnapCardState();
       } else {
         activeSession.stepsDone.snap = true;
-        activeSession.step = activeSession.mode === 'quick8'
-          ? (activeSession.paperIds.length ? 'paper' : 'oral_wrapup')
-          : 'bug';
+        activeSession.step = activeSession.paperIds.length ? 'paper' : 'oral_wrapup';
       }
       render();
       await saveState();
@@ -3389,6 +3456,9 @@
         };
         state.packs.unshift(newPack);
         state.selectedPackId = newPack.id;
+        packGroup = 'mine';
+        packQuery = '';
+        lessonDetailsOpen = false;
         currentTab = 'learn';
         render();
         await saveState();
